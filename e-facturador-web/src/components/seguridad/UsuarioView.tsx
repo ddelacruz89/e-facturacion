@@ -7,6 +7,7 @@ import { getUsuario, saveUsuario } from '../../apis/UsuarioController';
 import { SgUsuario } from '../../models/seguridad';
 
 
+
 const UsuarioView = () => {
     const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<SgUsuario>({
         defaultValues: {

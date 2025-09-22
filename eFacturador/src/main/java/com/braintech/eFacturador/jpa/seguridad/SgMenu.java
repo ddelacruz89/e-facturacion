@@ -22,6 +22,9 @@ public class SgMenu extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "tipo_menu_id")
     private SgTipoMenu tipoMenuId;
+    @ManyToOne
+    @JoinColumn(name = "modulo_id")
+    private SgModulo moduloId;
     @Column(name = "menu")
     private String menu;
     @Column(name = "url")
@@ -32,4 +35,9 @@ public class SgMenu extends BaseEntity {
     private Boolean activo;
     @Column(name = "orden")
     private Integer orden;
+
+    @Transient
+    public String getModuloId() {
+        return this.moduloId.id;
+    }
 }

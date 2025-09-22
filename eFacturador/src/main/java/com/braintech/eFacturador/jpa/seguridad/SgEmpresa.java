@@ -30,6 +30,7 @@ public class SgEmpresa extends BaseEntity {
     private  String correo;
     @Column(name = "direccion")
     private String direccion;
+    @Basic(optional = true)
     @Column(name = "logo")
     private byte[] logo;
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 type Props = {
-  logo: number[];
+  logo: number[] | string;
 };
 
 const LogoImg: React.FC<Props> = ({ logo }) => {
@@ -9,7 +9,8 @@ const LogoImg: React.FC<Props> = ({ logo }) => {
 
   useEffect(() => {
     if (typeof logo === "string") {
-      setLogoUrl(`data:image/png;base64,${logo}`);
+     // if (logo.startsWith("data:image/"))
+        setLogoUrl(`data:image/png;base64,${logo}`);
     } else {
       const uint8Array = new Uint8Array(logo || []); // Convertir el array a Uint8Array
       if (logo) {

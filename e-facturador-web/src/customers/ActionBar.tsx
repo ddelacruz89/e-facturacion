@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 
 interface MyComponentProps {
     title: string
-    children?: ReactNode[]; // ReactNode represents any valid JSX
+    children?: ReactNode; // ReactNode represents any valid JSX
 }
 
 const ActionBar: React.FC<MyComponentProps> = ({ children, title }) => {
@@ -16,7 +16,9 @@ const ActionBar: React.FC<MyComponentProps> = ({ children, title }) => {
                 <li>{title}</li>
             </ul>
             <ul id="rigth">
-                {children?.map((child, i) => <li key={i}>{child}</li>)}
+                {React.Children.map(children, (child, i) => (
+                    <li key={i}>{child}</li>
+                ))}
             </ul>
 
 

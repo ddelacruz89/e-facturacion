@@ -1,10 +1,12 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseDgII;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "mf_factura", schema = "facturacion")
@@ -40,4 +42,7 @@ public class MfFactura extends BaseDgII {
     private BigDecimal retencionIsr;
     @Column(name="total")
     private BigDecimal total;
+    @OneToMany(mappedBy = "facturaId", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<MfFacturaDetalle> detalles;
 }

@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,7 +9,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Table(name="mf_factura_detalle")
+@Table(name="mf_factura_detalle", schema = "facturacion")
 @Getter
 @Setter
 @Entity
@@ -19,8 +20,10 @@ public class MfFacturaDetalle{
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     @Column(name="id")
     private Integer id;
-    @Column(name="factura_id")
-    private Integer facturaId;
+    @ManyToOne
+    @JoinColumn(name = "factura_id")
+    @JsonManagedReference
+    private MfFactura facturaId;
     @Column(name="linea")
     private Integer linea;
     @Column(name="producto_id")
@@ -47,6 +50,10 @@ public class MfFacturaDetalle{
     private BigDecimal retencionIsr;
     @Column(name="almacen_id")
     private Integer almacenId;
+
+    public Integer getFacturaId() {
+        return facturaId != null ? facturaId.getId() : null;
+    }
 
 
 }
