@@ -2,10 +2,10 @@ package com.braintech.eFacturador.interfaces;
 
 import com.braintech.eFacturador.models.Response;
 
-public interface IBaseString {
+public interface IBaseString<T> {
 
     Response<?> getFindById(String id);
     Response<?> getFindByAll();
 
-    <T> Response<?> save(T entity);
+     Response<?> save(T entity);
 }

@@ -44,6 +44,30 @@ const HomeView = () => {
                                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
                                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
                             >Usuario</li>
+                            <li
+                                className="menu-item"
+                                onClick={() => handleNavigation("/tipo/factura")}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                            >Tipo Factura</li>
+                            <li
+                                className="menu-item"
+                                onClick={() => handleNavigation("/tipo/itbis")}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                            >Tipo ITBIS</li>
+                            <li
+                                className="menu-item"
+                                onClick={() => handleNavigation("/tipo/comprobante")}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                            >Tipo Comprobante</li>
+                            <li
+                                className="menu-item"
+                                onClick={() => handleNavigation("/facturacion")}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                            >Facturacion</li>
                         </ul>
                     </div>
                 )}

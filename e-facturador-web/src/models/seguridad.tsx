@@ -9,7 +9,7 @@ export interface SgEmpresa {
   telefono: string;
   correo: string;
   direccion: string;
-  logo: number[] | null; // se puede ajustar según cómo manejes los archivos binarios
+  logo?: number[] | null; // se puede ajustar según cómo manejes los archivos binarios
 }
 export interface SgUsuario {
   username: string;           // Clave primaria, única
