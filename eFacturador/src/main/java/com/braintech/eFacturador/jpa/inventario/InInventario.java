@@ -13,7 +13,7 @@ import java.util.Date;
 @Table(name = "in_inventarios", schema = "inventario")
 @Getter
 @Setter
-public class Inventario implements Serializable {
+public class InInventario implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

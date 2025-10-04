@@ -2,11 +2,13 @@ package com.braintech.eFacturador.jpa.inventario;
 
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
 
 @Entity
+@Data
 @Table(name = "in_almacenes", schema = "inventario")
 public class InAlmacen implements Serializable {
 
