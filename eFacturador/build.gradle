@@ -5,6 +5,9 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
+
+
+
 group = 'com.braintech'
 version = '0.0.1-SNAPSHOT'
 
@@ -27,6 +30,8 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-validation'
+
 	compileOnly 'org.projectlombok:lombok'
 	implementation 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'

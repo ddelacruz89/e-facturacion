@@ -32,4 +32,7 @@ public class SgEmpresa extends BaseEntity {
     private String direccion;
     @Column(name = "logo")
     private byte[] logo;
+
+    @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<SgSucursal> sucursales = new java.util.ArrayList<>();
 }
