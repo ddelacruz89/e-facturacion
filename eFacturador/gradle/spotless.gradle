@@ -1,0 +1,15 @@
+spotless {
+    // Execution order is enforced - these commands run sequentially.
+    format 'misc', {
+        target '**/*.gradle'
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+    java {
+        googleJavaFormat('1.28.0')
+        trimTrailingWhitespace()
+        endWithNewline()
+        removeUnusedImports()
+    }
+}
+compileJava.dependsOn('spotlessApply')

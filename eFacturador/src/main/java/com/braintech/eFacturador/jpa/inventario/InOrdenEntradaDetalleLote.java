@@ -1,46 +1,39 @@
 package com.braintech.eFacturador.jpa.inventario;
 
-import com.braintech.eFacturador.jpa.producto.MgProducto;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Date;
-import java.util.List;
-
+import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "in_orden_entrada_detalle_lote", schema = "inventario")
 public class InOrdenEntradaDetalleLote implements Serializable {
 
-    @Id
-    @Basic(optional = false)
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+  @Id
+  @Basic(optional = false)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    private Integer cantidad;
+  private Integer cantidad;
 
-    @Column(name = "usuario_reg")
-    private String usuarioReg;
+  @Column(name = "usuario_reg")
+  private String usuarioReg;
 
-    @Column(name = "fecha_reg", columnDefinition = "TIMESTAMP", insertable = false)
-    private Date fechaReg;
+  @Column(name = "fecha_reg", columnDefinition = "TIMESTAMP", insertable = false)
+  private Date fechaReg;
 
-    @Column(name = "estado", insertable = false)
-    private String estado;
+  @Column(name = "estado", insertable = false)
+  private String estado;
 
-    @JoinColumn(name = "orden_entrada_detalle_id", referencedColumnName = "id")
-    @ManyToOne(optional = false)
-    private InOrdenEntradaDetalle ordenEntradaDetalle;
+  @JoinColumn(name = "orden_entrada_detalle_id", referencedColumnName = "id")
+  @ManyToOne(optional = false)
+  private InOrdenEntradaDetalle ordenEntradaDetalle;
 
-    @JoinColumns({
-            @JoinColumn(name = "producto_id", referencedColumnName = "producto_id"),
-            @JoinColumn(name = "lote_id", referencedColumnName = "lote", nullable = false)
-    })
-    @ManyToOne(cascade = CascadeType.ALL, optional = false)
-    private InLote inLotes;
-
+  @JoinColumns({
+    @JoinColumn(name = "producto_id", referencedColumnName = "producto_id"),
+    @JoinColumn(name = "lote_id", referencedColumnName = "lote", nullable = false)
+  })
+  @ManyToOne(cascade = CascadeType.ALL, optional = false)
+  private InLote inLotes;
 }

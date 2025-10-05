@@ -7,18 +7,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
 
-import java.math.BigDecimal;
-
 @Entity
-@Table(name = "mg_tipo_factura",schema = "facturacion")
+@Table(name = "mg_tipo_factura", schema = "facturacion")
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class MgTipoFactura extends BaseEntity {
-    @Id
-    @Column(name = "id")
-    private Integer id;
-    private String nombre;
+  @Id
+  @Column(name = "id")
+  private Integer id;
+
+  private String nombre;
 }

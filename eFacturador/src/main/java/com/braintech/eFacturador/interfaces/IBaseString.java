@@ -4,8 +4,9 @@ import com.braintech.eFacturador.models.Response;
 
 public interface IBaseString<T> {
 
-    Response<?> getFindById(String id);
-    Response<?> getFindByAll();
+  Response<?> getFindById(String id);
 
-     Response<?> save(T entity);
+  Response<?> getFindByAll();
+
+  Response<?> save(T entity);
 }

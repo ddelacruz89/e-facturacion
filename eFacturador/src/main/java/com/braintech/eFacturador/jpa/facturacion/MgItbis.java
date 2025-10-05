@@ -5,12 +5,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import lombok.*;
 
-import java.math.BigDecimal;
-
 @Entity
-@Table(name = "mg_itbis",schema = "facturacion")
+@Table(name = "mg_itbis", schema = "facturacion")
 @Getter
 @Setter
 @ToString
@@ -18,9 +17,10 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class MgItbis extends BaseEntity {
 
-    @Id
-    @Column(name = "id")
-    private Integer id;
-    private String nombre;
-    private BigDecimal itbis;
+  @Id
+  @Column(name = "id")
+  private Integer id;
+
+  private String nombre;
+  private BigDecimal itbis;
 }

@@ -3,12 +3,11 @@ package com.braintech.eFacturador.jpa.inventario;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Date;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Entity
@@ -16,8 +15,7 @@ import java.util.Date;
 @Table(name = "in_lote", schema = "inventario")
 public class InLote implements Serializable {
 
-  @Id
-  private String lote;
+  @Id private String lote;
 
   @ManyToOne
   @Id
@@ -46,4 +44,4 @@ public class InLote implements Serializable {
   private Date fechaReg;
 
   private String estado;
-    }
+}

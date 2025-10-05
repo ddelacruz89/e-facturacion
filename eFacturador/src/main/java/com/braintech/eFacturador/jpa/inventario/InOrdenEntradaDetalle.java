@@ -3,76 +3,80 @@ package com.braintech.eFacturador.jpa.inventario;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
-
+import lombok.Data;
 
 @Data
 @Entity
 @Table(name = "in_orden_entrada_detalle", schema = "inventario")
 public class InOrdenEntradaDetalle implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    @Id
-    @Basic(optional = false)
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+  @Id
+  @Basic(optional = false)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Integer id;
 
-    @NotNull(message = "Cantidad no debe estar vacio")
-    private Integer cantidad;
+  @NotNull(message = "Cantidad no debe estar vacio")
+  private Integer cantidad;
 
-    @Column(name = "cantidad_tablar")
-    private Double cantidadTablar;
+  @Column(name = "cantidad_tablar")
+  private Double cantidadTablar;
 
-    private String lote;
-    // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these
-    // annotations to enforce field validation
-    @Basic(optional = false)
-    @Column(name = "precio_unitario")
-    private BigDecimal precioUnitario;
+  private String lote;
 
-    @Basic(optional = false)
-    private BigDecimal subtotal;
+  // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these
+  // annotations to enforce field validation
+  @Basic(optional = false)
+  @Column(name = "precio_unitario")
+  private BigDecimal precioUnitario;
 
-    @Basic(optional = false)
-    private BigDecimal itbis;
+  @Basic(optional = false)
+  private BigDecimal subtotal;
 
-    @Basic(optional = false)
-    private BigDecimal total;
+  @Basic(optional = false)
+  private BigDecimal itbis;
 
-    @Column(name = "descuento_porciento")
-    private Double descuentoPorciento;
+  @Basic(optional = false)
+  private BigDecimal total;
 
-    private Boolean extra;
+  @Column(name = "descuento_porciento")
+  private Double descuentoPorciento;
 
-    @JoinColumn(name = "orden_entrada_id", referencedColumnName = "id")
-    @ManyToOne(optional = false)
-    private InOrdenEntrada ordenEntradaId;
+  private Boolean extra;
 
-    @JoinColumn(name = "producto_id")
-    @ManyToOne(optional = false)
-    private MgProducto productoId;
+  @JoinColumn(name = "orden_entrada_id", referencedColumnName = "id")
+  @ManyToOne(optional = false)
+  private InOrdenEntrada ordenEntradaId;
 
-    @Column(name = "unidad_entrada_nombre")
-    private String unidadNombre;
+  @JoinColumn(name = "producto_id")
+  @ManyToOne(optional = false)
+  private MgProducto productoId;
 
-    @Column(name = "unidad_entrada_fraccion_cantidad")
-    private Integer unidadCantidad;
+  @Column(name = "unidad_entrada_nombre")
+  private String unidadNombre;
 
-    @Column(name = "itbis_al_sub_total")
-    private Boolean itbisAlSubTotal;
+  @Column(name = "unidad_entrada_fraccion_cantidad")
+  private Integer unidadCantidad;
 
-    @Column(name = "servicio")
-    private Boolean servicio;
+  @Column(name = "itbis_al_sub_total")
+  private Boolean itbisAlSubTotal;
 
-    @Column(name = "estado", insertable = false)
-    private String estado;
+  @Column(name = "servicio")
+  private Boolean servicio;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "ordenEntradaDetalle", fetch = FetchType.EAGER)
-    private List<InOrdenEntradaDetalleLote> inOrdenDetalleLotes;
+  @Column(name = "estado", insertable = false)
+  private String estado;
 
-    @Transient Boolean anulado;}
+  @JoinColumn(name = "suplidor_id", referencedColumnName = "id")
+  @ManyToOne(optional = false)
+  private InSuplidor suplidorId;
+
+  @OneToMany(cascade = CascadeType.ALL, mappedBy = "ordenEntradaDetalle", fetch = FetchType.EAGER)
+  private List<InOrdenEntradaDetalleLote> inOrdenDetalleLotes;
+
+  @Transient Boolean anulado;
+}

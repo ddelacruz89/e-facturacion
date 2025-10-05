@@ -1,42 +1,27 @@
 package com.braintech.eFacturador.jpa.inventario;
 
-import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
+import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
 import jakarta.persistence.*;
-import lombok.Data;
-
 import java.io.Serializable;
-import java.util.Date;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Table(name = "in_almacenes", schema = "inventario")
-public class InAlmacen implements Serializable {
+public class InAlmacen extends BaseSucursal implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Basic(optional = false)
-    private Integer id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Basic(optional = false)
+  private Integer id;
 
-    @Basic(optional = false)
-    private String nombre;
+  @Basic(optional = false)
+  private String nombre;
 
-    @Column(name = "ubicacion")
-    private String ubicacion;
-
-    @Column(name = "usuario_reg")
-    private String usuarioReg;
-
-    @Column(name = "fecha_reg", insertable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date fechaReg;
-
-    private String estado;
-
-    @JoinColumn(name = "sucursal_id")
-    @ManyToOne(optional = false)
-    private SgSucursal sucursalId;
-
-
-    }
+  @Column(name = "ubicacion")
+  private String ubicacion;
+}

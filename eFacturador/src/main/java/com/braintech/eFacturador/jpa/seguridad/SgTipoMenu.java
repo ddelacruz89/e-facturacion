@@ -15,9 +15,10 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SgTipoMenu extends BaseEntity {
-    @Id
-    @Column(name = "id")
-    String id;
-    @Column(name = "tipo")
-    String tipoMenu;
+  @Id
+  @Column(name = "id")
+  String id;
+
+  @Column(name = "tipo")
+  String tipoMenu;
 }

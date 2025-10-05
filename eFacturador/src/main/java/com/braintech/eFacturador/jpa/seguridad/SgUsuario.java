@@ -17,17 +17,19 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SgUsuario extends BaseEntity {
-    @Id
-    @Column(unique = true, name = "username", length = 20)
-    private String username;
-    @Column(name = "empresa_id")
-    private Integer empresaId;
-    @Column(name = "password", nullable = false)
-    private String password;
-    @Column(name = "cambio_password")
-    private Boolean cambioPassword;
-    @Column(name = "nombre", length = 200, nullable = false)
-    private String nombre;
+  @Id
+  @Column(unique = true, name = "username", length = 20)
+  private String username;
+
+  @Column(name = "empresa_id")
+  private Integer empresaId;
+
+  @Column(name = "password", nullable = false)
+  private String password;
+
+  @Column(name = "cambio_password")
+  private Boolean cambioPassword;
+
+  @Column(name = "nombre", length = 200, nullable = false)
+  private String nombre;
 }
-
-

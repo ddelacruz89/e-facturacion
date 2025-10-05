@@ -12,27 +12,25 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("api/seguridad/usuario")
 @AllArgsConstructor
 public class UsuariosController {
-    UsuarioServices usuarioServices;
+  UsuarioServices usuarioServices;
 
-    @GetMapping
-    public ResponseEntity<?> getUsuario() {
-        Response<?> response = usuarioServices.getFindByAll();
-        if (response.status() == HttpStatus.OK) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(response.status()).body(response);
-        }
-
+  @GetMapping
+  public ResponseEntity<?> getUsuario() {
+    Response<?> response = usuarioServices.getFindByAll();
+    if (response.status() == HttpStatus.OK) {
+      return ResponseEntity.ok(response);
+    } else {
+      return ResponseEntity.status(response.status()).body(response);
     }
+  }
 
-    @PostMapping
-    public ResponseEntity<?> saveUsuario(@RequestBody SgUsuario entity) {
-        Response<?> response = usuarioServices.save(entity);
-        if (response.status() == HttpStatus.OK) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(response.status()).body(response);
-        }
-
+  @PostMapping
+  public ResponseEntity<?> saveUsuario(@RequestBody SgUsuario entity) {
+    Response<?> response = usuarioServices.save(entity);
+    if (response.status() == HttpStatus.OK) {
+      return ResponseEntity.ok(response);
+    } else {
+      return ResponseEntity.status(response.status()).body(response);
     }
+  }
 }
