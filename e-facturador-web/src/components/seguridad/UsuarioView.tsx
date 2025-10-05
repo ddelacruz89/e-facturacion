@@ -1,33 +1,36 @@
-import React, { useEffect } from 'react';
-import { useForm, SubmitHandler, FieldErrors } from 'react-hook-form';
-import { Row, Form, Button } from 'reactstrap';
-import { NumericInput, AlphanumericInput,SelectInput } from '../../customers/CustomerReactStrap';
-import ActionBar from '../../customers/ActionBar';
-import { getUsuario, saveUsuario } from '../../apis/UsuarioController';
-import { SgUsuario } from '../../models/seguridad';
-
-
+import React, { useEffect } from "react";
+import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
+import { Box, Grid, Button } from "@mui/material";
+import { NumericInput, AlphanumericInput, SelectInput } from "../../customers/CustomMUIComponents";
+import ActionBar from "../../customers/ActionBar";
+import { getUsuario, saveUsuario } from "../../apis/UsuarioController";
+import { SgUsuario } from "../../models/seguridad";
 
 const UsuarioView = () => {
-    const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<SgUsuario>({
+    const {
+        control,
+        handleSubmit,
+        watch,
+        setValue,
+        formState: { errors },
+    } = useForm<SgUsuario>({
         defaultValues: {
-            username: '',
+            username: "",
             empresaId: 1,
-            password: '',
+            password: "",
             cambioPassword: true,
-            nombre: '',
+            nombre: "",
         },
     });
-
 
     const onSubmit: SubmitHandler<SgUsuario> = (data) => {
         saveUsuario(data)
             .then((response) => {
-                setValue('username', response.username);
-                setValue('empresaId', response.empresaId);
-                setValue('password', response.password);
-                setValue('cambioPassword', response.cambioPassword);
-                setValue('nombre', response.nombre);
+                setValue("username", response.username);
+                setValue("empresaId", response.empresaId);
+                setValue("password", response.password);
+                setValue("cambioPassword", response.cambioPassword);
+                setValue("nombre", response.nombre);
                 alert("Usuario guardado correctamente");
             })
             .catch((error) => {
@@ -42,21 +45,25 @@ const UsuarioView = () => {
 
     return (
         <main>
-            <Form onSubmit={handleSubmit(onSubmit, onError)}>
-                <ActionBar title='Usuario'>
-                    <Button size='sm' color="primary" type="submit">Guardar</Button>
-                    <Button size='sm' type="button">Nuevo</Button>
+            <Box component="form" onSubmit={handleSubmit(onSubmit, onError)}>
+                <ActionBar title="Usuario">
+                    <Button size="small" color="primary" type="submit">
+                        Guardar
+                    </Button>
+                    <Button size="small" type="button">
+                        Nuevo
+                    </Button>
                 </ActionBar>
                 <section>
-                    <Row>
+                    <Grid container spacing={2}>
                         <SelectInput
-                            label='Empresa'
+                            label="Empresa"
                             name="empresaId"
                             control={control}
                             error={errors.empresaId}
                             options={[
-                                { value: '1', label: 'Cédula' },
-                                { value: '2', label: 'Pasaporte' },
+                                { value: "1", label: "Cédula" },
+                                { value: "2", label: "Pasaporte" },
                                 // Agrega más opciones según tus datos
                             ]}
                             rules={{
@@ -64,10 +71,10 @@ const UsuarioView = () => {
                             }}
                             size={6}
                         />
-                    </Row>
-                    <Row>
+                    </Grid>
+                    <Grid container spacing={2}>
                         <AlphanumericInput
-                            label='Username'
+                            label="Username"
                             size={6}
                             name="username"
                             control={control}
@@ -88,11 +95,11 @@ const UsuarioView = () => {
                                 min: { value: 1, message: "Debe ser mayor que 0" },
                             }}
                         /> */}
-                    </Row>
+                    </Grid>
 
-                    <Row>
+                    <Grid container spacing={2}>
                         <AlphanumericInput
-                            label='Password'
+                            label="Password"
                             size={6}
                             name="password"
                             type="password"
@@ -104,17 +111,17 @@ const UsuarioView = () => {
                             }}
                         />
                         <AlphanumericInput
-                            label='Cambio de Password'
+                            label="Cambio de Password"
                             size={6}
                             name="cambioPassword"
                             control={control}
                             error={errors.cambioPassword}
                         />
-                    </Row>
+                    </Grid>
 
-                    <Row>
+                    <Grid container spacing={2}>
                         <AlphanumericInput
-                            label='Nombre'
+                            label="Nombre"
                             size={12}
                             name="nombre"
                             control={control}
@@ -125,9 +132,9 @@ const UsuarioView = () => {
                                 maxLength: { value: 200, message: "Máximo 200 caracteres" },
                             }}
                         />
-                    </Row>
+                    </Grid>
                 </section>
-            </Form>
+            </Box>
         </main>
     );
 };

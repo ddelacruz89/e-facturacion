@@ -52,7 +52,7 @@ public class UsuarioServices implements IBaseString {
     }
 
     @Override
-    public <T> Response<?> save(T entity) {
+    public Response<?> save(Object entity) {
         SgUsuario usuario = entity instanceof SgUsuario ? (SgUsuario) entity : new SgUsuario();
         usuario.setFechaReg(LocalDateTime.now());
         usuario.setActivo(true);
@@ -64,4 +64,6 @@ public class UsuarioServices implements IBaseString {
                 .content(usuario)
                 .build();
     }
+
+
 }
