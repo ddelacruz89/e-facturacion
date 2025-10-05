@@ -15,6 +15,8 @@ import lombok.NoArgsConstructor;
 @Table(name = "in_lote", schema = "inventario")
 public class InLote implements Serializable {
 
+  private static final long serialVersionUID = 1L;
+
   @Id private String lote;
 
   @ManyToOne

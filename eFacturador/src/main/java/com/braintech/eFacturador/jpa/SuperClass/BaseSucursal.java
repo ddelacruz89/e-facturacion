@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MappedSuperclass;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +13,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
-public class BaseSucursal {
+public class BaseSucursal implements Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   @Column(name = "usuario_reg", nullable = false)
   private String usuarioReg;

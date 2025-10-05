@@ -1,7 +1,7 @@
 package com.braintech.eFacturador.services.seguridad;
 
 import com.braintech.eFacturador.dao.seguridad.ModuloDao;
-import com.braintech.eFacturador.exceptions.DataNotFondException;
+import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.interfaces.IBaseString;
 import com.braintech.eFacturador.jpa.seguridad.SgModulo;
 import com.braintech.eFacturador.models.Response;
@@ -24,7 +24,7 @@ public class ModuloServices implements IBaseString<SgModulo> {
     } else {
       return Response.<SgModulo>builder()
           .status(HttpStatus.NOT_FOUND)
-          .error(new DataNotFondException("Modulo no encontrado"))
+          .error(new DataNotFoundDTO("Modulo no encontrado"))
           .build();
     }
   }
@@ -37,7 +37,7 @@ public class ModuloServices implements IBaseString<SgModulo> {
     } else {
       return Response.<List<SgModulo>>builder()
           .status(HttpStatus.NOT_FOUND)
-          .error(new DataNotFondException("Modulos no encontrado"))
+          .error(new DataNotFoundDTO("Modulos no encontrado"))
           .build();
     }
   }

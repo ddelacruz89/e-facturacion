@@ -10,6 +10,8 @@ import lombok.Data;
 @Table(name = "in_orden_entrada_detalle_lote", schema = "inventario")
 public class InOrdenEntradaDetalleLote implements Serializable {
 
+  private static final long serialVersionUID = 1L;
+
   @Id
   @Basic(optional = false)
   @GeneratedValue(strategy = GenerationType.IDENTITY)

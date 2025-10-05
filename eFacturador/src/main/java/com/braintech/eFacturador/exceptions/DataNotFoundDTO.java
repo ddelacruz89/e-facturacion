@@ -7,6 +7,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
-public class DataNotFondException {
+public class DataNotFoundDTO {
   String message;
 }

@@ -1,7 +1,7 @@
 package com.braintech.eFacturador.services.facturacion;
 
 import com.braintech.eFacturador.dao.facturacion.TipoFacturaDao;
-import com.braintech.eFacturador.exceptions.DataNotFondException;
+import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.jpa.facturacion.MgTipoFactura;
 import com.braintech.eFacturador.models.Response;
 import java.time.LocalDateTime;
@@ -22,7 +22,7 @@ public class TipoFacturaService implements ITipoEntity<MgTipoFactura> {
       return Response.<List<MgTipoFactura>>builder()
           .status(HttpStatus.NOT_FOUND)
           .content(List.of())
-          .error(new DataNotFondException("Tipo Factura no tiene registro"))
+          .error(new DataNotFoundDTO("Tipo Factura no tiene registro"))
           .build();
     }
     return Response.<List<MgTipoFactura>>builder().status(HttpStatus.OK).content(tipos).build();

@@ -2,6 +2,7 @@ package com.braintech.eFacturador.jpa.seguridad;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import jakarta.persistence.*;
+import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,7 +10,10 @@ import lombok.Setter;
 @Table(name = "sg_sucursal", schema = "seguridad")
 @Getter
 @Setter
-public class SgSucursal extends BaseEntity {
+public class SgSucursal extends BaseEntity implements Serializable {
+
+  private static final long serialVersionUID = 1L;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")

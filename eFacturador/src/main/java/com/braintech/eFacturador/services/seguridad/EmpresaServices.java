@@ -1,7 +1,7 @@
 package com.braintech.eFacturador.services.seguridad;
 
 import com.braintech.eFacturador.dao.seguridad.EmpresaDao;
-import com.braintech.eFacturador.exceptions.DataNotFondException;
+import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.interfaces.IEmpresa;
 import com.braintech.eFacturador.jpa.seguridad.SgEmpresa;
 import com.braintech.eFacturador.models.Response;
@@ -23,7 +23,7 @@ public class EmpresaServices implements IEmpresa {
     if (oEmpresa.isEmpty()) {
       return Response.builder()
           .status(HttpStatus.OK)
-          .error(new DataNotFondException("Empresa no encontrada"))
+          .error(new DataNotFoundDTO("Empresa no encontrada"))
           .build();
     } else {
       return Response.builder().status(HttpStatus.OK).content(oEmpresa).build();
@@ -36,7 +36,7 @@ public class EmpresaServices implements IEmpresa {
     if (empresaList.isEmpty()) {
       return Response.builder()
           .status(HttpStatus.OK)
-          .error(new DataNotFondException("No Existe Empresas"))
+          .error(new DataNotFoundDTO("No Existe Empresas"))
           .build();
     } else {
       return Response.builder().status(HttpStatus.OK).content(empresaList).build();

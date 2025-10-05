@@ -1,7 +1,7 @@
 package com.braintech.eFacturador.services.seguridad;
 
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioDao;
-import com.braintech.eFacturador.exceptions.DataNotFondException;
+import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.interfaces.IBaseString;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
 import com.braintech.eFacturador.models.Response;
@@ -24,7 +24,7 @@ public class UsuarioServices implements IBaseString {
     if (oUsername.isEmpty()) {
       return Response.builder()
           .status(HttpStatus.OK)
-          .error(new DataNotFondException("Usuario no encontrada"))
+          .error(new DataNotFoundDTO("Usuario no encontrada"))
           .build();
     } else {
       return Response.builder().status(HttpStatus.OK).content(oUsername).build();
@@ -37,7 +37,7 @@ public class UsuarioServices implements IBaseString {
     if (empresas.isEmpty()) {
       return Response.builder()
           .status(HttpStatus.BAD_REQUEST)
-          .error(new DataNotFondException("Usuario no encontrada"))
+          .error(new DataNotFoundDTO("Usuario no encontrada"))
           .build();
     } else {
       return Response.builder().status(HttpStatus.OK).content(empresas).build();

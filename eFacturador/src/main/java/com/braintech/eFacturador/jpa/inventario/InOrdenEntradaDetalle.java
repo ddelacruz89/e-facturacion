@@ -35,7 +35,7 @@ public class InOrdenEntradaDetalle implements Serializable {
   private BigDecimal precioUnitario;
 
   @Basic(optional = false)
-  private BigDecimal subtotal;
+  private BigDecimal subTotal;
 
   @Basic(optional = false)
   private BigDecimal itbis;
