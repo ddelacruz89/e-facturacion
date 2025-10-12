@@ -22,7 +22,7 @@ public class AuthController {
 
   @PostMapping("/login")
   public LoginResponse login(@RequestBody LoginRequest request) {
-    SgUsuario usuario = usuarioRepository.findByUsername(request.getUsername());
+    SgUsuario usuario = usuarioRepository.findByLoginEmailOrUsernameV1(request.getUsername());
     if (usuario == null || !passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
       throw new RuntimeException("Credenciales inválidas");
     }

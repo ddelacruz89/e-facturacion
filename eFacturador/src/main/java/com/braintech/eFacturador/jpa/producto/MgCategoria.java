@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.producto;
 
+import com.braintech.eFacturador.jpa.SuperClass.BaseEmpesaPk;
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,10 +12,15 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
+@IdClass(BaseEmpesaPk.class)
 public class MgCategoria extends BaseEntity {
   @Id
-  @Column(name = "id", nullable = false, length = 4)
-  private String id;
+  @Column(name = "id")
+  private Integer id;
+
+  @Id
+  @Column(name = "empresa_id")
+  private Integer empresaId;
 
   @Column(name = "categoria", nullable = false)
   private String categoria;

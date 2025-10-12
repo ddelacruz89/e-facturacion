@@ -24,6 +24,9 @@ public class SgUsuario extends BaseSucursal implements Serializable {
   @Column(unique = true, name = "username", length = 20)
   private String username;
 
+  @Column(unique = true, name = "login_email", length = 100)
+  private String loginEmail;
+
   @Column(name = "password", nullable = false)
   private String password;
 

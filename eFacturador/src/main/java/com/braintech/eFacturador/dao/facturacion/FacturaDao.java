@@ -19,4 +19,6 @@ public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
             select f from MfFactura f where  f.empresaId = ?1
             """)
   List<MfFactura> getFindByAll(Integer empresaId);
+
+  List<FacturaDao> findByEmpresaId(Integer empresaId);
 }
