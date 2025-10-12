@@ -47,7 +47,7 @@ public class InLoteDaoImpl implements InLoteDao {
     Optional<InLote> loteOpt = findById(lote, productoId);
     if (loteOpt.isPresent()) {
       InLote loteEntity = loteOpt.get();
-      loteEntity.setEstado("INA");
+      loteEntity.setEstadoId("INA");
       entityManager.merge(loteEntity);
     }
   }

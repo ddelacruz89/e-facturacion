@@ -16,31 +16,56 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class UsuarioServices implements IBaseString {
   private SgUsuarioDao dao;
-  final Integer empresaId = 2;
 
   @Override
   public Response<?> getFindById(String id) {
-    Optional<SgUsuario> oUsername = dao.findByUsername(empresaId, id);
+    Optional<SgUsuario> oUsername = dao.findById(id);
     if (oUsername.isEmpty()) {
       return Response.builder()
           .status(HttpStatus.OK)
-          .error(new DataNotFoundDTO("Usuario no encontrada"))
+          .error(new DataNotFoundDTO("Usuario no encontrado"))
           .build();
     } else {
-      return Response.builder().status(HttpStatus.OK).content(oUsername).build();
+      return Response.builder().status(HttpStatus.OK).content(oUsername.get()).build();
     }
   }
 
   @Override
   public Response<?> getFindByAll() {
-    List<SgUsuario> empresas = dao.findAllByEmpresaId(empresaId);
-    if (empresas.isEmpty()) {
+    List<SgUsuario> usuarios = dao.findAll();
+    if (usuarios.isEmpty()) {
       return Response.builder()
           .status(HttpStatus.BAD_REQUEST)
-          .error(new DataNotFoundDTO("Usuario no encontrada"))
+          .error(new DataNotFoundDTO("Usuarios no encontrados"))
           .build();
     } else {
-      return Response.builder().status(HttpStatus.OK).content(empresas).build();
+      return Response.builder().status(HttpStatus.OK).content(usuarios).build();
+    }
+  }
+
+  // Method to find users by empresa ID (for when needed)
+  public Response<?> getFindByEmpresaId(Integer empresaId) {
+    List<SgUsuario> usuarios = dao.findAllByEmpresaId(empresaId);
+    if (usuarios.isEmpty()) {
+      return Response.builder()
+          .status(HttpStatus.BAD_REQUEST)
+          .error(new DataNotFoundDTO("Usuarios no encontrados para esta empresa"))
+          .build();
+    } else {
+      return Response.builder().status(HttpStatus.OK).content(usuarios).build();
+    }
+  }
+
+  // Method to find user by username and empresa ID (for authentication)
+  public Response<?> getFindByUsername(Integer empresaId, String username) {
+    Optional<SgUsuario> oUsername = dao.findByUsername(empresaId, username);
+    if (oUsername.isEmpty()) {
+      return Response.builder()
+          .status(HttpStatus.OK)
+          .error(new DataNotFoundDTO("Usuario no encontrado"))
+          .build();
+    } else {
+      return Response.builder().status(HttpStatus.OK).content(oUsername.get()).build();
     }
   }
 
@@ -48,7 +73,7 @@ public class UsuarioServices implements IBaseString {
   public Response<?> save(Object entity) {
     SgUsuario usuario = entity instanceof SgUsuario ? (SgUsuario) entity : new SgUsuario();
     usuario.setFechaReg(LocalDateTime.now());
-    usuario.setActivo(true);
+    usuario.setEstadoId("ACT");
     usuario.setUsuarioReg("TEST");
 
     usuario = dao.save(usuario);

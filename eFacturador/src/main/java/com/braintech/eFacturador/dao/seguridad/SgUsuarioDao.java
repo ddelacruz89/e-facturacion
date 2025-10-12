@@ -12,13 +12,13 @@ public interface SgUsuarioDao extends JpaRepository<SgUsuario, String> {
 
   @Query(
       """
-            select s from SgUsuario s where s.empresaId = ?1
+            select s from SgUsuario s where s.sucursalId.empresa.id = ?1
             """)
   List<SgUsuario> findAllByEmpresaId(Integer empresaId);
 
   @Query(
       """
-            select s from SgUsuario s where s.empresaId = ?1 and s.username = ?2
+            select s from SgUsuario s where s.sucursalId.empresa.id = ?1 and s.username = ?2
             """)
   Optional<SgUsuario> findByUsername(Integer empresaId, String username);
 }

@@ -1,10 +1,11 @@
 package com.braintech.eFacturador.jpa.seguridad;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
+import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.io.Serializable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,13 +17,13 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class SgUsuario extends BaseEntity {
+public class SgUsuario extends BaseSucursal implements Serializable {
+
+  private static final long serialVersionUID = 1L;
+
   @Id
   @Column(unique = true, name = "username", length = 20)
   private String username;
-
-  @Column(name = "empresa_id")
-  private Integer empresaId;
 
   @Column(name = "password", nullable = false)
   private String password;

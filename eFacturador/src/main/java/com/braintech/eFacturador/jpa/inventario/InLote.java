@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.inventario;
 
+import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
@@ -7,13 +8,15 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.Date;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
 @Entity
 @NoArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 @Table(name = "in_lote", schema = "inventario")
-public class InLote implements Serializable {
+public class InLote extends BaseSucursal implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -36,14 +39,4 @@ public class InLote implements Serializable {
 
   @Column(name = "alertas_dias")
   private Integer alertasDias;
-
-  @Column(name = "usuario_reg")
-  private String usuarioReg;
-
-  @Column(name = "fecha_reg", insertable = false)
-  @Temporal(TemporalType.TIMESTAMP)
-  @JsonFormat(pattern = "dd/MM/yyyy")
-  private Date fechaReg;
-
-  private String estado;
 }

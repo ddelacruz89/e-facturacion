@@ -31,7 +31,11 @@ public class SgSucursal extends BaseEntity implements Serializable {
   @Column(name = "email")
   private String email;
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @Column(name = "estado_id")
+  private String estadoId;
+
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "empresa_id")
+  @com.fasterxml.jackson.annotation.JsonIgnoreProperties("sucursales")
   private SgEmpresa empresa;
 }

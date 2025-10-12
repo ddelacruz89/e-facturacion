@@ -1,7 +1,13 @@
-import './App.css';
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import "./App.css";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import { createTheme, ThemeProvider } from '@mui/material';
+import { createTheme, ThemeProvider } from "@mui/material";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import LoginView from "./components/auth/LoginView";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+
+// Import debug utility
+import "./utils/debugAuth";
 
 // Lazy imports
 const HomeView = lazy(() => import("./HomeView"));
@@ -12,39 +18,62 @@ const TipoItbisView = lazy(() => import("./components/facturacion/TipoItbisView"
 const FacturacionView = lazy(() => import("./components/facturacion/FacturacionView"));
 const TipoComprobanteView = lazy(() => import("./components/facturacion/TipoComprobanteView"));
 
-function App() {
-  const theme = createTheme({
-    components: {
-      MuiInputLabel: {
-        styleOverrides: {
-          shrink: {
-            fontSize: "16px",
-            fontWeight: "bold"   // tamaño cuando sube (shrink)
-          },
-        },
-      }
-    },
-  });
-  return (
+// Routes component that uses authentication context
+const AppRoutes = () => {
+    const { user } = useAuth();
 
-    <ThemeProvider theme={theme}>
-      <Router>
+    return (
         <Suspense fallback={<div>Cargando...</div>}>
-          <Routes>
-            <Route path="/" element={<HomeView />}>
-              <Route path="empresa" element={<EmpresaView />} />
-              <Route path="usuario" element={<UsuarioView />} />
-              <Route path="tipo/factura" element={<TipoFacturaView />} />
-              <Route path="tipo/itbis" element={<TipoItbisView />} />
-              <Route path="tipo/comprobante" element={<TipoComprobanteView />} />
-              <Route path="facturacion" element={<FacturacionView />} />
-            </Route>
-          </Routes>
-        </Suspense>
-      </Router>
-    </ThemeProvider>
+            <Routes>
+                {/* Login route - redirect to home if already authenticated */}
+                <Route path="/login" element={user?.isAuthenticated ? <Navigate to="/" replace /> : <LoginView />} />
 
-  );
+                {/* Protected routes */}
+                <Route
+                    path="/"
+                    element={
+                        <ProtectedRoute>
+                            <HomeView />
+                        </ProtectedRoute>
+                    }>
+                    <Route path="empresa" element={<EmpresaView />} />
+                    <Route path="usuario" element={<UsuarioView />} />
+                    <Route path="tipo/factura" element={<TipoFacturaView />} />
+                    <Route path="tipo/itbis" element={<TipoItbisView />} />
+                    <Route path="tipo/comprobante" element={<TipoComprobanteView />} />
+                    <Route path="facturacion" element={<FacturacionView />} />
+                </Route>
+
+                {/* Catch all route */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </Suspense>
+    );
+};
+
+function App() {
+    const theme = createTheme({
+        components: {
+            MuiInputLabel: {
+                styleOverrides: {
+                    shrink: {
+                        fontSize: "16px",
+                        fontWeight: "bold", // tamaño cuando sube (shrink)
+                    },
+                },
+            },
+        },
+    });
+
+    return (
+        <ThemeProvider theme={theme}>
+            <AuthProvider>
+                <Router>
+                    <AppRoutes />
+                </Router>
+            </AuthProvider>
+        </ThemeProvider>
+    );
 }
 
 export default App;
