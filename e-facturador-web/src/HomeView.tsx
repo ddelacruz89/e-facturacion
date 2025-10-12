@@ -1,11 +1,19 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import './menu.css'; // Asegúrate de que la ruta sea correcta
 import logo from "./assets/logo-braintech.png";
+import { getModulos } from "./apis/ModulosController";
+import { ModuloDto } from "./models/seguridad";
 
 const HomeView = () => {
     const [mostrarPanel, setMostrarPanel] = useState(false);
     const navigate = useNavigate();
+    const [modulos, setModulos] = useState<ModuloDto[]>([]);
+    const [moduloActivo, setModuloActivo] = useState<ModuloDto>({ id: '', menus: [], modulo: '' });
+
+    useEffect(() => {
+        getModulos().then(modulos => setModulos(modulos));
+    }, []);
 
     const handleNavigation = (path: string) => {
         navigate(path);
@@ -17,12 +25,19 @@ const HomeView = () => {
             <div className="left">
                 <div
                     style={{ cursor: "pointer", fontWeight: "bold" }}
-                    onClick={() => setMostrarPanel(!mostrarPanel)}
+                // onClick={() => setMostrarPanel(!mostrarPanel)}
                 >
                     <div className='short-menu'>
                         <ul>
-                            <li className="seg">SEG</li>
-                            <li className="seg">SEG</li>
+                            {modulos.map(modulo => (
+                                <li key={modulo.id} className="seg" title={modulo.modulo} data-active={moduloActivo.id === modulo.id}
+                                    onClick={() => {
+                                        setMostrarPanel(true);
+                                        setModuloActivo(modulo)
+                                    }}>
+                                    {modulo.modulo.substring(0, 3).toUpperCase()}
+                                </li>
+                            ))}
                         </ul>
 
                     </div>
@@ -30,9 +45,17 @@ const HomeView = () => {
                 </div>
                 {mostrarPanel && (
                     <div className="menu-panel">
-                        <div className="tittle-menu" style={{}}>Seguridad <div className="exit-menu" onClick={() => setMostrarPanel(false)}>X</div></div>
+                        <div className="tittle-menu" style={{}}>{moduloActivo.modulo} <div className="exit-menu" onClick={() => setMostrarPanel(false)}>X</div></div>
                         <ul>
-                            <li
+                            {moduloActivo.menus.map(menu => <li
+                                className="menu-item"
+                                onClick={() => handleNavigation(menu.url)}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
+                                {menu.menu}
+                            </li>
+                            )}
+                            {/* <li
                                 className="menu-item"
                                 onClick={() => handleNavigation("/empresa")}
                                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
@@ -67,7 +90,7 @@ const HomeView = () => {
                                 onClick={() => handleNavigation("/facturacion")}
                                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
                                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Facturacion</li>
+                            >Facturacion</li> */}
                         </ul>
                     </div>
                 )}

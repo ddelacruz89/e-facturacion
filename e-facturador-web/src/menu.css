@@ -61,7 +61,6 @@
 
 .seg:hover {
     background-color: var(--hover-color);
-
     --_p: 0%;
 }
 
@@ -71,6 +70,11 @@
 
 .seg:active {
     background-color: var(--sky-color);
+}
+
+.seg[data-active="true"] {
+    background-color: var(--hover-color);
+    color: var(--sky-color);
 }
 
 .left ul {
@@ -87,7 +91,8 @@
     min-width: 500px !important;
     opacity: 0.9;
 }
-.menu-panel .tittle-menu{
+
+.menu-panel .tittle-menu {
     position: relative;
     font-size: 1.2rem;
     font-weight: bold;
@@ -102,6 +107,12 @@
     color: rgb(233, 32, 32);
     font-size: 1.2rem;
 }
+
 .exit-menu:hover {
-     color: rgb(85, 0, 0);
+    color: rgb(85, 0, 0);
+}
+
+.menu-item{
+    background-color: var(--sky-color);
+    cursor: pointer;
 }

@@ -4,6 +4,7 @@ import com.braintech.eFacturador.dao.seguridad.ModuloDao;
 import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.interfaces.IBaseString;
 import com.braintech.eFacturador.jpa.seguridad.SgModulo;
+import com.braintech.eFacturador.jpa.seguridad.dto.ModuloDto;
 import com.braintech.eFacturador.models.Response;
 import java.util.List;
 import java.util.Optional;
@@ -30,12 +31,24 @@ public class ModuloServices implements IBaseString<SgModulo> {
   }
 
   @Override
-  public Response<List<SgModulo>> getFindByAll() {
-    List<SgModulo> entities = moduloDao.findAll();
+  public Response<List<ModuloDto>> getFindByAll() {
+    //    List<SgModulo> entities = moduloDao.findAll();
+    //    if (!entities.isEmpty()) {
+    //      return
+    // Response.<List<SgModulo>>builder().content(entities).status(HttpStatus.OK).build();
+    //    } else {
+    //      return Response.<List<SgModulo>>builder()
+    //          .status(HttpStatus.NOT_FOUND)
+    //          .error(new DataNotFoundDTO("Modulos no encontrado"))
+    //          .build();
+    //    }
+
+    List<ModuloDto> entities = moduloDao.getModulos();
+
     if (!entities.isEmpty()) {
-      return Response.<List<SgModulo>>builder().content(entities).status(HttpStatus.OK).build();
+      return Response.<List<ModuloDto>>builder().content(entities).status(HttpStatus.OK).build();
     } else {
-      return Response.<List<SgModulo>>builder()
+      return Response.<List<ModuloDto>>builder()
           .status(HttpStatus.NOT_FOUND)
           .error(new DataNotFoundDTO("Modulos no encontrado"))
           .build();
