@@ -27,6 +27,9 @@ public class McCatalogoCuenta extends BaseEntity {
   @Column(name = "nivel")
   private Integer nivelCuenta;
 
+  @Column(name = "secuencia")
+  private Integer secuencia;
+
   @Column(name = "nombre_cuenta")
   private Integer nombreCuenta;
 
