@@ -1,24 +1,15 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "./contexts/AuthContext";
 import { Button, Box, Typography } from "@mui/material";
 import { ExitToApp } from "@mui/icons-material";
 import "./menu.css"; // Asegúrate de que la ruta sea correcta
-import { use, useEffect, useState } from "react";
-import "./menu.css"; // Asegúrate de que la ruta sea correcta
 import logo from "./assets/logo-braintech.png";
-import { getModulos } from "./apis/ModulosController";
-import { ModuloDto } from "./models/seguridad";
 
 const HomeView = () => {
     const [mostrarPanel, setMostrarPanel] = useState(false);
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const [modulos, setModulos] = useState<ModuloDto[]>([]);
-    const [moduloActivo, setModuloActivo] = useState<ModuloDto>({ id: "", menus: [], modulo: "" });
-
-    useEffect(() => {
-        getModulos().then((modulos) => setModulos(modulos));
-    }, []);
 
     const handleNavigation = (path: string) => {
         navigate(path);
@@ -58,82 +49,65 @@ const HomeView = () => {
                 </Box>
             </div>
             <div className="left">
-                <div
-                    style={{ cursor: "pointer", fontWeight: "bold" }}
-                    // onClick={() => setMostrarPanel(!mostrarPanel)}
-                >
+                <div style={{ cursor: "pointer", fontWeight: "bold" }} onClick={() => setMostrarPanel(!mostrarPanel)}>
                     <div className="short-menu">
                         <ul>
-                            {modulos.map((modulo) => (
-                                <li
-                                    key={modulo.id}
-                                    className="seg"
-                                    title={modulo.modulo}
-                                    data-active={moduloActivo.id === modulo.id}
-                                    onClick={() => {
-                                        setMostrarPanel(true);
-                                        setModuloActivo(modulo);
-                                    }}>
-                                    {modulo.modulo.substring(0, 3).toUpperCase()}
-                                </li>
-                            ))}
+                            <li className="seg">SEG</li>
+                            <li className="seg">SEG</li>
                         </ul>
                     </div>
                 </div>
                 {mostrarPanel && (
                     <div className="menu-panel">
                         <div className="tittle-menu" style={{}}>
-                            {moduloActivo.modulo}{" "}
+                            Seguridad{" "}
                             <div className="exit-menu" onClick={() => setMostrarPanel(false)}>
                                 X
                             </div>
                         </div>
                         <ul>
-                            {moduloActivo.menus.map((menu) => (
-                                <li
-                                    className="menu-item"
-                                    onClick={() => handleNavigation(menu.url)}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
-                                    {menu.menu}
-                                </li>
-                            ))}
-                            {/* <li
+                            <li
                                 className="menu-item"
                                 onClick={() => handleNavigation("/empresa")}
                                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Empresa</li>
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
+                                Empresa
+                            </li>
                             <li
                                 className="menu-item"
                                 onClick={() => handleNavigation("/usuario")}
                                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Usuario</li>
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
+                                Usuario
+                            </li>
                             <li
                                 className="menu-item"
                                 onClick={() => handleNavigation("/tipo/factura")}
                                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Tipo Factura</li>
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
+                                Tipo Factura
+                            </li>
                             <li
                                 className="menu-item"
                                 onClick={() => handleNavigation("/tipo/itbis")}
                                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Tipo ITBIS</li>
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
+                                Tipo ITBIS
+                            </li>
                             <li
                                 className="menu-item"
                                 onClick={() => handleNavigation("/tipo/comprobante")}
                                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Tipo Comprobante</li>
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
+                                Tipo Comprobante
+                            </li>
                             <li
                                 className="menu-item"
                                 onClick={() => handleNavigation("/facturacion")}
                                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Facturacion</li> */}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
+                                Facturacion
+                            </li>
                         </ul>
                     </div>
                 )}

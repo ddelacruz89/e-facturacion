@@ -30,3 +30,17 @@ export interface SgPermiso {
   descripcion: string;
   ruta: string; // ruta de la API o del frontend
 }
+
+export interface MenuDto {
+  id: number;
+  menu: string;
+  urlSql: string;
+  url: string;
+}
+
+export interface ModuloDto {
+  id: string;
+  menus: MenuDto[];
+  modulo: string;
+}
+
