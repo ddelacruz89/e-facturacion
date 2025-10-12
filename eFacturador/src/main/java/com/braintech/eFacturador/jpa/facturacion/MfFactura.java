@@ -1,7 +1,6 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseDgII;
-import com.braintech.eFacturador.jpa.SuperClass.BaseEmpesaPk;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -15,15 +14,11 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@IdClass(BaseEmpesaPk.class)
 public class MfFactura extends BaseDgII {
   @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
   private Integer id;
-
-  @Id
-  @Column(name = "empresa_id")
-  private Integer empresaId;
 
   @Column(name = "numeroFactura")
   private Integer numeroFactura;
