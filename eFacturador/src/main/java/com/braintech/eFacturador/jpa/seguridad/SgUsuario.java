@@ -1,11 +1,10 @@
 package com.braintech.eFacturador.jpa.seguridad;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,4 +32,7 @@ public class SgUsuario extends BaseSucursal implements Serializable {
 
   @Column(name = "nombre", length = 200, nullable = false)
   private String nombre;
+
+  @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  private List<SgUsuarioSucursal> sucursalesAsignadas = new ArrayList<>();
 }
