@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import lombok.*;
 
@@ -15,7 +16,9 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class MgItbis extends BaseEntity {
+public class MgItbis extends BaseEntity implements Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   @Id
   @Column(name = "id")
