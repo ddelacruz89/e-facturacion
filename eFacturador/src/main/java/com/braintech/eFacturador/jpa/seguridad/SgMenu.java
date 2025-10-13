@@ -2,6 +2,7 @@ package com.braintech.eFacturador.jpa.seguridad;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import jakarta.persistence.*;
+import java.io.Serializable;
 import lombok.*;
 
 @Entity
@@ -11,7 +12,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class SgMenu extends BaseEntity {
+public class SgMenu extends BaseEntity implements Serializable {
+
+  private static final long serialVersionUID = 1L;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
