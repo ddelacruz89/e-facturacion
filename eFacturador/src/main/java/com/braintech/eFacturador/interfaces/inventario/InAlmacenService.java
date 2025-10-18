@@ -4,11 +4,15 @@ import com.braintech.eFacturador.jpa.inventario.InAlmacen;
 import java.util.List;
 
 public interface InAlmacenService {
-  InAlmacen save(InAlmacen almacen);
+  InAlmacen create(InAlmacen almacen);
 
-  InAlmacen findById(Integer id);
+  InAlmacen update(Integer id, InAlmacen almacen);
 
-  List<InAlmacen> findAll();
+  InAlmacen getById(Integer id);
 
-  void deleteById(Integer id);
+  List<InAlmacen> getAll();
+
+  List<InAlmacen> getAllActive();
+
+  void disable(Integer id);
 }

@@ -17,6 +17,8 @@ const TipoFacturaView = lazy(() => import("./components/facturacion/TipoFacturaV
 const TipoItbisView = lazy(() => import("./components/facturacion/TipoItbisView"));
 const FacturacionView = lazy(() => import("./components/facturacion/FacturacionView"));
 const TipoComprobanteView = lazy(() => import("./components/facturacion/TipoComprobanteView"));
+const ProductoView = lazy(() => import("./components/producto/ProductoView"));
+const CategoriaView = lazy(() => import("./components/producto/CategoriaView"));
 
 // Routes component that uses authentication context
 const AppRoutes = () => {
@@ -42,6 +44,8 @@ const AppRoutes = () => {
                     <Route path="tipo/itbis" element={<TipoItbisView />} />
                     <Route path="tipo/comprobante" element={<TipoComprobanteView />} />
                     <Route path="facturacion" element={<FacturacionView />} />
+                    <Route path="producto" element={<ProductoView />} />
+                    <Route path="categoria" element={<CategoriaView />} />
                 </Route>
 
                 {/* Catch all route */}

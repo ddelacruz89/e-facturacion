@@ -26,6 +26,9 @@ public class BaseSucursal implements Serializable {
   @Column(name = "estado_id")
   private String estadoId;
 
+  @Column(name = "empresa_id")
+  private int empresaId;
+
   @JoinColumn(name = "sucursal_id")
   @ManyToOne(optional = false)
   private SgSucursal sucursalId;

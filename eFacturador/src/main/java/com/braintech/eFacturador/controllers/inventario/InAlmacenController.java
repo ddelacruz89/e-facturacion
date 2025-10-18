@@ -12,45 +12,41 @@ import org.springframework.web.bind.annotation.*;
 public class InAlmacenController {
   @Autowired private InAlmacenService inAlmacenService;
 
+  // Get all active records (estadoId = 'ACT')
   @GetMapping
   public List<InAlmacen> getAll() {
-    return inAlmacenService.findAll();
+    return inAlmacenService.getAllActive();
+  }
+
+  // Get all records including inactive
+  @GetMapping("/all")
+  public List<InAlmacen> getAllIncludingInactive() {
+    return inAlmacenService.getAll();
   }
 
   @GetMapping("/{id}")
   public ResponseEntity<InAlmacen> getById(@PathVariable Integer id) {
-    InAlmacen almacen = inAlmacenService.findById(id);
-    if (almacen == null) {
-      return ResponseEntity.notFound().build();
-    }
+    InAlmacen almacen = inAlmacenService.getById(id);
     return ResponseEntity.ok(almacen);
   }
 
   @PostMapping
   public ResponseEntity<InAlmacen> create(@RequestBody InAlmacen almacen) {
-    InAlmacen saved = inAlmacenService.save(almacen);
+    InAlmacen saved = inAlmacenService.create(almacen);
     return ResponseEntity.ok(saved);
   }
 
   @PutMapping("/{id}")
   public ResponseEntity<InAlmacen> update(
       @PathVariable Integer id, @RequestBody InAlmacen almacen) {
-    InAlmacen existing = inAlmacenService.findById(id);
-    if (existing == null) {
-      return ResponseEntity.notFound().build();
-    }
-    almacen.setId(id);
-    InAlmacen updated = inAlmacenService.save(almacen);
+    InAlmacen updated = inAlmacenService.update(id, almacen);
     return ResponseEntity.ok(updated);
   }
 
+  // Soft delete - changes estadoId to 'INA'
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> delete(@PathVariable Integer id) {
-    InAlmacen existing = inAlmacenService.findById(id);
-    if (existing == null) {
-      return ResponseEntity.notFound().build();
-    }
-    inAlmacenService.deleteById(id);
+  public ResponseEntity<Void> disable(@PathVariable Integer id) {
+    inAlmacenService.disable(id);
     return ResponseEntity.noContent().build();
   }
 }

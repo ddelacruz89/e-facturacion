@@ -2,15 +2,17 @@ package com.braintech.eFacturador.jpa.SuperClass;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+import java.io.Serial;
+import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter
 @Setter
 @MappedSuperclass
-public class BaseDgII extends BaseEntity {
-  @Column(nullable = false, name = "empresa_id")
-  private Integer empresaId;
+public class BaseDgII extends BaseSucursal implements Serializable {
+
+  @Serial private static final long serialVersionUID = 1L;
 
   @Column(name = "secuity_code")
   private String secuityCode;

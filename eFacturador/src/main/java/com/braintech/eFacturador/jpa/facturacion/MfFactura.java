@@ -3,6 +3,8 @@ package com.braintech.eFacturador.jpa.facturacion;
 import com.braintech.eFacturador.jpa.SuperClass.BaseDgII;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.*;
@@ -14,7 +16,10 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class MfFactura extends BaseDgII {
+public class MfFactura extends BaseDgII implements Serializable {
+
+  @Serial private static final long serialVersionUID = 1L;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")

@@ -5,4 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface EmpresaDao extends JpaRepository<SgEmpresa, Integer> {}
+public interface EmpresaDao extends JpaRepository<SgEmpresa, Integer> {
+  // SgEmpresa extends BaseEntity - no multi-tenant filtering required (system-wide data)
+  // Use standard JpaRepository methods: findAll(), findById(), etc.
+}

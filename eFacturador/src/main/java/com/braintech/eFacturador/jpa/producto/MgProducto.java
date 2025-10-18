@@ -2,8 +2,10 @@ package com.braintech.eFacturador.jpa.producto;
 
 import com.braintech.eFacturador.jpa.facturacion.MgItbis;
 import jakarta.persistence.*;
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +20,7 @@ import org.hibernate.annotations.Comment;
 @NoArgsConstructor
 public class MgProducto implements Serializable {
 
-  private static final long serialVersionUID = 1L;
+  @Serial private static final long serialVersionUID = 1L;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -67,4 +69,15 @@ public class MgProducto implements Serializable {
   @JoinColumn(name = "categoria_id")
   @ManyToOne(optional = false)
   private MgCategoria categoriaId;
+
+  @OneToMany(cascade = CascadeType.ALL, mappedBy = "productoId", fetch = FetchType.EAGER)
+  private List<MgUnidadFraccion> unidadFraccions;
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "producto_id", referencedColumnName = "id")
+  private List<MgProductoAlmacenLimite> productosAlmacenesLimites;
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "producto_id", referencedColumnName = "id")
+  private List<MgProductoModulo> productosModulos;
 }
