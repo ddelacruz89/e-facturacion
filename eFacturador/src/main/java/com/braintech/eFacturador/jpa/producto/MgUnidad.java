@@ -1,9 +1,9 @@
 package com.braintech.eFacturador.jpa.producto;
 
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntityEmpresa;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import java.io.Serializable;
-import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 @Table(name = "mg_unidades", schema = "producto")
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class MgUnidad implements Serializable {
+public class MgUnidad extends BaseEntityEmpresa implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -28,14 +28,4 @@ public class MgUnidad implements Serializable {
   @Basic(optional = false)
   @Column(name = "sigla")
   private String sigla;
-
-  @Column(name = "usuario_reg")
-  private String usuarioReg;
-
-  @Column(name = "estado_id", insertable = false)
-  private String estadoId;
-
-  @Column(name = "fecha_reg", insertable = false)
-  @Temporal(TemporalType.TIMESTAMP)
-  private Date fechaReg;
 }

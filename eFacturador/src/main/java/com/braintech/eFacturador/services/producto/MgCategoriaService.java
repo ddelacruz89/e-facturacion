@@ -12,7 +12,7 @@ public interface MgCategoriaService {
 
   MgCategoria create(MgCategoria mgCategoria);
 
-  MgCategoria update(String id, MgCategoria mgCategoria);
+  MgCategoria update(Integer id, MgCategoria mgCategoria);
 
-  void delete(String id);
+  void delete(Integer id);
 }

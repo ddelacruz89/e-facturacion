@@ -33,12 +33,12 @@ public class MgCategoriaController {
   }
 
   @PutMapping("/{id}")
-  public MgCategoria update(@PathVariable String id, @RequestBody MgCategoria mgCategoria) {
+  public MgCategoria update(@PathVariable Integer id, @RequestBody MgCategoria mgCategoria) {
     return mgCategoriaService.update(id, mgCategoria);
   }
 
   @DeleteMapping("/{id}")
-  public void delete(@PathVariable String id) {
+  public void delete(@PathVariable Integer id) {
     mgCategoriaService.delete(id);
   }
 }

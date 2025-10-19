@@ -49,7 +49,7 @@ public class MgCategoriaServiceImpl implements MgCategoriaService {
   }
 
   @Override
-  public MgCategoria update(String id, MgCategoria mgCategoria) {
+  public MgCategoria update(Integer id, MgCategoria mgCategoria) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
 
     mgCategoria.setId(id);
@@ -58,7 +58,7 @@ public class MgCategoriaServiceImpl implements MgCategoriaService {
   }
 
   @Override
-  public void delete(String id) {
+  public void delete(Integer id) {
 
     mgCategoriaRepository.deleteById(id);
   }

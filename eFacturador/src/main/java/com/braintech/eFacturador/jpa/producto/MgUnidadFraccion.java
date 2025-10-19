@@ -1,15 +1,19 @@
 package com.braintech.eFacturador.jpa.producto;
 
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntityEmpresa;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.Date;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Comment;
 
 @Entity
 @Table(name = "mg_unidades_fracciones")
-public class MgUnidadFraccion implements Serializable {
+@Data
+@EqualsAndHashCode(callSuper = false)
+public class MgUnidadFraccion extends BaseEntityEmpresa implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -55,14 +59,4 @@ public class MgUnidadFraccion implements Serializable {
   @ManyToOne(optional = false)
   @NotNull(message = "Producto no puede ser null")
   private MgProducto productoId;
-
-  @Column(name = "usuario_reg")
-  private String usuarioReg;
-
-  @Column(name = "fecha_reg", insertable = false)
-  @Temporal(TemporalType.TIMESTAMP)
-  private Date fechaReg;
-
-  @Column(name = "estado_id", insertable = false)
-  private String estadoId;
 }

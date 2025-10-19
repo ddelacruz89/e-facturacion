@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface MgCategoriaRepository extends JpaRepository<MgCategoria, String> {
+public interface MgCategoriaRepository extends JpaRepository<MgCategoria, Integer> {
   // MgCategoria extends BaseEntityEmpresa - filter by empresaId only
 
   @Query("SELECT c FROM MgCategoria c WHERE c.empresaId = :empresaId")
