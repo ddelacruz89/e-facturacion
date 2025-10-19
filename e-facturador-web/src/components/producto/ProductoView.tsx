@@ -199,55 +199,55 @@ const ProductoViewExample = () => {
                                     }}
                                 />
                             </Grid>
-                        </CardContent>
-                    </Card>
 
-                    {/* Pricing and Inventory */}
-                    <Card sx={{ mb: 2 }}>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom>
-                                Precios e Inventario
+                            {/* Configuración General del Producto */}
+                            <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, mb: 1 }}>
+                                Configuración General
                             </Typography>
-                            <Grid container spacing={2}>
-                                <NumericInput
-                                    label="Existencia"
-                                    size={3}
-                                    name="existencia"
-                                    control={control}
-                                    error={errors.existencia}
+                            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={watch("soloEnCompra")}
+                                            onChange={(e) => setValue("soloEnCompra", e.target.checked)}
+                                        />
+                                    }
+                                    label="Solo disponible en compra"
                                 />
-                                <MoneyInput
-                                    label="Precio de Venta"
-                                    size={3}
-                                    name="precioVenta"
-                                    control={control}
-                                    error={errors.precioVenta}
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={watch("trabajador")}
+                                            onChange={(e) => setValue("trabajador", e.target.checked)}
+                                        />
+                                    }
+                                    label="Es trabajador"
                                 />
-                                <MoneyInput
-                                    label="Precio Mínimo"
-                                    size={3}
-                                    name="precioMinimo"
-                                    control={control}
-                                    error={errors.precioMinimo}
-                                />
-                                <MoneyInput
-                                    label="Precio Costo Promedio"
-                                    size={3}
-                                    name="precioCostoAvg"
-                                    control={control}
-                                    error={errors.precioCostoAvg}
-                                />
-                            </Grid>
+                                {watch("trabajador") && (
+                                    <Box sx={{ minWidth: 200 }}>
+                                        <MoneyInput
+                                            label="Comisión"
+                                            size={12}
+                                            name="comision"
+                                            control={control}
+                                            error={errors.comision}
+                                        />
+                                    </Box>
+                                )}
+                            </Box>
                         </CardContent>
                     </Card>
 
-                    {/* Unit Fractions */}
-                    <Accordion>
+                    {/* Unit Fractions with Pricing and Inventory */}
+                    <Accordion defaultExpanded>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="h6">Unidades y Fracciones ({unidadFraccions.length})</Typography>
+                            <Typography variant="h6">Unidades, Precios e Inventario ({unidadFraccions.length})</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Cada unidad puede tener diferentes precios de venta e inventario independiente.
+                                </Typography>
                                 <Button variant="outlined" size="small" onClick={addUnidadFraccion}>
                                     Agregar Unidad/Fracción
                                 </Button>
@@ -269,6 +269,10 @@ const ProductoViewExample = () => {
                                             </Button>
                                         </Box>
 
+                                        {/* Configuración de Unidades */}
+                                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
+                                            Configuración de Unidades
+                                        </Typography>
                                         <Grid container spacing={2}>
                                             <UnidadComboBox
                                                 name={`unidadFraccions.${index}.unidadId`}
@@ -289,6 +293,72 @@ const ProductoViewExample = () => {
                                                 size={4}
                                             />
                                         </Grid>
+
+                                        {/* Precios e Inventario */}
+                                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
+                                            Precios e Inventario
+                                        </Typography>
+                                        <Grid container spacing={2}>
+                                            <MoneyInput
+                                                label="Precio de Venta"
+                                                name={`unidadFraccions.${index}.precioVenta`}
+                                                control={control}
+                                                size={3}
+                                            />
+                                            <MoneyInput
+                                                label="Precio Mínimo"
+                                                name={`unidadFraccions.${index}.precioMinimo`}
+                                                control={control}
+                                                size={3}
+                                            />
+                                            <NumericInput
+                                                label="Existencia"
+                                                name={`unidadFraccions.${index}.existencia`}
+                                                control={control}
+                                                size={3}
+                                            />
+                                            <MoneyInput
+                                                label="Precio Costo Promedio"
+                                                name={`unidadFraccions.${index}.precioCostoAvg`}
+                                                control={control}
+                                                size={3}
+                                            />
+                                        </Grid>
+
+                                        {/* Opciones de Disponibilidad */}
+                                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
+                                            Disponibilidad
+                                        </Typography>
+                                        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        checked={watch(`unidadFraccions.${index}.disponibleEnCompra`)}
+                                                        onChange={(e) =>
+                                                            setValue(
+                                                                `unidadFraccions.${index}.disponibleEnCompra`,
+                                                                e.target.checked
+                                                            )
+                                                        }
+                                                    />
+                                                }
+                                                label="Disponible en compra"
+                                            />
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        checked={watch(`unidadFraccions.${index}.disponibleEnVenta`)}
+                                                        onChange={(e) =>
+                                                            setValue(
+                                                                `unidadFraccions.${index}.disponibleEnVenta`,
+                                                                e.target.checked
+                                                            )
+                                                        }
+                                                    />
+                                                }
+                                                label="Disponible en venta"
+                                            />
+                                        </Box>
                                     </CardContent>
                                 </Card>
                             ))}
