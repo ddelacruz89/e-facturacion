@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useForm, SubmitHandler, FieldErrors, useFieldArray } from "react-hook-form";
 import {
     Box,
@@ -14,26 +14,23 @@ import {
     AccordionDetails,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { AlphanumericInput, NumericInput, MoneyInput, SelectInput } from "../../customers/CustomMUIComponents";
+import { AlphanumericInput, NumericInput, MoneyInput } from "../../customers/CustomMUIComponents";
 import ActionBar from "../../customers/ActionBar";
-import { getProductos, saveProducto } from "../../apis/ProductoController";
-import { getCategorias } from "../../apis/CategoriaController";
-import { getUnidades } from "../../apis/UnidadController";
-import { getItbisActivos, getItbisOptions } from "../../apis/ItbisController";
-import { getAlmacenesActivos } from "../../apis/AlmacenController";
-import { getMenusActivos } from "../../apis/MenuController";
-import { MgProducto, MgCategoria, MgUnidad } from "../../models/producto";
+import { saveProducto } from "../../apis/ProductoController";
+import { MgProducto, MgUnidad } from "../../models/producto";
 import { InAlmacen } from "../../models/inventario";
 import { SgMenu } from "../../models/seguridad";
-import { MgItbis } from "../../models/facturacion";
 
-const ProductoView = () => {
-    const [categorias, setCategorias] = useState<MgCategoria[]>([]);
-    const [unidades, setUnidades] = useState<MgUnidad[]>([]);
-    const [itbisOptions, setItbisOptions] = useState<MgItbis[]>([]);
-    const [almacenes, setAlmacenes] = useState<InAlmacen[]>([]);
-    const [menus, setMenus] = useState<SgMenu[]>([]);
+// Import the new ComboBox components
+import {
+    CategoriaComboBox,
+    UnidadComboBox,
+    ItbisComboBox,
+    AlmacenComboBox,
+    MenuComboBox,
+} from "../../customers/ProductComboBoxes";
 
+const ProductoViewExample = () => {
     const {
         control,
         handleSubmit,
@@ -85,25 +82,6 @@ const ProductoView = () => {
         control,
         name: "productosModulos",
     });
-
-    // Load initial data
-    useEffect(() => {
-        Promise.all([getCategorias(), getUnidades(), getItbisActivos(), getAlmacenesActivos(), getMenusActivos()])
-            .then(([categoriasData, unidadesData, itbisData, almacenesData, menusData]) => {
-                console.log("Loaded categorias:", categoriasData);
-                console.log("Categorias count:", categoriasData.length);
-
-                debugger;
-                setCategorias(categoriasData);
-                setUnidades(unidadesData);
-                setItbisOptions(itbisData);
-                setAlmacenes(almacenesData);
-                setMenus(menusData);
-            })
-            .catch((error) => {
-                console.error("Error loading initial data:", error);
-            });
-    }, []);
 
     const onSubmit: SubmitHandler<MgProducto> = (data) => {
         console.log("Saving producto:", data);
@@ -198,35 +176,27 @@ const ProductoView = () => {
                                 />
                             </Grid>
 
+                            {/* Using the new SearchableComboBox components */}
                             <Grid container spacing={2}>
-                                <SelectInput
-                                    label="Categoría"
+                                <CategoriaComboBox
                                     name="categoriaId"
                                     control={control}
                                     error={errors.categoriaId as any}
-                                    options={(() => {
-                                        console.log("Rendering categoria options, categorias:", categorias);
-                                        const options = categorias.map((cat) => ({
-                                            value: cat.id,
-                                            label: cat.categoria,
-                                        }));
-                                        console.log("Categoria options:", options);
-                                        return options;
-                                    })()}
                                     rules={{ required: "Seleccione una categoría" }}
                                     size={6}
+                                    onSelectionChange={(value) => {
+                                        console.log("Categoria selected:", value);
+                                    }}
                                 />
-                                <SelectInput
-                                    label="ITBIS"
+                                <ItbisComboBox
                                     name="itbisId"
                                     control={control}
                                     error={errors.itbisId as any}
-                                    options={itbisOptions.map((itbis) => ({
-                                        value: itbis.id?.toString() || "",
-                                        label: `${itbis.nombre} (${itbis.itbis}%)`,
-                                    }))}
                                     rules={{ required: "Seleccione un ITBIS" }}
                                     size={6}
+                                    onSelectionChange={(value) => {
+                                        console.log("ITBIS selected:", value);
+                                    }}
                                 />
                             </Grid>
                         </CardContent>
@@ -268,38 +238,6 @@ const ProductoView = () => {
                                     error={errors.precioCostoAvg}
                                 />
                             </Grid>
-
-                            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            checked={watch("soloEnCompra")}
-                                            onChange={(e) => setValue("soloEnCompra", e.target.checked)}
-                                        />
-                                    }
-                                    label="Solo disponible en compra"
-                                />
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            checked={watch("trabajador")}
-                                            onChange={(e) => setValue("trabajador", e.target.checked)}
-                                        />
-                                    }
-                                    label="Es trabajador"
-                                />
-                                {watch("trabajador") && (
-                                    <Box sx={{ minWidth: 200 }}>
-                                        <MoneyInput
-                                            label="Comisión"
-                                            size={12}
-                                            name="comision"
-                                            control={control}
-                                            error={errors.comision}
-                                        />
-                                    </Box>
-                                )}
-                            </Box>
                         </CardContent>
                     </Card>
 
@@ -332,24 +270,16 @@ const ProductoView = () => {
                                         </Box>
 
                                         <Grid container spacing={2}>
-                                            <SelectInput
-                                                label="Unidad Base"
+                                            <UnidadComboBox
                                                 name={`unidadFraccions.${index}.unidadId`}
+                                                label="Unidad Base"
                                                 control={control}
-                                                options={unidades.map((unidad) => ({
-                                                    value: unidad.id,
-                                                    label: `${unidad.nombre} (${unidad.abreviacion})`,
-                                                }))}
                                                 size={4}
                                             />
-                                            <SelectInput
-                                                label="Unidad Fracción"
+                                            <UnidadComboBox
                                                 name={`unidadFraccions.${index}.unidadFraccionId`}
+                                                label="Unidad Fracción"
                                                 control={control}
-                                                options={unidades.map((unidad) => ({
-                                                    value: unidad.id,
-                                                    label: `${unidad.nombre} (${unidad.abreviacion})`,
-                                                }))}
                                                 size={4}
                                             />
                                             <NumericInput
@@ -359,64 +289,6 @@ const ProductoView = () => {
                                                 size={4}
                                             />
                                         </Grid>
-
-                                        <Grid container spacing={2}>
-                                            <MoneyInput
-                                                label="Precio Venta"
-                                                name={`unidadFraccions.${index}.precioVenta`}
-                                                control={control}
-                                                size={3}
-                                            />
-                                            <MoneyInput
-                                                label="Precio Mínimo"
-                                                name={`unidadFraccions.${index}.precioMinimo`}
-                                                control={control}
-                                                size={3}
-                                            />
-                                            <NumericInput
-                                                label="Existencia"
-                                                name={`unidadFraccions.${index}.existencia`}
-                                                control={control}
-                                                size={3}
-                                            />
-                                            <MoneyInput
-                                                label="Costo Promedio"
-                                                name={`unidadFraccions.${index}.precioCostoAvg`}
-                                                control={control}
-                                                size={3}
-                                            />
-                                        </Grid>
-
-                                        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mt: 1 }}>
-                                            <FormControlLabel
-                                                control={
-                                                    <Checkbox
-                                                        checked={watch(`unidadFraccions.${index}.disponibleEnCompra`)}
-                                                        onChange={(e) =>
-                                                            setValue(
-                                                                `unidadFraccions.${index}.disponibleEnCompra`,
-                                                                e.target.checked
-                                                            )
-                                                        }
-                                                    />
-                                                }
-                                                label="Disponible en compra"
-                                            />
-                                            <FormControlLabel
-                                                control={
-                                                    <Checkbox
-                                                        checked={watch(`unidadFraccions.${index}.disponibleEnVenta`)}
-                                                        onChange={(e) =>
-                                                            setValue(
-                                                                `unidadFraccions.${index}.disponibleEnVenta`,
-                                                                e.target.checked
-                                                            )
-                                                        }
-                                                    />
-                                                }
-                                                label="Disponible en venta"
-                                            />
-                                        </Box>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -438,28 +310,10 @@ const ProductoView = () => {
                             {almacenLimites.map((field, index) => (
                                 <Card key={field.id} variant="outlined" sx={{ mb: 2 }}>
                                     <CardContent>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                mb: 2,
-                                            }}>
-                                            <Typography variant="subtitle1">Límite #{index + 1}</Typography>
-                                            <Button color="error" size="small" onClick={() => removeAlmacenLimite(index)}>
-                                                Eliminar
-                                            </Button>
-                                        </Box>
-
                                         <Grid container spacing={2}>
-                                            <SelectInput
-                                                label="Almacén"
+                                            <AlmacenComboBox
                                                 name={`productosAlmacenesLimites.${index}.almacenId`}
                                                 control={control}
-                                                options={almacenes.map((almacen) => ({
-                                                    value: almacen.id?.toString() || "",
-                                                    label: almacen.nombre,
-                                                }))}
                                                 size={8}
                                             />
                                             <NumericInput
@@ -490,28 +344,10 @@ const ProductoView = () => {
                             {productModulos.map((field, index) => (
                                 <Card key={field.id} variant="outlined" sx={{ mb: 2 }}>
                                     <CardContent>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                mb: 2,
-                                            }}>
-                                            <Typography variant="subtitle1">Módulo #{index + 1}</Typography>
-                                            <Button color="error" size="small" onClick={() => removeProductoModulo(index)}>
-                                                Eliminar
-                                            </Button>
-                                        </Box>
-
                                         <Grid container spacing={2}>
-                                            <SelectInput
-                                                label="Menú/Módulo"
+                                            <MenuComboBox
                                                 name={`productosModulos.${index}.sgMenuId`}
                                                 control={control}
-                                                options={menus.map((menu) => ({
-                                                    value: menu.id?.toString() || "",
-                                                    label: menu.nombre,
-                                                }))}
                                                 size={12}
                                             />
                                         </Grid>
@@ -526,4 +362,4 @@ const ProductoView = () => {
     );
 };
 
-export default ProductoView;
+export default ProductoViewExample;
