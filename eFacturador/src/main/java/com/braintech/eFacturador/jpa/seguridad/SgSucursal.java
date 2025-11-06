@@ -1,8 +1,8 @@
 package com.braintech.eFacturador.jpa.seguridad;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -10,7 +10,7 @@ import lombok.Setter;
 @Table(name = "sg_sucursal", schema = "seguridad")
 @Getter
 @Setter
-public class SgSucursal extends BaseEntity implements Serializable {
+public class SgSucursal implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -33,6 +33,15 @@ public class SgSucursal extends BaseEntity implements Serializable {
 
   @Column(name = "estado_id")
   private String estadoId;
+
+  @Column(name = "usuario_reg", nullable = false)
+  private String usuarioReg;
+
+  @Column(name = "fecha_reg", nullable = false)
+  private LocalDateTime fechaReg;
+
+  @Column(name = "activo")
+  private Boolean activo;
 
   @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(name = "empresa_id")

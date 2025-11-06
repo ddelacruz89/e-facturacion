@@ -1,9 +1,7 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
-import jakarta.persistence.Column;
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntityS;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
 
@@ -14,10 +12,7 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class MgTipoComprobante extends BaseEntity {
-  @Id
-  @Column(name = "id")
-  private String id;
+public class MgTipoComprobante extends BaseEntityS {
 
   private String tipoComprobante;
   private Boolean electronico;

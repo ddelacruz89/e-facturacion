@@ -20,10 +20,8 @@ public class MfFactura extends BaseDgII implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id")
-  private Integer id;
+  @Column(name = "sucursal_id", nullable = false)
+  private Integer sucursalId;
 
   @Column(name = "numeroFactura")
   private Integer numeroFactura;
@@ -39,6 +37,9 @@ public class MfFactura extends BaseDgII implements Serializable {
 
   @Column(name = "rnc")
   private String rnc;
+
+  @Column(name = "estado_id")
+  private String estadoId;
 
   @Column(name = "monto")
   private BigDecimal monto;

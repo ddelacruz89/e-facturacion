@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
-public class BaseEntityPk {
+public class BaseEntityPkS {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
@@ -17,5 +17,5 @@ public class BaseEntityPk {
   private Integer empresaId;
 
   @Column(name = "secuencia", nullable = false)
-  private Integer secuencia;
+  private String secuencia;
 }

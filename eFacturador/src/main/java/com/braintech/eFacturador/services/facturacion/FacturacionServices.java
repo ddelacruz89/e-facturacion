@@ -3,7 +3,6 @@ package com.braintech.eFacturador.services.facturacion;
 import com.braintech.eFacturador.dao.facturacion.FacturaDao;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
-import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -57,9 +56,7 @@ public class FacturacionServices implements IFacturacion {
     String username = tenantContext.getCurrentUsername();
 
     entity.setEmpresaId(empresaId);
-    SgSucursal sucursal = new SgSucursal();
-    sucursal.setId(sucursalId);
-    entity.setSucursalId(sucursal);
+    entity.setSucursalId(sucursalId);
     entity.setUsuarioReg(username);
     entity.setFechaReg(LocalDateTime.now());
     entity.setEstadoId("ACT");
@@ -81,9 +78,7 @@ public class FacturacionServices implements IFacturacion {
     // Update fields - keep audit fields from existing
     entity.setId(id);
     entity.setEmpresaId(empresaId);
-    SgSucursal sucursal = new SgSucursal();
-    sucursal.setId(sucursalId);
-    entity.setSucursalId(sucursal);
+    entity.setSucursalId(sucursalId);
     entity.setUsuarioReg(existing.getUsuarioReg());
     entity.setFechaReg(existing.getFechaReg());
 

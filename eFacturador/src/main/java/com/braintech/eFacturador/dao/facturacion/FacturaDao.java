@@ -14,12 +14,12 @@ public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
   List<MfFactura> findAllByEmpresaId(@Param("empresaId") Integer empresaId);
 
   @Query(
-      "SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId AND f.sucursalId.id = :sucursalId")
+      "SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId AND f.sucursalId = :sucursalId")
   List<MfFactura> findAllByEmpresaIdAndSucursalId(
       @Param("empresaId") Integer empresaId, @Param("sucursalId") Integer sucursalId);
 
   @Query(
-      "SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId AND f.sucursalId.id = :sucursalId AND f.estadoId = 'ACT'")
+      "SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId AND f.sucursalId = :sucursalId AND f.estadoId = 'ACT'")
   List<MfFactura> findAllActiveByEmpresaIdAndSucursalId(
       @Param("empresaId") Integer empresaId, @Param("sucursalId") Integer sucursalId);
 
@@ -28,14 +28,14 @@ public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
       @Param("id") Integer id, @Param("empresaId") Integer empresaId);
 
   @Query(
-      "SELECT f FROM MfFactura f WHERE f.id = :id AND f.empresaId = :empresaId AND f.sucursalId.id = :sucursalId")
+      "SELECT f FROM MfFactura f WHERE f.id = :id AND f.empresaId = :empresaId AND f.sucursalId = :sucursalId")
   Optional<MfFactura> findByIdAndEmpresaIdAndSucursalId(
       @Param("id") Integer id,
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId);
 
   @Query(
-      "SELECT f FROM MfFactura f WHERE f.numeroFactura = :numeroFactura AND f.empresaId = :empresaId AND f.sucursalId.id = :sucursalId")
+      "SELECT f FROM MfFactura f WHERE f.numeroFactura = :numeroFactura AND f.empresaId = :empresaId AND f.sucursalId = :sucursalId")
   Optional<MfFactura> findByNumeroFacturaAndEmpresaIdAndSucursalId(
       @Param("numeroFactura") Integer numeroFactura,
       @Param("empresaId") Integer empresaId,

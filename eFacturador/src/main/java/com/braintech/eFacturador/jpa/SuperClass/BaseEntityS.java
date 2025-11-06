@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
-public class BaseEntity extends BaseEntityPk {
+public class BaseEntityS extends BaseEntityPkS {
   @Column(name = "usuario_reg", nullable = false)
   private String usuarioReg;
 

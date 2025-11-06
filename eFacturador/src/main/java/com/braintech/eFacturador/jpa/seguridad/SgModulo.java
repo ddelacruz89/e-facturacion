@@ -1,8 +1,8 @@
 package com.braintech.eFacturador.jpa.seguridad;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.*;
 
@@ -13,7 +13,7 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class SgModulo extends BaseEntity implements Serializable {
+public class SgModulo implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -23,6 +23,15 @@ public class SgModulo extends BaseEntity implements Serializable {
 
   @Column(name = "modulo")
   String modulo;
+
+  @Column(name = "usuario_reg", nullable = false)
+  private String usuarioReg;
+
+  @Column(name = "fecha_reg", nullable = false)
+  private LocalDateTime fechaReg;
+
+  @Column(name = "activo")
+  private Boolean activo;
 
   @OneToMany(mappedBy = "moduloId", cascade = CascadeType.ALL, orphanRemoval = true)
   List<SgMenu> menus;
