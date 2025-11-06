@@ -1,7 +1,7 @@
 package com.braintech.eFacturador.jpa.inventario;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
-import com.braintech.eFacturador.jpa.producto.MgProductoSuplidor;
+import com.braintech.eFacturador.jpa.producto.MgProductoUnidadSuplidor;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import java.io.Serializable;
@@ -68,5 +68,5 @@ public class InSuplidor extends BaseSucursal implements Serializable {
   //        private MfTiposCf tiposCfId;
 
   @OneToMany(mappedBy = "suplidor")
-  private List<MgProductoSuplidor> productosSuplidores;
+  private List<MgProductoUnidadSuplidor> productosSuplidores;
 }

@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.jpa.producto;
 
 import com.braintech.eFacturador.jpa.facturacion.MgItbis;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.io.Serial;
 import java.io.Serializable;
@@ -80,4 +81,9 @@ public class MgProducto implements Serializable {
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "producto_id", referencedColumnName = "id")
   private List<MgProductoModulo> productosModulos;
+
+  @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @JsonManagedReference
+  @Comment("Lista de etiquetas/tags asociadas al producto")
+  private List<MgProductoTag> tags;
 }

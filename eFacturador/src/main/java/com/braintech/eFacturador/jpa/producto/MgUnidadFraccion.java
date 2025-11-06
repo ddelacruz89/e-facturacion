@@ -1,16 +1,17 @@
 package com.braintech.eFacturador.jpa.producto;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntityEmpresa;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.math.BigDecimal;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.Comment;
 
 @Entity
-@Table(name = "mg_unidades_fracciones")
+@Table(name = "mg_unidades_fracciones", schema = "producto")
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class MgUnidadFraccion extends BaseEntityEmpresa implements Serializable {
@@ -22,26 +23,6 @@ public class MgUnidadFraccion extends BaseEntityEmpresa implements Serializable 
   @Basic(optional = false)
   @Column(name = "id")
   private Integer id;
-
-  @Column(name = "existencia")
-  private Integer existencia;
-
-  @Column(name = "precio_venta")
-  private BigDecimal precioVenta;
-
-  @Column(name = "precio_minimo")
-  private BigDecimal precioMinimo;
-
-  @Column(name = "disponible_compra")
-  @Comment("Indica si el producto  está disponible para compras ")
-  private Boolean disponibleEnCompra;
-
-  @Column(name = "disponible_venta")
-  @Comment("Indica si el producto está disponible para  ventas")
-  private Boolean disponibleEnVenta;
-
-  @Column(name = "precio_costo_avg")
-  private BigDecimal precioCostoAvg;
 
   @Basic(optional = false)
   @Column(name = "cantidad")
@@ -59,4 +40,9 @@ public class MgUnidadFraccion extends BaseEntityEmpresa implements Serializable 
   @ManyToOne(optional = false)
   @NotNull(message = "Producto no puede ser null")
   private MgProducto productoId;
+
+  @OneToMany(mappedBy = "unidadFraccion", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @JsonManagedReference
+  @Comment("Lista de suplidores que venden esta unidad de fracción del producto")
+  private List<MgProductoSuplidor> suplidores;
 }
