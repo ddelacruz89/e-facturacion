@@ -1,7 +1,8 @@
 package com.braintech.eFacturador.jpa.producto;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntityEmpresa;
 import jakarta.persistence.*;
+import java.io.Serializable;
 import lombok.*;
 
 @Entity
@@ -11,10 +12,14 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class MgCategoria extends BaseEntity {
+public class MgCategoria extends BaseEntityEmpresa implements Serializable {
+
+  private static final long serialVersionUID = 1L;
+
   @Id
-  @Column(name = "id", nullable = false, length = 4)
-  private String id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Basic(optional = false)
+  private Integer id;
 
   @Column(name = "categoria", nullable = false)
   private String categoria;

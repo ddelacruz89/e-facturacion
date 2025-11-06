@@ -36,14 +36,10 @@ apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = TokenService.getToken();
     
-    // Enhanced debugging
-    console.group(`🚀 [API Request] ${config.method?.toUpperCase()} ${config.url}`);
-    console.log('🎫 Token exists:', !!token);
-    console.log('🎫 Token preview:', token ? `${token.substring(0, 20)}...` : 'None');
+
     
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('✅ Authorization header added');
     } else {
       console.warn('❌ No token available or headers missing');
     }

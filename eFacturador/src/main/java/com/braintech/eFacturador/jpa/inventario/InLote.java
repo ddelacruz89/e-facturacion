@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
 @Table(name = "in_lote", schema = "inventario")
+@IdClass(InLotePK.class)
 public class InLote extends BaseSucursal implements Serializable {
 
   private static final long serialVersionUID = 1L;

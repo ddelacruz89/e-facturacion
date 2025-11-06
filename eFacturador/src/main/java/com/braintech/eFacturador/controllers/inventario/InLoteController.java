@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/inventario/lotes")
+@RequestMapping("api/v1/inventario/lotes")
 public class InLoteController {
   @Autowired private InLoteService inLoteService;
 

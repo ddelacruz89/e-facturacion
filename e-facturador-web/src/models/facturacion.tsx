@@ -15,6 +15,13 @@ export interface TipoItbis {
     itbis: number;
 }
 
+export interface MgItbis {
+    id?: number;
+    nombre: string;
+    itbis: number;
+    activo?: boolean;
+}
+
 export interface Factura {
     usuarioReg?: string;
     fechaReg?: Date;

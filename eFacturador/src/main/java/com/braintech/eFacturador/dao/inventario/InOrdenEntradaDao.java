@@ -5,11 +5,19 @@ import java.util.List;
 import java.util.Optional;
 
 public interface InOrdenEntradaDao {
+  // InOrdenEntrada extends BaseSucursal - filter by empresaId AND sucursalId
+
   InOrdenEntrada save(InOrdenEntrada ordenEntrada);
 
-  Optional<InOrdenEntrada> findById(Integer id);
+  Optional<InOrdenEntrada> findById(Integer id, Integer empresaId);
 
-  List<InOrdenEntrada> findAll();
+  Optional<InOrdenEntrada> findById(Integer id, Integer empresaId, Integer sucursalId);
 
-  void disableById(Integer id);
+  List<InOrdenEntrada> findAll(Integer empresaId);
+
+  List<InOrdenEntrada> findAll(Integer empresaId, Integer sucursalId);
+
+  void disableById(Integer id, Integer empresaId);
+
+  void disableById(Integer id, Integer empresaId, Integer sucursalId);
 }

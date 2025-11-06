@@ -47,8 +47,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
       UserDetails userDetails =
           User.withUsername(username).password("").authorities(Collections.emptyList()).build();
+      // Guardar el token en las credenciales para que TenantContext pueda acceder a él
       UsernamePasswordAuthenticationToken authToken =
-          new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+          new UsernamePasswordAuthenticationToken(userDetails, token, userDetails.getAuthorities());
       authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
       SecurityContextHolder.getContext().setAuthentication(authToken);
     }
