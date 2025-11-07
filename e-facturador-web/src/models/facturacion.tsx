@@ -1,22 +1,20 @@
 export interface TipoFactura {
     id?: number; // opcional si lo generas automáticamente
+    secuencia?: number; // opcional si lo generas automáticamente
     nombre: string;
-    activo: true;
+    activo: boolean;
 }
 
 export interface TipoComprobante {
     id?: string; // opcional si lo generas automáticamente
     tipoComprobante: string;
-    electronico: true;
+    electronico: boolean;
 }
-export interface TipoItbis {
-    id?: number; // opcional si lo generas automáticamente
-    nombre: string;
-    itbis: number;
-}
+
 
 export interface MgItbis {
     id?: number;
+    secuencia?: number; // opcional si lo generas automáticamente
     nombre: string;
     itbis: number;
     activo?: boolean;

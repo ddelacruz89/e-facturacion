@@ -22,7 +22,6 @@ export function TextInput({ name, disabled, readOnly, label, control, error, rul
             name={name}
             control={control}
             rules={{
-
                 ...rules
             }}
             render={({ field }) => (

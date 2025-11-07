@@ -2,20 +2,19 @@ import { Button, Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { TableComponent, TextInput, TextInputPk } from "../../customers/CustomComponents";
 import { FieldErrors, SubmitHandler, useForm } from "react-hook-form";
-import { TipoItbis } from "../../models/facturacion";
+import { MgItbis } from "../../models/facturacion";
 import ActionBar from "../../customers/ActionBar";
 import { saveTipoItbis, getTipoItbis } from "../../apis/TipoItbisController";
 import { useEffect, useState } from "react";
 
 export default function TipoItbisView() {
-    const { control, handleSubmit, setValue, formState: { errors } } = useForm<TipoItbis>({
+    const { control, handleSubmit, setValue, formState: { errors } } = useForm<MgItbis>({
         defaultValues: {
-            id: 0,
             nombre: '',
             itbis: 0
         }
     });
-    const [tipoItbis, setTipoItbis] = useState<TipoItbis[]>([]);
+    const [tipoItbis, setTipoItbis] = useState<MgItbis[]>([]);
 
     useEffect(() => {
         try {
@@ -26,11 +25,12 @@ export default function TipoItbisView() {
 
     }, []);
 
-    const onSubmit: SubmitHandler<TipoItbis> = (data) => {
+    const onSubmit: SubmitHandler<MgItbis> = (data) => {
         try {
 
             saveTipoItbis(data).then((response) => {
                 setValue('id', response.id);
+                setValue('secuencia', response.secuencia);
                 setValue('nombre', response.nombre);
                 setValue('itbis', response.itbis);
                 alert("Tipo de ITBIS guardado correctamente");
@@ -48,18 +48,20 @@ export default function TipoItbisView() {
         }
     };
 
-    const onError = (errors: FieldErrors<TipoItbis>) => {
+    const onError = (errors: FieldErrors<MgItbis>) => {
         console.log("Errores de validación:", errors);
     };
 
     const handleClean = () => {
-        setValue('id', 0);
+        setValue('id', undefined);
+        setValue('secuencia', 0);
         setValue('nombre', '');
         setValue('itbis', 0);
     };
 
-    const handleOnSelect = (row: TipoItbis) => {
+    const handleOnSelect = (row: MgItbis) => {
         setValue('id', row.id);
+        setValue('secuencia', row.secuencia);
         setValue('nombre', row.nombre);
         setValue('itbis', row.itbis);
     };
@@ -75,9 +77,9 @@ export default function TipoItbisView() {
                 <Grid container spacing={2} style={{ padding: 20 }}>
                     <TextInputPk
                         control={control}
-                        name="id"
+                        name="secuencia"
                         label="Codigo"
-                        error={errors.id}
+                        error={errors.secuencia}
                         size={2}
                     />
                     <TextInput
@@ -100,7 +102,7 @@ export default function TipoItbisView() {
                     selected={handleOnSelect}
                     rows={tipoItbis}
                     columns={[
-                        { id: "id", label: "No." },
+                        { id: "secuencia", label: "No." },
                         { id: "nombre", label: "Nombre" },
                         { id: "itbis", label: "ITBIS (%)" }
                     ]}

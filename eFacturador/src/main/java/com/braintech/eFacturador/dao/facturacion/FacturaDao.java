@@ -13,8 +13,7 @@ public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
   @Query("SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId")
   List<MfFactura> findAllByEmpresaId(@Param("empresaId") Integer empresaId);
 
-  @Query(
-      "SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId AND f.sucursalId = :sucursalId")
+  @Query("SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId AND f.sucursalId = :sucursalId")
   List<MfFactura> findAllByEmpresaIdAndSucursalId(
       @Param("empresaId") Integer empresaId, @Param("sucursalId") Integer sucursalId);
 

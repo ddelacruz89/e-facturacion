@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.jpa.inventario;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
+import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import jakarta.persistence.*;
 import java.io.Serial;
 import java.io.Serializable;
@@ -22,6 +23,10 @@ public class InAlmacen extends BaseSucursal implements Serializable {
 
   @Basic(optional = false)
   private String nombre;
+
+  @JoinColumn(name = "sucursal_id")
+  @ManyToOne(optional = false)
+  private SgSucursal sucursalId;
 
   @Column(name = "ubicacion")
   private String ubicacion;

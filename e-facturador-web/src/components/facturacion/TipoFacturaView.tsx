@@ -9,8 +9,8 @@ import { useEffect, useState } from "react";
 const TipoFacturaView = () => {
     const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<TipoFactura>({
         defaultValues: {
-            id: 0,
-            nombre: ''
+            nombre: '',
+            activo: true
         }
     });
     const [tipoFacturas, setTipoFacturas] = useState<TipoFactura[]>([]);
@@ -23,7 +23,9 @@ const TipoFacturaView = () => {
     const onSubmit: SubmitHandler<TipoFactura> = (data) => {
         saveTipoFactura(data).then((response) => {
             setValue('id', response.id);
+            setValue('secuencia', response.secuencia);
             setValue('nombre', response.nombre);
+            setValue("activo", response.activo)
             alert("Tipo de factura guardado correctamente");
         }).catch((error) => {
             console.error("Error al guardar el tipo de factura:", error);
@@ -44,11 +46,13 @@ const TipoFacturaView = () => {
 
     const handleClean = () => {
         setValue('id', 0);
+        setValue('secuencia', 0);
         setValue('nombre', '');
     }
 
     const handleOnSelect = (row: TipoFactura) => {
         setValue('id', row.id);
+        setValue('secuencia', row.secuencia);
         setValue('nombre', row.nombre);
     }
     return (
@@ -65,10 +69,10 @@ const TipoFacturaView = () => {
                     style={{ padding: 20 }}>
                     <TextInputPk
                         control={control}
-                        // readOnly={true}
+                        readOnly={true}
                         name="id"
                         label="Codigo"
-                        error={errors.nombre}
+                        error={errors.id}
                         size={2}
                     />
                     <TextInput

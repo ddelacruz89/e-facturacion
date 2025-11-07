@@ -27,7 +27,7 @@ public class BaseSucursal implements Serializable {
   private String estadoId;
 
   @Column(name = "empresa_id")
-  private int empresaId;
+  private Integer empresaId;
 
   @JoinColumn(name = "sucursal_id")
   @ManyToOne(optional = false)

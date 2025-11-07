@@ -8,17 +8,18 @@ import com.braintech.eFacturador.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
-  @Autowired private SgUsuarioRepository usuarioRepository;
-  @Autowired private JwtUtil jwtUtil;
-  @Autowired private PasswordEncoder passwordEncoder;
+  private final SgUsuarioRepository usuarioRepository;
+  private final JwtUtil jwtUtil;
+  private final PasswordEncoder passwordEncoder;
 
   @PostMapping("/login")
   public LoginResponse login(@RequestBody LoginRequest request) {

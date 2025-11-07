@@ -1,6 +1,6 @@
 package com.braintech.eFacturador.jpa.producto;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntityEmpresa;
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -13,15 +13,7 @@ import org.hibernate.annotations.Comment;
 @Table(name = "mg_unidades_fracciones")
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class MgUnidadFraccion extends BaseEntityEmpresa implements Serializable {
-
-  private static final long serialVersionUID = 1L;
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Basic(optional = false)
-  @Column(name = "id")
-  private Integer id;
+public class MgUnidadFraccion extends BaseEntity implements Serializable {
 
   @Column(name = "existencia")
   private Integer existencia;

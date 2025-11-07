@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
-public class BaseEntityEmpresa {
+public class BaseEntitySucursal extends BaseEntityPk {
   @Column(name = "usuario_reg", nullable = false)
   private String usuarioReg;
 
@@ -19,6 +19,6 @@ public class BaseEntityEmpresa {
   @Column(name = "activo")
   private Boolean activo;
 
-  @Column(name = "empresa_id", nullable = false)
-  private Integer empresaId;
+  @Column(name = "sucursal_id", nullable = false)
+  private Integer sucursalId;
 }

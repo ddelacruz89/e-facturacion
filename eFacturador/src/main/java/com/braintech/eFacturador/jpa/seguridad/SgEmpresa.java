@@ -1,8 +1,8 @@
 package com.braintech.eFacturador.jpa.seguridad;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +14,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class SgEmpresa extends BaseEntity implements Serializable {
+public class SgEmpresa implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -40,6 +40,15 @@ public class SgEmpresa extends BaseEntity implements Serializable {
 
   @Column(name = "direccion")
   private String direccion;
+
+  @Column(name = "usuario_reg", nullable = false)
+  private String usuarioReg;
+
+  @Column(name = "fecha_reg", nullable = false)
+  private LocalDateTime fechaReg;
+
+  @Column(name = "activo")
+  private Boolean activo;
 
   @Basic(optional = true)
   @Column(name = "logo")

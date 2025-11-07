@@ -13,9 +13,9 @@ public class BaseEntityPkS {
   @Column(name = "id")
   private Integer id;
 
-  @Column(name = "empresa_id", nullable = false)
+  @Column(name = "empresa_id")
   private Integer empresaId;
 
-  @Column(name = "secuencia", nullable = false)
+  @Column(name = "secuencia")
   private String secuencia;
 }

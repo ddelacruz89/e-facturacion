@@ -34,7 +34,7 @@ public class TipoComprobanteServices implements ITipoEntity<MgTipoComprobante> {
     entity.setUsuarioReg("Master");
     MgTipoComprobante save = tipoComprobanteDao.save(entity);
 
-    if (!save.getSecuencia().isEmpty()) {
+    if (!save.getId().isEmpty()) {
       return Response.<MgTipoComprobante>builder().status(HttpStatus.OK).content(save).build();
     } else {
 

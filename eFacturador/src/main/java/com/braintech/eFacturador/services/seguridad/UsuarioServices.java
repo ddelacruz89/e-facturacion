@@ -8,75 +8,81 @@ import com.braintech.eFacturador.models.Response;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@AllArgsConstructor
-public class UsuarioServices implements IBaseString {
-  private SgUsuarioDao dao;
+@RequiredArgsConstructor
+public class UsuarioServices implements IBaseString<SgUsuario> {
+  private final SgUsuarioDao dao;
+  private final PasswordEncoder passwordEncoder;
 
   @Override
-  public Response<?> getFindById(String id) {
+  public Response<SgUsuario> getFindById(String id) {
     Optional<SgUsuario> oUsername = dao.findById(id);
     if (oUsername.isEmpty()) {
-      return Response.builder()
+      return Response.<SgUsuario>builder()
           .status(HttpStatus.OK)
           .error(new DataNotFoundDTO("Usuario no encontrado"))
           .build();
     } else {
-      return Response.builder().status(HttpStatus.OK).content(oUsername.get()).build();
+      return Response.<SgUsuario>builder().status(HttpStatus.OK).content(oUsername.get()).build();
     }
   }
 
   @Override
-  public Response<?> getFindByAll() {
+  public Response<List<SgUsuario>> getFindByAll() {
     List<SgUsuario> usuarios = dao.findAll();
     if (usuarios.isEmpty()) {
-      return Response.builder()
+      return Response.<List<SgUsuario>>builder()
           .status(HttpStatus.BAD_REQUEST)
           .error(new DataNotFoundDTO("Usuarios no encontrados"))
           .build();
     } else {
-      return Response.builder().status(HttpStatus.OK).content(usuarios).build();
+      return Response.<List<SgUsuario>>builder().status(HttpStatus.OK).content(usuarios).build();
     }
   }
 
   // Method to find users by empresa ID (for when needed)
-  public Response<?> getFindByEmpresaId(Integer empresaId) {
+  public Response<List<SgUsuario>> getFindByEmpresaId(Integer empresaId) {
     List<SgUsuario> usuarios = dao.findAllByEmpresaId(empresaId);
     if (usuarios.isEmpty()) {
-      return Response.builder()
+      return Response.<List<SgUsuario>>builder()
           .status(HttpStatus.BAD_REQUEST)
           .error(new DataNotFoundDTO("Usuarios no encontrados para esta empresa"))
           .build();
     } else {
-      return Response.builder().status(HttpStatus.OK).content(usuarios).build();
+      return Response.<List<SgUsuario>>builder().status(HttpStatus.OK).content(usuarios).build();
     }
   }
 
   // Method to find user by username and empresa ID (for authentication)
-  public Response<?> getFindByUsername(Integer empresaId, String username) {
+  public Response<SgUsuario> getFindByUsername(Integer empresaId, String username) {
     Optional<SgUsuario> oUsername = dao.findByUsername(empresaId, username);
     if (oUsername.isEmpty()) {
-      return Response.builder()
+      return Response.<SgUsuario>builder()
           .status(HttpStatus.OK)
           .error(new DataNotFoundDTO("Usuario no encontrado"))
           .build();
     } else {
-      return Response.builder().status(HttpStatus.OK).content(oUsername.get()).build();
+      return Response.<SgUsuario>builder().status(HttpStatus.OK).content(oUsername.get()).build();
     }
   }
 
   @Override
-  public Response<?> save(Object entity) {
-    SgUsuario usuario = entity instanceof SgUsuario ? (SgUsuario) entity : new SgUsuario();
-    usuario.setFechaReg(LocalDateTime.now());
-    usuario.setEstadoId("ACT");
-    usuario.setUsuarioReg("TEST");
+  public Response<SgUsuario> save(SgUsuario entity) {
+    if (entity.getCambioPassword()) {
 
-    usuario = dao.save(usuario);
-    return Response.builder().status(HttpStatus.OK).content(usuario).build();
+      String encode = passwordEncoder.encode(entity.getPassword());
+      entity.setPassword(encode);
+    }
+
+    entity.setFechaReg(LocalDateTime.now());
+    entity.setEstadoId("ACT");
+    entity.setUsuarioReg("TEST");
+    entity = dao.save(entity);
+    return Response.<SgUsuario>builder().status(HttpStatus.OK).content(entity).build();
   }
 }
