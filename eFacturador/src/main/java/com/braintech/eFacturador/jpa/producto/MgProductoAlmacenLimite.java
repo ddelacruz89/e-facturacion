@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "mg_producto_almacen_limite")
+@Table(name = "mg_producto_almacen_limite", schema = "producto")
 @Getter
 @Setter
 public class MgProductoAlmacenLimite extends BaseEntity implements Serializable {

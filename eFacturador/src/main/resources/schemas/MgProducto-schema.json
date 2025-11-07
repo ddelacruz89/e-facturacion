@@ -1,0 +1,243 @@
+{
+  "// SCHEMA": "Este JSON representa la estructura completa de MgProducto para crear/actualizar",
+  "// NOTE": "Los campos con null son opcionales, los demás son requeridos",
+
+  "id": "Integer - Auto-generado por la base de datos (null al crear, requerido al actualizar)",
+  "codigoBarra": "String - Código de barras del producto (opcional)",
+  "nombreProducto": "String - Nombre del producto (requerido)",
+  "descripcion": "String - Descripción detallada del producto (opcional)",
+  "unidadId": "String - ID de la unidad de medida base (requerido)",
+  "existencia": "Integer - Cantidad en existencia (calculado, no enviar al crear)",
+  "precioVenta": "BigDecimal - Precio de venta al público (requerido)",
+  "precioMinimo": "BigDecimal - Precio mínimo de venta permitido (requerido)",
+  "soloEnCompra": "Boolean - true si solo está disponible para compra, false si está en venta (requerido)",
+  "precioCostoAvg": "BigDecimal - Precio de costo promedio (calculado automáticamente)",
+  "trabajador": "Boolean - true si es producto/servicio de trabajador (opcional)",
+  "comision": "BigDecimal - Porcentaje de comisión por venta (opcional, solo si trabajador=true)",
+
+  "itbisId": {
+    "// TYPE": "MgItbis - Relación ManyToOne",
+    "id": "Integer - ID del tipo de ITBIS (requerido)"
+  },
+
+  "categoriaId": {
+    "// TYPE": "MgCategoria - Relación ManyToOne",
+    "id": "Integer - ID de la categoría del producto (requerido)"
+  },
+
+  "unidadFraccions": [
+    {
+      "// TYPE": "List<MgUnidadFraccion> - Lista de presentaciones/fracciones del producto",
+      "// NOTE": "Al menos una unidad de fracción es requerida",
+      "id": "Integer - Auto-generado (null al crear)",
+      "existencia": "Integer - Existencia de esta fracción específica",
+      "precioVenta": "BigDecimal - Precio de venta de esta fracción",
+      "precioMinimo": "BigDecimal - Precio mínimo de esta fracción",
+      "disponibleEnCompra": "Boolean - Si está disponible para comprar",
+      "disponibleEnVenta": "Boolean - Si está disponible para vender",
+      "precioCostoAvg": "BigDecimal - Costo promedio de esta fracción",
+      "cantidad": "Integer - Cantidad de unidades que componen esta fracción (ej: 24 para caja)",
+      "empresaId": "Integer - Se asigna automáticamente desde JWT",
+      "usuarioReg": "String - Se asigna automáticamente desde JWT",
+      "fechaReg": "DateTime - Se asigna automáticamente",
+      "activo": "Boolean - true por defecto",
+
+      "unidadId": {
+        "// TYPE": "MgUnidad - Unidad base",
+        "id": "Integer - ID de la unidad base (ej: Unidad, Litro, Kg)"
+      },
+
+      "unidadFraccionId": {
+        "// TYPE": "MgUnidad - Unidad de la fracción",
+        "id": "Integer - ID de la unidad de fracción (ej: Caja, Six-Pack)"
+      },
+
+      "productoId": {
+        "// TYPE": "MgProducto - Referencia al producto padre",
+        "id": "Integer - Se asigna automáticamente"
+      },
+
+      "suplidores": [
+        {
+          "// TYPE": "List<MgProductoSuplidor> - Suplidores que venden esta fracción",
+          "id": "Integer - Auto-generado (null al crear)",
+          "precio": "BigDecimal - Precio de compra al suplidor (requerido)",
+          "itbisDefault": "Boolean - Si el suplidor aplica ITBIS por defecto (requerido)",
+          "estadoId": "String - Estado del registro (ACT/INA)",
+          "empresaId": "Integer - Se asigna automáticamente desde JWT",
+          "usuarioReg": "String - Se asigna automáticamente desde JWT",
+          "fechaReg": "DateTime - Se asigna automáticamente",
+          "activo": "Boolean - true por defecto",
+
+          "suplidor": {
+            "// TYPE": "InSuplidor - Relación ManyToOne",
+            "id": "Integer - ID del suplidor (requerido)"
+          }
+        }
+      ]
+    }
+  ],
+
+  "productosAlmacenesLimites": [
+    {
+      "// TYPE": "List<MgProductoAlmacenLimite> - Límites por almacén (opcional)",
+      "id": "Integer - Auto-generado (null al crear)",
+      "limite": "Integer - Cantidad límite en este almacén",
+      "usuarioReg": "String - Se asigna automáticamente desde JWT",
+      "fechaReg": "DateTime - Se asigna automáticamente",
+      "activo": "Boolean - true por defecto",
+
+      "almacenId": {
+        "// TYPE": "InAlmacen - Relación ManyToOne",
+        "id": "Integer - ID del almacén"
+      }
+    }
+  ],
+
+  "productosModulos": [
+    {
+      "// TYPE": "List<MgProductoModulo> - Módulos donde aparece el producto (opcional)",
+      "id": "Integer - Auto-generado (null al crear)",
+      "usuarioReg": "String - Se asigna automáticamente desde JWT",
+      "fechaReg": "DateTime - Se asigna automáticamente",
+      "activo": "Boolean - true por defecto",
+
+      "sgMenuId": {
+        "// TYPE": "SgMenu - Relación ManyToOne",
+        "id": "Integer - ID del menú/módulo"
+      }
+    }
+  ],
+
+  "// EXAMPLE": "=== EJEMPLO COMPLETO DE CREACIÓN ===",
+
+  "EXAMPLE_CREATE": {
+    "codigoBarra": "7501234567890",
+    "nombreProducto": "Coca-Cola 2 Litros",
+    "descripcion": "Refresco de cola 2 litros",
+    "unidadId": "1",
+    "precioVenta": 45.00,
+    "precioMinimo": 40.00,
+    "soloEnCompra": false,
+    "trabajador": false,
+    "comision": null,
+
+    "itbisId": {
+      "id": 1
+    },
+
+    "categoriaId": {
+      "id": 5
+    },
+
+    "unidadFraccions": [
+      {
+        "existencia": 0,
+        "precioVenta": 45.00,
+        "precioMinimo": 40.00,
+        "disponibleEnCompra": true,
+        "disponibleEnVenta": true,
+        "precioCostoAvg": 30.00,
+        "cantidad": 1,
+        "unidadId": {
+          "id": 1
+        },
+        "unidadFraccionId": {
+          "id": 1
+        },
+        "suplidores": [
+          {
+            "precio": 30.00,
+            "itbisDefault": true,
+            "estadoId": "ACT",
+            "suplidor": {
+              "id": 3
+            }
+          },
+          {
+            "precio": 28.50,
+            "itbisDefault": true,
+            "estadoId": "ACT",
+            "suplidor": {
+              "id": 7
+            }
+          }
+        ]
+      },
+      {
+        "existencia": 0,
+        "precioVenta": 540.00,
+        "precioMinimo": 500.00,
+        "disponibleEnCompra": true,
+        "disponibleEnVenta": true,
+        "precioCostoAvg": 360.00,
+        "cantidad": 12,
+        "unidadId": {
+          "id": 1
+        },
+        "unidadFraccionId": {
+          "id": 2
+        },
+        "suplidores": [
+          {
+            "precio": 360.00,
+            "itbisDefault": true,
+            "estadoId": "ACT",
+            "suplidor": {
+              "id": 3
+            }
+          }
+        ]
+      }
+    ],
+
+    "productosAlmacenesLimites": [
+      {
+        "limite": 100,
+        "almacenId": {
+          "id": 1
+        }
+      }
+    ],
+
+    "productosModulos": [
+      {
+        "sgMenuId": {
+          "id": 10
+        }
+      }
+    ]
+  },
+
+  "// API_ENDPOINTS": "=== ENDPOINTS DISPONIBLES ===",
+  "ENDPOINTS": {
+    "GET_ALL_ACTIVE": "GET /api/v1/producto/producto - Obtener todos los productos activos",
+    "GET_ALL": "GET /api/v1/producto/producto/all - Obtener todos (activos e inactivos)",
+    "GET_BY_ID": "GET /api/v1/producto/producto/{id} - Obtener un producto por ID",
+    "CREATE": "POST /api/v1/producto/producto - Crear nuevo producto",
+    "UPDATE": "PUT /api/v1/producto/producto/{id} - Actualizar producto existente",
+    "DELETE": "DELETE /api/v1/producto/producto/{id} - Soft delete (marca como inactivo)"
+  },
+
+  "// VALIDATION_RULES": "=== REGLAS DE VALIDACIÓN ===",
+  "VALIDATION": {
+    "nombreProducto": "Requerido, máximo 255 caracteres",
+    "precioVenta": "Requerido, mayor que 0",
+    "precioMinimo": "Requerido, menor o igual a precioVenta",
+    "itbisId": "Requerido, debe existir en tabla mg_itbis",
+    "categoriaId": "Requerido, debe existir en tabla mg_categoria de la misma empresa",
+    "unidadFraccions": "Requerido, al menos una fracción",
+    "unidadFraccions[].cantidad": "Requerido, mayor que 0",
+    "unidadFraccions[].suplidores[].precio": "Requerido, mayor que 0"
+  },
+
+  "// DATA_TYPES": "=== TIPOS DE DATOS ===",
+  "DATA_TYPES": {
+    "Integer": "Número entero (ej: 1, 100, -5)",
+    "BigDecimal": "Número decimal preciso para montos (ej: 45.50, 1234.99)",
+    "String": "Texto (ej: 'Coca-Cola', 'ABC123')",
+    "Boolean": "Verdadero o falso (true/false)",
+    "DateTime": "Fecha y hora ISO 8601 (ej: '2025-10-19T13:45:30')"
+  }
+}
+

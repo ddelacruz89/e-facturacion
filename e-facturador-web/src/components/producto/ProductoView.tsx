@@ -278,19 +278,20 @@ const ProductoViewExample = () => {
                                                 name={`unidadFraccions.${index}.unidadId`}
                                                 label="Unidad Base"
                                                 control={control}
-                                                size={4}
+                                                size={2}
+                                            />
+
+                                            <NumericInput
+                                                label="Cantidad"
+                                                name={`unidadFraccions.${index}.cantidad`}
+                                                control={control}
+                                                size={2}
                                             />
                                             <UnidadComboBox
                                                 name={`unidadFraccions.${index}.unidadFraccionId`}
                                                 label="Unidad Fracción"
                                                 control={control}
-                                                size={4}
-                                            />
-                                            <NumericInput
-                                                label="Cantidad"
-                                                name={`unidadFraccions.${index}.cantidad`}
-                                                control={control}
-                                                size={4}
+                                                size={2}
                                             />
                                         </Grid>
 
@@ -303,25 +304,25 @@ const ProductoViewExample = () => {
                                                 label="Precio de Venta"
                                                 name={`unidadFraccions.${index}.precioVenta`}
                                                 control={control}
-                                                size={3}
+                                                size={2}
                                             />
                                             <MoneyInput
                                                 label="Precio Mínimo"
                                                 name={`unidadFraccions.${index}.precioMinimo`}
                                                 control={control}
-                                                size={3}
+                                                size={2}
                                             />
                                             <NumericInput
                                                 label="Existencia"
                                                 name={`unidadFraccions.${index}.existencia`}
                                                 control={control}
-                                                size={3}
+                                                size={2}
                                             />
                                             <MoneyInput
                                                 label="Precio Costo Promedio"
                                                 name={`unidadFraccions.${index}.precioCostoAvg`}
                                                 control={control}
-                                                size={3}
+                                                size={2}
                                             />
                                         </Grid>
 

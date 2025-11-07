@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "mg_producto_modulo")
+@Table(name = "mg_producto_modulo", schema = "producto")
 @Data
 @NoArgsConstructor
 public class MgProductoModulo extends BaseEntity implements Serializable {
