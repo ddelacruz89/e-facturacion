@@ -18,6 +18,4 @@ public class BaseEntitySucursal extends BaseEntityPk {
 
   @Column(name = "activo")
   private Boolean activo;
-
-g
 }
