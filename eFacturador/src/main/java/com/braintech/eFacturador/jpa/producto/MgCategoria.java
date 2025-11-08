@@ -1,6 +1,6 @@
 package com.braintech.eFacturador.jpa.producto;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntityS;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import lombok.*;
@@ -12,7 +12,7 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class MgCategoria extends BaseEntity implements Serializable {
+public class MgCategoria extends BaseEntityS implements Serializable {
 
   private static final long serialVersionUID = 1L;
 

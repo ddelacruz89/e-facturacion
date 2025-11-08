@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
-public class BaseDgII extends BaseEntity implements Serializable {
+public class BaseDgII extends BaseEntitySucursal implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
 

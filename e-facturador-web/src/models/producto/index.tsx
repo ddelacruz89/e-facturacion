@@ -12,7 +12,8 @@ export interface MgUnidad {
 }
 
 export interface MgCategoria {
-    id: string;
+    id?: number;
+    secuencia?: string
     categoria: string;
     modificable: boolean;
     tieneModulo: boolean;

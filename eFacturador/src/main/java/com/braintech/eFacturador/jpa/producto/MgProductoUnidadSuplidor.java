@@ -1,6 +1,6 @@
 package com.braintech.eFacturador.jpa.producto;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntityEmpresa;
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import com.braintech.eFacturador.jpa.inventario.InSuplidor;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -14,14 +14,9 @@ import org.hibernate.annotations.Comment;
 @Table(name = "mg_producto_unidad_suplidor", schema = "producto")
 @Getter
 @Setter
-public class MgProductoUnidadSuplidor extends BaseEntityEmpresa implements Serializable {
+public class MgProductoUnidadSuplidor extends BaseEntity implements Serializable {
 
   private static final long serialVersionUID = 1L;
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Basic(optional = false)
-  private Integer id;
 
   @Column(name = "existencia")
   private Integer existencia;

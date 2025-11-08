@@ -1,6 +1,6 @@
 package com.braintech.eFacturador.jpa.producto;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntityEmpresa;
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.io.Serial;
@@ -20,14 +20,9 @@ import org.hibernate.annotations.Comment;
 @EqualsAndHashCode(callSuper = false)
 @AllArgsConstructor
 @NoArgsConstructor
-public class MgProductoTag extends BaseEntityEmpresa implements Serializable {
+public class MgProductoTag extends BaseEntity implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
-
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id")
-  private Integer id;
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "producto_id", nullable = false)

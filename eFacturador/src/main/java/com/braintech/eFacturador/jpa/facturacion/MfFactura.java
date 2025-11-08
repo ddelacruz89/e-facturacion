@@ -20,12 +20,6 @@ public class MfFactura extends BaseDgII implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
 
-  @Column(name = "sucursal_id", nullable = false)
-  private Integer sucursalId;
-
-  @Column(name = "numeroFactura")
-  private Integer numeroFactura;
-
   @Column(name = "tipo_factura_id")
   private Integer tipoFacturaId;
 

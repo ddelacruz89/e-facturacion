@@ -19,6 +19,5 @@ public class BaseEntitySucursal extends BaseEntityPk {
   @Column(name = "activo")
   private Boolean activo;
 
-  @Column(name = "sucursal_id", nullable = false)
-  private Integer sucursalId;
+g
 }

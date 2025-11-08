@@ -51,9 +51,9 @@ export const CategoriaComboBox: React.FC<BaseComboProps> = ({ label = "Categorí
     }, [loadCategorias]);
 
     const options: ComboBoxOption[] = categorias.map((categoria) => ({
-        value: categoria.id,
+        value: categoria.secuencia || 0,
         label: categoria.categoria,
-        description: `ID: ${categoria.id} ${categoria.modificable ? "- Modificable" : ""}`,
+        description: `ID: ${categoria.secuencia} ${categoria.modificable ? "- Modificable" : ""}`,
         disabled: false, // No activo field in model
     }));
 

@@ -1,5 +1,5 @@
 import { AccountCircle, Key } from "@mui/icons-material";
-import { Grid, InputAdornment, Paper, TablePagination, TextField } from "@mui/material";
+import { FormControlLabel, Grid, InputAdornment, Paper, Switch, TablePagination, TextField } from "@mui/material";
 import { Table, TableContainer, TableHead, TableBody, TableRow, TableCell } from "@mui/material";
 import { yellow } from "@mui/material/colors";
 import React, { ReactNode } from "react";
@@ -92,6 +92,38 @@ export function TextInputPk({ name, disabled, readOnly, label, control, error, r
 
     );
 }
+
+export function SwitchInput({ name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: BaseProps) {
+    return (
+
+        <Controller
+            name={name}
+            control={control}
+            rules={{
+                ...rules
+            }}
+            render={({ field }) => (
+                <Grid size={{ xs: 12, sm: size }}>
+                    <FormControlLabel control={<Switch defaultChecked />}
+                        disabled={disabled}
+                        slotProps={{
+                        }}
+                        id={name}
+                        label={label}
+                        {...field}
+                        {...rest}
+                    />
+                </Grid>
+                //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
+
+            )}
+        />
+
+
+    );
+}
+
+
 export interface Column {
     id: string;
     label: string;

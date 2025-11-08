@@ -1,7 +1,6 @@
 package com.braintech.eFacturador.jpa.producto;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntityEmpresa;
-import com.braintech.eFacturador.jpa.inventario.InSuplidor;
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -16,7 +15,7 @@ import org.hibernate.annotations.Comment;
 @Table(name = "mg_producto_suplidor", schema = "producto")
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class MgProductoSuplidor extends BaseEntityEmpresa implements Serializable {
+public class MgProductoSuplidor extends BaseEntity implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
 
@@ -36,11 +35,6 @@ public class MgProductoSuplidor extends BaseEntityEmpresa implements Serializabl
 
   @Column(name = "estado_id")
   private String estadoId;
-
-  @JoinColumn(name = "suplidor_id")
-  @ManyToOne(optional = false)
-  @NotNull(message = "Suplidor no puede ser null")
-  private InSuplidor suplidor;
 
   @JoinColumn(name = "unidad_fraccion_id")
   @ManyToOne(optional = false)
