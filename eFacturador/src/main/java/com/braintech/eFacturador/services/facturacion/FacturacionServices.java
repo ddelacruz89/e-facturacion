@@ -52,11 +52,11 @@ public class FacturacionServices implements IFacturacion {
   @Transactional
   public MfFactura create(MfFactura entity) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
-    Integer sucursalId = tenantContext.getCurrentSucursalId();
+    //    Integer sucursalId = tenantContext.getCurrentSucursalId();
     String username = tenantContext.getCurrentUsername();
 
     entity.setEmpresaId(empresaId);
-    entity.setSucursalId(sucursalId);
+    //        entity.setSucursalId(sucursalId);
     entity.setUsuarioReg(username);
     entity.setFechaReg(LocalDateTime.now());
     entity.setEstadoId("ACT");
@@ -67,20 +67,20 @@ public class FacturacionServices implements IFacturacion {
   @Override
   @Transactional
   public MfFactura update(Integer id, MfFactura entity) {
-    Integer empresaId = tenantContext.getCurrentEmpresaId();
-    Integer sucursalId = tenantContext.getCurrentSucursalId();
-
-    MfFactura existing =
-        facturaDao
-            .findByIdAndEmpresaIdAndSucursalId(id, empresaId, sucursalId)
-            .orElseThrow(() -> new RecordNotFoundException("Registro no encontrado"));
-
-    // Update fields - keep audit fields from existing
-    entity.setId(id);
-    entity.setEmpresaId(empresaId);
-    entity.setSucursalId(sucursalId);
-    entity.setUsuarioReg(existing.getUsuarioReg());
-    entity.setFechaReg(existing.getFechaReg());
+    //    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    ////    Integer sucursalId = tenantContext.getCurrentSucursalId();
+    //
+    //    MfFactura existing =
+    //        facturaDao
+    //            .findByIdAndEmpresaIdAndSucursalId(id, empresaId, sucursalId)
+    //            .orElseThrow(() -> new RecordNotFoundException("Registro no encontrado"));
+    //
+    //    // Update fields - keep audit fields from existing
+    //    entity.setId(id);
+    //    entity.setEmpresaId(empresaId);
+    ////        entity.setSucursalId(sucursalId);
+    //    entity.setUsuarioReg(existing.getUsuarioReg());
+    //    entity.setFechaReg(existing.getFechaReg());
 
     return facturaDao.save(entity);
   }

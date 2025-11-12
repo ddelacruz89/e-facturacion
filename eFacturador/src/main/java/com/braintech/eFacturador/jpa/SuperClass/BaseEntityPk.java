@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.jpa.SuperClass;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,6 +15,7 @@ public class BaseEntityPk {
   private Integer id;
 
   @Column(name = "empresa_id", updatable = false)
+  @NotNull(message = "La empresa no puede ser nulo")
   private Integer empresaId;
 
   @Column(name = "secuencia")

@@ -13,15 +13,15 @@ export interface MgUnidad {
 
 export interface MgCategoria {
     id?: number;
-    secuencia?: string
+    secuencia?: string;
     categoria: string;
     modificable: boolean;
     tieneModulo: boolean;
-    llevaMedida: boolean;
     // From BaseEntity
     usuarioReg?: string;
     fechaReg?: Date;
     estadoId?: string;
+    activo: boolean;
 }
 
 export interface MgUnidadFraccion {

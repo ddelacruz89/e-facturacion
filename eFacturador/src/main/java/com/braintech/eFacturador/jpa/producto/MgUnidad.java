@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = false)
 public class MgUnidad extends BaseEntity implements Serializable {
+  private static final long serialVersionUID = 1L;
 
   @Basic(optional = false)
   @Column(name = "nombre")

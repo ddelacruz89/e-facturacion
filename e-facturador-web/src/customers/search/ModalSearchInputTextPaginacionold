@@ -1,0 +1,457 @@
+// import React, { useState, useEffect } from "react";
+// import { Modal, ModalHeader, ModalFooter, ModalBody, InputGroup, InputGroupAddon, Button, Input, FormFeedback } from "reactstrap";
+// import "./../../css/tabla.css";
+// import "./search.css";
+
+// /** Uso de  los props.
+//  *  value={ }
+//     col="form-group col-sd-4 col-sm-4 col-lg-3" // tamano de la columna
+//     label=""  String nombre en el campo
+//     disabled={this.state.almacenId.id === 0}
+//     paginacion={true}
+//     simboloAnd={true} // si utiliza un request con parametros predefinidos en la url, debe colocar en true. Pues esto hara que utilice un & en vez de un ? y no explote el query
+//     size="lg"
+//     title="Productos"  // nombre dee la busqueda
+//  */
+// const ModalSearchInputTextPaginacion = (props) => {
+//     let [pageNo, setPageNo] = useState(0);
+//     let [pageSize, setPageSize] = useState(20);
+
+//     const [modal, setModal] = useState(false);
+//     const [estado, setEstado] = useState(props.defaultEstado);
+//     const [cuenta, setCuenta] = useState(props.cuentaDefault);
+
+//     const [datos, setDatos] = useState([]);
+//     const [filter, setFilter] = useState([]);
+//     const [findBy, setFindBy] = useState(undefined);
+//     const [userQuery, setUserQuery] = useState("");
+//     const [timeoutId, setTimeoutId] = useState(0);
+//     var CurrencyFormat = require("react-currency-format");
+//     const onchange = (event) => {
+//         let value = event.target.dataset.key;
+//         if (value !== undefined) {
+//             setFindBy(value);
+//         }
+//     };
+
+//     const filter_ref = React.createRef();
+//     useEffect(() => {
+//         if (props.getVisibilityStateRef !== undefined) {
+//             props.getVisibilityStateRef(setModal);
+//         }
+//     });
+
+//     // useEffect(() => {
+//     //     if(props.cargaInicial){
+
+//     //     if (timeoutId > 0) {
+//     //       clearTimeout(timeoutId);
+//     //     }
+//     //     // se crea un timeout para que espere un tercio del segundo antes de buscar
+//     //     // y asi evitar hacer una busqueda por cada letra escrita, sino que busque cuando
+//     //     // el usuario ya se detuvo de escribir.
+//     //     var id = setTimeout(function () {
+
+//     //      find(1)
+//     //       setTimeoutId(0);
+
+//     //     }, 600);
+//     //     setTimeoutId(id);
+
+//     //     }
+//     //   }, [userQuery]);
+
+//     let estadoString = props.defaultEstado;
+//     let notClosing = true;
+//     function handleRadioButton(e) {
+//         estadoString = e.target.value;
+//         setEstado(e.target.value);
+//         if (notClosing) {
+//             find();
+//         }
+//     }
+
+//     let cuentaString = props.cuentaDefault;
+//     function handleCuenta(e) {
+//         cuentaString = Number(e.target.value);
+//         setCuenta(Number(e.target.value));
+//         if (notClosing) {
+//             setPageNo(1);
+
+//             find();
+//         }
+//     }
+
+//     const cargarMas = () => {
+//         find(undefined, userQuery);
+//     };
+
+//     const find = (pageValue, textSearch) => {
+//         if (timeoutId > 0) {
+//             clearTimeout(timeoutId);
+//         }
+//         // se crea un timeout para que espere un tercio del segundo antes de buscar
+//         // y asi evitar hacer una busqueda por cada letra escrita, sino que busque cuando
+//         // el usuario ya se detuvo de escribir.
+//         var id = setTimeout(function () {
+//             if (pageValue === undefined) {
+//                 pageValue = pageNo;
+//             }
+//             let tipoBusqueda;
+//             if (findBy === undefined) {
+//                 var find = props.findBy.find((item) => item.default);
+//                 setFindBy(find.key);
+//                 tipoBusqueda = find.key;
+//             } else {
+//                 tipoBusqueda = findBy;
+//             }
+
+//             if (textSearch === undefined) textSearch = "";
+
+//             fetch(
+//                 props.api +
+//                     (props.paginacion
+//                         ? (props.simboloAnd ? "&" : "?") +
+//                           "busqueda=" +
+//                           textSearch +
+//                           "&tipoBusqueda=" +
+//                           tipoBusqueda +
+//                           "&pageNo=" +
+//                           pageValue +
+//                           "&pageSize=" +
+//                           pageSize
+//                         : "") +
+//                     (props.estados ? "/" + estadoString : "") +
+//                     (props.cuentasContables ? "/" + cuentaString : "")
+//             )
+//                 .then((response) => response.json())
+//                 .then((json) => {
+//                     console.log(textSearch);
+//                     console.log(json);
+//                     if (pageValue === 0) {
+//                         setDatos(json.content);
+//                         setFilter(json.content);
+//                     } else {
+//                         setDatos([...datos, ...json.content]);
+//                         setFilter([...filter, ...json.content]);
+//                     }
+//                     setPageNo(json.number + 1);
+//                 });
+
+//             setTimeoutId(0);
+//         }, 600);
+//         setTimeoutId(id);
+//     };
+
+//     var header = props.header;
+
+//     var findBys = props.findBy.map((row, i) => {
+//         if (row.default === true) {
+//             return (
+//                 <label key={i} className="btn btn-outline-info active" data-key={row.key} onClick={onchange}>
+//                     <input type="radio" name="options" id={row.key} autoComplete="off" defaultChecked />
+//                     {row.name}
+//                 </label>
+//             );
+//         } else {
+//             return (
+//                 <label key={i} className="btn btn-outline-info " data-key={row.key} onClick={onchange}>
+//                     <input type="radio" name="options" id={row.key} autoComplete="off" />
+//                     {row.name}
+//                 </label>
+//             );
+//         }
+//     });
+
+//     var ths = header.map((row) => {
+//         return <th key={row.name}>{row.name}</th>;
+//     });
+
+//     var trs = datos.map((row, index) => {
+//         var tds = header.map((h, i) => {
+//             if (h.money !== undefined) {
+//                 if (h.objectName !== undefined) {
+//                     return (
+//                         <CurrencyFormat
+//                             key={i}
+//                             value={row[h.objectName][h.column]}
+//                             displayType={"text"}
+//                             decimalScale={2}
+//                             fixedDecimalScale={true}
+//                             thousandSeparator={true}
+//                             prefix={"RD$ "}
+//                             renderText={(value) => <td>{value}</td>}
+//                         />
+//                     );
+//                 } else {
+//                     return (
+//                         <CurrencyFormat
+//                             key={i}
+//                             value={row[h.column]}
+//                             displayType={"text"}
+//                             decimalScale={2}
+//                             fixedDecimalScale={true}
+//                             thousandSeparator={true}
+//                             prefix={"RD$ "}
+//                             renderText={(value) => <td>{value}</td>}
+//                         />
+//                     );
+//                 }
+//             } else {
+//                 if (h.objectName !== undefined) {
+//                     return (
+//                         <td key={i} style={{ cursor: "pointer" }}>
+//                             {row[h.objectName][h.column]}
+//                         </td>
+//                     );
+//                 } else {
+//                     return (
+//                         <td key={i} style={{ cursor: "pointer" }}>
+//                             {row[h.column]}
+//                         </td>
+//                     );
+//                 }
+//             }
+//         });
+//         return (
+//             <tr
+//                 key={index}
+//                 data-index={index}
+//                 onClick={() => {
+//                     props.selected(row);
+//                     setModal(!modal);
+//                     setFindBy(undefined);
+//                 }}>
+//                 {tds}
+//             </tr>
+//         );
+//     });
+
+//     const handleChange = (event) => {
+//         setUserQuery(event.target.value);
+//         var text = event.target.value;
+//         find(0, text);
+//     };
+
+//     let modalRef = undefined;
+//     const navigate = (e) => {
+//         if (e.which === 38 || e.which === 40) {
+//             var table = modalRef._dialog.querySelector(".table");
+//             var selectedRow = table.querySelector("tr.selected");
+//             if (selectedRow === null) {
+//                 table.querySelector("tbody tr").classList.add("selected");
+//             } else {
+//                 var trs = table.querySelectorAll("tbody tr");
+//                 for (var i = 0; i < trs.length; i++) {
+//                     trs[i].classList.remove("selected");
+//                 }
+//             }
+
+//             if (selectedRow !== null) {
+//                 var element = null;
+//                 if (e.which === 38) {
+//                     element = selectedRow.previousElementSibling;
+//                 }
+//                 if (e.which === 40) {
+//                     element = selectedRow.nextElementSibling;
+//                 }
+//                 if (element !== null && element.tagName.toLowerCase() === "tr") element.classList.add("selected");
+//                 element.focus();
+//             }
+//         } else if (e.which === 13) {
+//             element = modalRef._dialog.querySelector(".table tr.selected");
+//             if (element === null) return;
+
+//             var data = datos[element.getAttribute("data-index")];
+//             props.selected(data);
+//             setModal(!modal);
+//             setFindBy(undefined);
+//         }
+//     };
+
+//     const abrirModal = () => {
+//         if (props.modalExterior) {
+//             props.modalExterior();
+//         }
+//     };
+
+//     return (
+//         <>
+//             {props.onlyButton ? (
+//                 <button
+//                     className={` menu-icon-button btn ${props.color ? props.color : "btn-primary"} btn-sm`}
+//                     type="button"
+//                     disabled={props.disabled === undefined ? false : props.disabled}
+//                     style={{ right: props.right ? props.right : 0 }}
+//                     onClick={() => {
+//                         setModal(!modal);
+//                         find(0);
+//                         abrirModal();
+//                     }}>
+//                     {props.label}
+//                 </button>
+//             ) : (
+//                 <div className={"form-group " + props.col}>
+//                     <label htmlFor="nombre">
+//                         <b>{props.label}</b>
+//                     </label>
+//                     <InputGroup>
+//                         <Input
+//                             invalid={props.invalid}
+//                             type="text"
+//                             className="form-control bg-white"
+//                             value={props.value}
+//                             placeholder={props.placeholder}
+//                             readOnly
+//                         />
+//                         <InputGroupAddon addonType="append">
+//                             <button
+//                                 className={`btn ${props.color ? props.color : "btn-primary"} btn-sm`}
+//                                 type="button"
+//                                 disabled={props.disabled === undefined ? false : props.disabled}
+//                                 onClick={() => {
+//                                     setModal(!modal);
+//                                     find(0);
+//                                 }}>
+//                                 <i className="fas fa-search" />
+//                             </button>
+//                         </InputGroupAddon>
+//                         <FormFeedback>
+//                             {" "}
+//                             El campo <b>{props.label}</b> es requerido
+//                         </FormFeedback>
+//                     </InputGroup>
+//                 </div>
+//             )}
+
+//             <Modal
+//                 isOpen={modal}
+//                 fade={false}
+//                 toggle={() => {
+//                     setModal(!modal);
+//                     setEstado(Number(props.defaultEstado));
+//                     setCuenta(props.cuentaDefault);
+//                     setFindBy(undefined);
+//                     filter_ref.current.focus();
+//                 }}
+//                 onOpened={() => {
+//                     filter_ref.current.focus();
+//                 }}
+//                 size={props.size ? props.size : "xl"}
+//                 onKeyUp={navigate}
+//                 ref={(e) => {
+//                     modalRef = e;
+//                 }}>
+//                 <ModalHeader
+//                     toggle={() => {
+//                         setModal(!modal);
+//                         setEstado(Number(props.defaultEstado));
+//                         setCuenta(props.cuentaDefault);
+
+//                         setFindBy(undefined);
+//                     }}>
+//                     <span className="search-word">
+//                         <span className="fa fa-search"></span>&nbsp; BUSCAR:
+//                     </span>{" "}
+//                     {props.title}
+//                 </ModalHeader>
+//                 {props.estados ? (
+//                     <div
+//                         className="btn-group btn-group-toggle"
+//                         style={{
+//                             background: "#17a2b8",
+//                             color: "white",
+//                             paddingTop: "15px",
+//                             paddingBottom: "15px",
+//                             paddingLeft: "10px",
+//                         }}
+//                         data-toggle="buttons">
+//                         {props.estados.map((row, i) => {
+//                             return (
+//                                 <div key={i} className="form-check form-check-inline">
+//                                     <input
+//                                         type="radio"
+//                                         key={i}
+//                                         id={row.id}
+//                                         value={row.id}
+//                                         checked={estado === row.id}
+//                                         onChange={handleRadioButton}
+//                                     />
+//                                     <label className="form-check-label" htmlFor={row.id}>
+//                                         {row.estado}
+//                                     </label>
+//                                 </div>
+//                             );
+//                         })}
+//                     </div>
+//                 ) : (
+//                     ""
+//                 )}
+//                 {props.cuentasContables ? (
+//                     <div
+//                         className="btn-group btn-group-toggle"
+//                         style={{
+//                             background: "#17a2b8",
+//                             color: "white",
+//                             paddingTop: "15px",
+//                             paddingBottom: "15px",
+//                             paddingLeft: "10px",
+//                         }}
+//                         data-toggle="buttons">
+//                         {props.cuentasContables.map((row, i) => {
+//                             return (
+//                                 <div key={i} className="form-check form-check-inline">
+//                                     <label className="form-check-label" htmlFor={row.id}>
+//                                         <input
+//                                             type="radio"
+//                                             key={i}
+//                                             id={row.id}
+//                                             value={row.id}
+//                                             checked={cuenta === row.id}
+//                                             onChange={handleCuenta}
+//                                         />
+//                                         {row.nombreCuenta}
+//                                     </label>
+//                                 </div>
+//                             );
+//                         })}
+//                     </div>
+//                 ) : (
+//                     ""
+//                 )}
+//                 <div className="btn-group btn-group-toggle m-2" data-toggle="buttons">
+//                     {findBys}
+//                 </div>
+//                 <ModalBody>
+//                     <input
+//                         ref={filter_ref}
+//                         type="text"
+//                         autoFocus={true}
+//                         className="form-control"
+//                         placeholder="Buscar aqui..."
+//                         onChange={handleChange}
+//                     />
+//                     <div style={{ height: "calc(100vh - 250px)", overflowY: "auto", margin: "10px", padding: "0px" }}>
+//                         <table className="table table-hover table-striped tableFixHead mt-1">
+//                             <thead className="thead-dark">
+//                                 <tr>{ths}</tr>
+//                             </thead>
+//                             <tbody>{trs}</tbody>
+//                             <tfoot align="center">
+//                                 <tr align="center">
+//                                     <td colSpan={props.header.length} valign="bottom">
+//                                         <Button style={{ width: "100%" }} outline color="secondary" onClick={() => cargarMas()}>
+//                                             Cargar mas
+//                                         </Button>{" "}
+//                                     </td>
+//                                 </tr>
+//                             </tfoot>
+//                         </table>
+//                     </div>
+//                 </ModalBody>
+//                 <ModalFooter></ModalFooter>
+//             </Modal>
+//         </>
+//     );
+// };
+// export default ModalSearchInputTextPaginacion;

@@ -11,9 +11,8 @@ import lombok.*;
 
 @Entity
 @Table(name = "mf_factura", schema = "facturacion")
-@Getter
-@Setter
-@ToString
+@Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
 public class MfFactura extends BaseDgII implements Serializable {
@@ -25,6 +24,9 @@ public class MfFactura extends BaseDgII implements Serializable {
 
   @Column(name = "cliente_id")
   private Integer clienteId;
+
+  @Column(name = "sucursal_id")
+  private Integer sucursalId;
 
   @Column(name = "razon_social")
   private String razonSocial;

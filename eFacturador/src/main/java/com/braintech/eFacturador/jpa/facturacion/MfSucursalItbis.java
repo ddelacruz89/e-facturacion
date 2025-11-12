@@ -1,8 +1,7 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntitySucursal;
 import com.braintech.eFacturador.jpa.general.MgItbis;
-import com.braintech.eFacturador.jpa.producto.MgCategoria;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -13,12 +12,11 @@ import lombok.*;
 
 @Entity
 @Table(name = "mf_itbis", schema = "facturacion")
-@Getter
-@Setter
-@ToString
+@Data
+@EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @AllArgsConstructor
-public class MfItbis extends BaseEntity implements Serializable {
+public class MfSucursalItbis extends BaseEntitySucursal implements Serializable {
 
   private static final long serialVersionUID = 1L;
 

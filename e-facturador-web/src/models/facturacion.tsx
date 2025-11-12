@@ -11,13 +11,27 @@ export interface TipoComprobante {
     electronico: boolean;
 }
 
-
 export interface MgItbis {
     id?: number;
-    secuencia?: number; // opcional si lo generas automáticamente
     nombre: string;
     itbis: number;
-    activo?: boolean;
+    activo: boolean;
+}
+
+export interface MfSucursalItbis {
+    // From BaseEntityPk
+    id?: number;
+    empresaId: number;
+    secuencia?: number;
+    // From BaseEntitySucursal
+    usuarioReg: string;
+    fechaReg: Date;
+    sucursalId: number;
+    activo: boolean;
+    // Own properties
+    nombre: string;
+    itbis: number;
+    mgItbisId: number; // Foreign key reference to MgItbis
 }
 
 export interface Factura {

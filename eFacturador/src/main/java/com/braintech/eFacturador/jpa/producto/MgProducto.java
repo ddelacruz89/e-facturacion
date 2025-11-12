@@ -1,6 +1,6 @@
 package com.braintech.eFacturador.jpa.producto;
 
-import com.braintech.eFacturador.jpa.facturacion.MgItbis;
+import com.braintech.eFacturador.jpa.facturacion.MfSucursalItbis;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.io.Serial;
@@ -65,7 +65,7 @@ public class MgProducto implements Serializable {
 
   @JoinColumn(name = "itbis_id")
   @ManyToOne(optional = false)
-  private MgItbis itbisId;
+  private MfSucursalItbis itbisId;
 
   @JoinColumn(name = "categoria_id")
   @ManyToOne(optional = false)

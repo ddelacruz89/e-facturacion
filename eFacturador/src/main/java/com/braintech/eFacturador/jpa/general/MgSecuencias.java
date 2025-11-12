@@ -11,6 +11,7 @@ import lombok.Setter;
 @Setter
 @IdClass(MgSecuenciasPk.class)
 public class MgSecuencias implements Serializable {
+  private static final long serialVersionUID = 1L;
 
   @Id
   @Column(name = "empresa_id")

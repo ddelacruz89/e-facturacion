@@ -14,15 +14,14 @@ type BaseProps = {
     error?: FieldError;
     rules?: object;
     size: Size;
-}
+};
 export function TextInput({ name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: BaseProps) {
     return (
-
         <Controller
             name={name}
             control={control}
             rules={{
-                ...rules
+                ...rules,
             }}
             render={({ field }) => (
                 <Grid size={{ xs: 12, sm: size }}>
@@ -39,25 +38,21 @@ export function TextInput({ name, disabled, readOnly, label, control, error, rul
                         variant="outlined"
                         {...field}
                         {...rest}
-                        size="small" />
+                        size="small"
+                    />
                 </Grid>
                 //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
-
             )}
         />
-
-
     );
 }
 export function TextInputPk({ name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: BaseProps) {
     return (
-
         <Controller
             name={name}
             control={control}
             rules={{
-
-                ...rules
+                ...rules,
             }}
             render={({ field }) => (
                 <Grid size={{ xs: 12, sm: size }}>
@@ -70,7 +65,7 @@ export function TextInputPk({ name, disabled, readOnly, label, control, error, r
                                     <InputAdornment position="start">
                                         <Key sx={{ color: yellow[700], rotate: "90  deg" }} />
                                     </InputAdornment>
-                                ) // ✅ ahora se usa aquí
+                                ),
                             },
                         }}
                         id={name}
@@ -80,55 +75,52 @@ export function TextInputPk({ name, disabled, readOnly, label, control, error, r
                         {...field}
                         {...rest}
                         size="small"
-
-
                     />
                 </Grid>
                 //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
-
             )}
         />
-
-
     );
 }
 
-export function SwitchInput({ name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: BaseProps) {
+export function SwitchInput({
+    name,
+    disabled,
+    readOnly,
+    label,
+    control,
+    error,
+    rules,
+    isChecked = false,
+    size = 12,
+    ...rest
+}: BaseProps & { isChecked?: boolean }) {
     return (
-
         <Controller
             name={name}
             control={control}
             rules={{
-                ...rules
+                ...rules,
             }}
             render={({ field }) => (
                 <Grid size={{ xs: 12, sm: size }}>
-                    <FormControlLabel control={<Switch defaultChecked />}
+                    <FormControlLabel
+                        control={<Switch checked={Boolean(field.value)} onChange={field.onChange} inputRef={field.ref} />}
                         disabled={disabled}
-                        slotProps={{
-                        }}
-                        id={name}
                         label={label}
-                        {...field}
-                        {...rest}
                     />
                 </Grid>
                 //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
-
             )}
         />
-
-
     );
 }
-
 
 export interface Column {
     id: string;
     label: string;
     minWidth?: number;
-    align?: 'right' | 'left' | 'center';
+    align?: "right" | "left" | "center";
     format?: (value: number) => string;
 }
 export interface PropsTable {
@@ -148,54 +140,64 @@ export function TableComponent({ columns, rows, selected }: PropsTable) {
         setRowsPerPage(+event.target.value);
         setPage(0);
     };
-    return (<Paper sx={{ width: '100%' }}>
-        <TableContainer sx={{ maxHeight: 440 }}>
-            <Table stickyHeader aria-label="sticky table">
-                <TableHead>
-                    <TableRow>
-                        {columns.map((column) => (
-                            <TableCell
-                                key={column.id}
-                                align={column.align}
-                                style={{ minWidth: column.minWidth, backgroundColor: '#263238', color: 'white' }}
-                            >
-                                {column.label}
-                            </TableCell>
-                        ))}
-                    </TableRow>
-                </TableHead>
-                <TableBody>
-                    {rows
-                        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                        .map((row) => {
+    return (
+        <Paper sx={{ width: "100%" }}>
+            <TableContainer sx={{ maxHeight: 440 }}>
+                <Table stickyHeader aria-label="sticky table">
+                    <TableHead>
+                        <TableRow>
+                            {columns.map((column) => (
+                                <TableCell
+                                    key={column.id}
+                                    align={column.align}
+                                    style={{ minWidth: column.minWidth, backgroundColor: "#263238", color: "white" }}>
+                                    {column.label}
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {(rows || []).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
                             return (
-                                <TableRow style={{ cursor: "pointer" }} hover role="checkbox" tabIndex={-1} key={row.code} onClick={() => selected && selected(row)}>
+                                <TableRow
+                                    style={{ cursor: "pointer" }}
+                                    hover
+                                    role="checkbox"
+                                    tabIndex={-1}
+                                    key={row.code}
+                                    onClick={() => selected && selected(row)}>
                                     {columns.map((column) => {
                                         const value = row[column.id];
+                                        let displayValue = value;
+
+                                        // Handle boolean values
+                                        if (typeof value === "boolean") {
+                                            displayValue = value ? "Sí" : "No";
+                                        }
+
                                         return (
                                             <TableCell key={column.id} align={column.align}>
-                                                {column.format && typeof value === 'number'
-                                                    ? column.format(value)
-                                                    : value}
+                                                {column.format && typeof value === "number" ? column.format(value) : displayValue}
                                             </TableCell>
                                         );
                                     })}
                                 </TableRow>
                             );
                         })}
-                </TableBody>
-            </Table>
-        </TableContainer>
-        <TablePagination
-            rowsPerPageOptions={[10, 25, 100]}
-            component="div"
-            count={rows.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-        />
-    </Paper>);
+                    </TableBody>
+                </Table>
+            </TableContainer>
+            <TablePagination
+                rowsPerPageOptions={[10, 25, 100]}
+                component="div"
+                count={(rows || []).length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+            />
+        </Paper>
+    );
 }
 
 interface GridProps {
@@ -206,5 +208,5 @@ export function GridRow({ children }: GridProps) {
         <Grid container size={{ xs: 12, sm: 12 }} spacing={2}>
             {children}
         </Grid>
-    )
+    );
 }
