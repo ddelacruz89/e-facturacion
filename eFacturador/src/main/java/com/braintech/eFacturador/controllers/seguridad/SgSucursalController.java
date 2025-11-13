@@ -8,11 +8,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/seguridad/sucursales")
+@RequestMapping("/api/v1/seguridad/sucursales")
 public class SgSucursalController {
   @Autowired private SgSucursalService sucursalService;
 
   @GetMapping
+  public ResponseEntity<Response<?>> getActive() {
+    Response<?> response = sucursalService.getFindAllActive();
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/all")
   public ResponseEntity<Response<?>> getAll() {
     Response<?> response = sucursalService.getFindByAll();
     return ResponseEntity.ok(response);

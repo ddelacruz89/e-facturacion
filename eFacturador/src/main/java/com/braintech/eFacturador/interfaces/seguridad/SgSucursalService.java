@@ -15,6 +15,8 @@ public interface SgSucursalService {
 
   Response<?> getFindByAll();
 
+  Response<?> getFindAllActive();
+
   // Keep original methods for backward compatibility
   SgSucursal findById(Integer id);
 

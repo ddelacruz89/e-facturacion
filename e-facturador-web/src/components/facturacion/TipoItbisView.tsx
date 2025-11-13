@@ -2,9 +2,10 @@ import { Button, Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { TableComponent, TextInput, TextInputPk, SwitchInput } from "../../customers/CustomComponents";
 import { FieldErrors, SubmitHandler, useForm } from "react-hook-form";
-import { MgItbis } from "../../models/facturacion";
+import { MfSucursalItbis } from "../../models/facturacion";
+import { ItbisComboBox, SucursalComboBox } from "../../customers/ProductComboBoxes";
 import ActionBar from "../../customers/ActionBar";
-import { saveTipoItbis, getTipoItbis } from "../../apis/TipoItbisController";
+import { saveMfSucursalItbis, getMfSucursalItbis } from "../../apis/MfSucursalItbisController";
 import { useEffect, useState } from "react";
 
 export default function TipoItbisView() {
@@ -13,30 +14,32 @@ export default function TipoItbisView() {
         handleSubmit,
         setValue,
         formState: { errors },
-    } = useForm<MgItbis>({
+    } = useForm<MfSucursalItbis>({
         defaultValues: {
             nombre: "",
             itbis: 0,
             activo: true,
+            mgItbisId: 0,
+            sucursalId: 0,
         },
     });
-    const [tipoItbis, setTipoItbis] = useState<MgItbis[]>([]);
+    const [tipoItbis, setTipoItbis] = useState<MfSucursalItbis[]>([]);
 
     useEffect(() => {
-        getTipoItbis()
-            .then((data) => {
+        getMfSucursalItbis()
+            .then((data: MfSucursalItbis[]) => {
                 // Asegurar que data sea un array válido
                 setTipoItbis(Array.isArray(data) ? data : []);
             })
-            .catch((error) => {
+            .catch((error: any) => {
                 console.error("Error al cargar tipos de ITBIS:", error);
                 setTipoItbis([]); // Asegurar que siempre sea un array
             });
     }, []);
 
-    const onSubmit: SubmitHandler<MgItbis> = (data) => {
-        saveTipoItbis(data)
-            .then((response) => {
+    const onSubmit: SubmitHandler<MfSucursalItbis> = (data) => {
+        saveMfSucursalItbis(data)
+            .then((response: MfSucursalItbis) => {
                 setValue("id", response.id);
                 setValue("empresaId", response.empresaId);
                 setValue("secuencia", response.secuencia);
@@ -45,36 +48,40 @@ export default function TipoItbisView() {
                 setValue("usuarioReg", response.usuarioReg);
                 setValue("fechaReg", response.fechaReg);
                 setValue("activo", response.activo);
+                setValue("sucursalId", response.sucursalId);
+                setValue("mgItbisId", response.mgItbisId);
                 alert("Tipo de ITBIS guardado correctamente");
 
                 // Recargar la lista después de guardar
-                return getTipoItbis();
+                return getMfSucursalItbis();
             })
-            .then((data) => {
+            .then((data: MfSucursalItbis[]) => {
                 setTipoItbis(Array.isArray(data) ? data : []);
             })
-            .catch((error) => {
+            .catch((error: any) => {
                 console.error("Error al guardar el tipo de ITBIS:", error);
                 alert("Error al guardar el tipo de ITBIS");
             });
     };
 
-    const onError = (errors: FieldErrors<MgItbis>) => {
+    const onError = (errors: FieldErrors<MfSucursalItbis>) => {
         console.log("Errores de validación:", errors);
     };
 
     const handleClean = () => {
         setValue("id", undefined);
-        setValue("empresaId", undefined);
+        setValue("empresaId", 0);
         setValue("secuencia", undefined);
         setValue("nombre", "");
         setValue("itbis", 0);
         setValue("usuarioReg", "");
-        setValue("fechaReg", undefined);
+        setValue("fechaReg", new Date());
         setValue("activo", true);
+        setValue("sucursalId", 0);
+        setValue("mgItbisId", 0);
     };
 
-    const handleOnSelect = (row: MgItbis) => {
+    const handleOnSelect = (row: MfSucursalItbis) => {
         setValue("id", row.id);
         setValue("empresaId", row.empresaId);
         setValue("secuencia", row.secuencia);
@@ -83,6 +90,8 @@ export default function TipoItbisView() {
         setValue("usuarioReg", row.usuarioReg);
         setValue("fechaReg", row.fechaReg);
         setValue("activo", row.activo);
+        setValue("sucursalId", row.sucursalId);
+        setValue("mgItbisId", row.mgItbisId);
     };
 
     return (
@@ -105,6 +114,10 @@ export default function TipoItbisView() {
                     <TextInput control={control} name="nombre" label="Nombre ITBIS" error={errors.nombre} size={4} />
                     <TextInput control={control} name="itbis" label="ITBIS (%)" error={errors.itbis} size={2} />
                 </Grid>
+                <Grid container spacing={2} style={{ padding: 20 }}>
+                    <SucursalComboBox control={control} name="sucursalId" label="Sucursal" error={errors.sucursalId} size={4} />
+                    <ItbisComboBox control={control} name="mgItbisId" label="Tipo ITBIS Base" error={errors.mgItbisId} size={4} />
+                </Grid>
                 <Divider>Listado</Divider>
                 <TableComponent
                     selected={handleOnSelect}
@@ -113,6 +126,8 @@ export default function TipoItbisView() {
                         { id: "secuencia", label: "No." },
                         { id: "nombre", label: "Nombre" },
                         { id: "itbis", label: "ITBIS (%)" },
+                        { id: "sucursalId", label: "Sucursal" },
+                        { id: "mgItbisId", label: "Tipo Base" },
                         { id: "activo", label: "Activo" },
                     ]}
                 />

@@ -55,6 +55,19 @@ public class SgSucursalServiceImpl implements SgSucursalService {
   }
 
   @Override
+  public Response<?> getFindAllActive() {
+    List<SgSucursal> sucursales = sucursalRepository.findAllActive();
+    if (sucursales.isEmpty()) {
+      return Response.builder()
+          .status(HttpStatus.BAD_REQUEST)
+          .error(new DataNotFoundDTO("No se encontraron sucursales activas"))
+          .build();
+    } else {
+      return Response.builder().status(HttpStatus.OK).content(sucursales).build();
+    }
+  }
+
+  @Override
   public Response<?> getFindById(Integer id) {
     Optional<SgSucursal> oSucursal = sucursalRepository.findById(id);
     if (oSucursal.isEmpty()) {

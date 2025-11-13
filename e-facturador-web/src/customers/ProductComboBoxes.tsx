@@ -5,15 +5,17 @@ import { Control, FieldError } from "react-hook-form";
 // Controllers
 import { getCategorias } from "../apis/CategoriaController";
 import { getUnidades } from "../apis/UnidadController";
-import { getItbisOptions } from "../apis/ItbisController";
+import { getItbisActivos } from "../apis/ItbisController";
 import { getAlmacenesActivos } from "../apis/AlmacenController";
 import { getMenusActivos } from "../apis/MenuController";
+import { getSucursalesActivas } from "../apis/SucursalController";
 
 // Models
 import { MgCategoria, MgUnidad } from "../models/producto";
 import { MgItbis } from "../models/facturacion";
 import { InAlmacen } from "../models/inventario";
 import { SgMenu } from "../models/seguridad";
+import { SgSucursal } from "../models/seguridad/SgSucursal";
 
 interface BaseComboProps {
     name: string;
@@ -129,7 +131,7 @@ export const ItbisComboBox: React.FC<BaseComboProps> = ({ label = "ITBIS", ...pr
     const loadItbis = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getItbisOptions();
+            const data = await getItbisActivos();
             setItbisOptions(data);
         } catch (error) {
             console.error("Error loading ITBIS:", error);
@@ -240,6 +242,60 @@ export const MenuComboBox: React.FC<BaseComboProps> = ({ label = "Menú/Módulo"
             onRefresh={loadMenus}
             noOptionsText="No hay menús disponibles"
             placeholder="Buscar menú..."
+        />
+    );
+};
+
+// Sucursal ComboBox
+export const SucursalComboBox: React.FC<BaseComboProps> = ({ label = "Sucursal", ...props }) => {
+    const [sucursales, setSucursales] = useState<SgSucursal[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    const loadSucursales = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await getSucursalesActivas();
+            setSucursales(data);
+        } catch (error) {
+            console.error("Error loading sucursales:", error);
+            setSucursales([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadSucursales();
+    }, [loadSucursales]);
+
+    const options: ComboBoxOption[] = sucursales.map((sucursal) => ({
+        value: sucursal.id?.toString() || "",
+        label: sucursal.nombre,
+        description: `${sucursal.encargado} - ${sucursal.direccion}`,
+        disabled: !sucursal.activo,
+    }));
+
+    const handleSearch = useCallback(
+        async (query: string): Promise<ComboBoxOption[]> => {
+            return options.filter(
+                (option) =>
+                    option.label.toLowerCase().includes(query.toLowerCase()) ||
+                    option.description?.toLowerCase().includes(query.toLowerCase())
+            );
+        },
+        [options]
+    );
+
+    return (
+        <SearchableComboBox
+            {...props}
+            label={label}
+            options={options}
+            loading={loading}
+            onRefresh={loadSucursales}
+            onSearch={handleSearch}
+            noOptionsText="No hay sucursales disponibles"
+            placeholder="Buscar sucursal..."
         />
     );
 };
