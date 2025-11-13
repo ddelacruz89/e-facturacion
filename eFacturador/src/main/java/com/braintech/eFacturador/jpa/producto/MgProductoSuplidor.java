@@ -1,7 +1,7 @@
 package com.braintech.eFacturador.jpa.producto;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.braintech.eFacturador.jpa.inventario.InSuplidor;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serial;
@@ -33,14 +33,11 @@ public class MgProductoSuplidor extends BaseEntity implements Serializable {
   @Comment("Indica si este suplidor aplica ITBIS por defecto para esta unidad de fracción")
   private Boolean itbisDefault;
 
+  @JoinColumn(name = "suplidor_id", referencedColumnName = "id")
+  @ManyToOne(optional = false)
+  @NotNull(message = "Suplidor no puede ser null")
+  private InSuplidor suplidor;
+
   @Column(name = "estado_id")
   private String estadoId;
-
-  @JoinColumn(name = "unidad_fraccion_id")
-  @ManyToOne(optional = false)
-  @NotNull(message = "Unidad de fracción no puede ser null")
-  @JsonBackReference
-  @Comment(
-      "Unidad de fracción del producto que este suplidor vende (ej: caja x24, six-pack, unidad)")
-  private MgUnidadFraccion unidadFraccion;
 }

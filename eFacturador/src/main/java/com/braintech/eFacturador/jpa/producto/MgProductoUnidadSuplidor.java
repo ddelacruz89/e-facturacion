@@ -1,11 +1,11 @@
 package com.braintech.eFacturador.jpa.producto;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
-import com.braintech.eFacturador.jpa.inventario.InSuplidor;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Comment;
@@ -45,13 +45,28 @@ public class MgProductoUnidadSuplidor extends BaseEntity implements Serializable
   @NotNull(message = "Preico no puede ser nulo")
   private BigDecimal precio;
 
-  @JoinColumn(name = "suplidor_id")
-  @ManyToOne(optional = false)
-  @NotNull(message = "Suplidor no puede ser null")
-  private InSuplidor suplidor;
-
   @JoinColumn(name = "unidad_fraccion_id")
   @ManyToOne(optional = false)
   @NotNull(message = "Unidad de fracción no puede ser null")
-  private MgUnidadFraccion unidadFraccion;
+  private MgUnidad unidadFraccionId;
+
+  @JoinColumn(name = "unidad_id")
+  @ManyToOne(optional = false)
+  @NotNull(message = "Unidad de fracción no puede ser null")
+  private MgUnidad unidadId;
+
+  @Column(name = "cantidad")
+  private Integer cantidad;
+
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "producto_id", nullable = false)
+  private MgProducto productoId;
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "producto_suplidor_id", referencedColumnName = "id")
+  private List<MgProductoSuplidor> productosSuplidores;
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "producto_unidad_suplidor_id", referencedColumnName = "id")
+  private List<MgProductoUnidadSuplidorLimiteAlmacen> productosAlmacenesLimites;
 }

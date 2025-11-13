@@ -26,7 +26,9 @@ public interface MgProductoRepository extends JpaRepository<MgProducto, Integer>
   @Query("SELECT p FROM MgProducto p WHERE p.categoriaId.id = :categoriaId")
   List<MgProducto> findByCategoriaId(@Param("categoriaId") Integer categoriaId);
 
-  @Query("SELECT p FROM MgProducto p WHERE p.soloEnCompra = false")
+  @Query(
+      "SELECT DISTINCT p FROM MgProducto p JOIN p.unidadProductorSuplidor u WHERE"
+          + " u.disponibleEnVenta = true")
   List<MgProducto> findAllAvailableForSale();
 
   @Query("SELECT p FROM MgProducto p WHERE p.trabajador = true")

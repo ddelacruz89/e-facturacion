@@ -39,12 +39,6 @@ public class MgUnidadFraccionServiceImpl implements MgUnidadFraccionService {
   }
 
   @Override
-  public List<MgUnidadFraccion> getByProductoId(Integer productoId) {
-    Integer empresaId = tenantContext.getCurrentEmpresaId();
-    return unidadFraccionRepository.findByProductoIdAndEmpresaId(productoId, empresaId);
-  }
-
-  @Override
   @Transactional
   public MgUnidadFraccion create(MgUnidadFraccion unidadFraccion) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();

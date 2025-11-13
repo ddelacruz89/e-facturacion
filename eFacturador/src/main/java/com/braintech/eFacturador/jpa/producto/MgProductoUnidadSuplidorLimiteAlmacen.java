@@ -11,7 +11,7 @@ import lombok.Setter;
 @Table(name = "mg_producto_almacen_limite", schema = "producto")
 @Getter
 @Setter
-public class MgProductoAlmacenLimite extends BaseEntity implements Serializable {
+public class MgProductoUnidadSuplidorLimiteAlmacen extends BaseEntity implements Serializable {
 
   private static final long serialVersionUID = 1L;
 

@@ -10,3 +10,6 @@ export interface InAlmacen {
     fechaReg?: Date;
     estadoId?: string;
 }
+
+// Re-export from individual files
+export type { InSuplidor } from "./InSuplidor";

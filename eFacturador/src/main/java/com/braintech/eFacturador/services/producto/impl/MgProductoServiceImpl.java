@@ -3,7 +3,7 @@ package com.braintech.eFacturador.services.producto.impl;
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
-import com.braintech.eFacturador.jpa.producto.MgUnidadFraccion;
+import com.braintech.eFacturador.jpa.producto.MgProductoUnidadSuplidor;
 import com.braintech.eFacturador.services.producto.MgProductoService;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
@@ -64,49 +64,48 @@ public class MgProductoServiceImpl implements MgProductoService {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     String username = tenantContext.getCurrentUsername();
 
-    // Set audit fields for unidad fracciones
-    if (producto.getUnidadFraccions() != null) {
-      for (MgUnidadFraccion fraccion : producto.getUnidadFraccions()) {
-        fraccion.setProductoId(producto);
-        fraccion.setEmpresaId(empresaId);
-        fraccion.setUsuarioReg(username);
-        fraccion.setFechaReg(LocalDateTime.now());
-        fraccion.setActivo(true);
+    // Set audit fields for unidad fracciones (MgProductoUnidadSuplidor)
+    for (MgProductoUnidadSuplidor unidadSuplidor : producto.getUnidadProductorSuplidor()) {
+      unidadSuplidor.setProductoId(producto);
+      unidadSuplidor.setEmpresaId(empresaId);
+      unidadSuplidor.setUsuarioReg(username);
+      unidadSuplidor.setFechaReg(LocalDateTime.now());
+      unidadSuplidor.setActivo(true);
 
-        // Set audit fields for suplidores within each fraccion
-        if (fraccion.getSuplidores() != null) {
-          fraccion
-              .getSuplidores()
-              .forEach(
-                  suplidor -> {
-                    suplidor.setUnidadFraccion(fraccion);
-                    suplidor.setEmpresaId(empresaId);
-                    suplidor.setUsuarioReg(username);
-                    suplidor.setFechaReg(LocalDateTime.now());
-                    suplidor.setActivo(true);
-                  });
-        }
+      // Set audit fields for productosSuplidores within each unidadSuplidor
+      if (unidadSuplidor.getProductosSuplidores() != null) {
+        unidadSuplidor
+            .getProductosSuplidores()
+            .forEach(
+                suplidor -> {
+                  suplidor.setEmpresaId(empresaId);
+                  suplidor.setUsuarioReg(username);
+                  suplidor.setFechaReg(LocalDateTime.now());
+                  suplidor.setActivo(true);
+                });
+      }
+
+      // Set audit fields for almacen limites within each unidadSuplidor
+      if (unidadSuplidor.getProductosAlmacenesLimites() != null) {
+        unidadSuplidor
+            .getProductosAlmacenesLimites()
+            .forEach(
+                limite -> {
+                  limite.setEmpresaId(empresaId);
+                  limite.setUsuarioReg(username);
+                  limite.setFechaReg(LocalDateTime.now());
+                  limite.setActivo(true);
+                });
       }
     }
 
-    // Set audit fields for almacen limites
-    if (producto.getProductosAlmacenesLimites() != null) {
-      producto
-          .getProductosAlmacenesLimites()
-          .forEach(
-              limite -> {
-                limite.setUsuarioReg(username);
-                limite.setFechaReg(LocalDateTime.now());
-                limite.setActivo(true);
-              });
-    }
-
-    // Set audit fields for modulos
+    // Set audit fields for producto modulos
     if (producto.getProductosModulos() != null) {
       producto
           .getProductosModulos()
           .forEach(
               modulo -> {
+                modulo.setEmpresaId(empresaId);
                 modulo.setUsuarioReg(username);
                 modulo.setFechaReg(LocalDateTime.now());
                 modulo.setActivo(true);

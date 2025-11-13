@@ -1,21 +1,25 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { SearchableComboBox, ComboBoxOption } from "./SearchableComboBox";
 import { Control, FieldError } from "react-hook-form";
+import { useSharedUnidades } from "../hooks/useSharedUnidades";
 
 // Controllers
 import { getCategorias } from "../apis/CategoriaController";
-import { getUnidades } from "../apis/UnidadController";
+// Remove getUnidades import since we're using the shared hook
 import { getItbisActivos } from "../apis/ItbisController";
 import { getAlmacenesActivos } from "../apis/AlmacenController";
 import { getMenusActivos } from "../apis/MenuController";
 import { getSucursalesActivas } from "../apis/SucursalController";
+import { getSuplidoresActivos } from "../apis/SuplidorController";
+import { getTagsActivos } from "../apis/TagController";
 
 // Models
 import { MgCategoria, MgUnidad } from "../models/producto";
 import { MgItbis } from "../models/facturacion";
-import { InAlmacen } from "../models/inventario";
+import { InAlmacen, InSuplidor } from "../models/inventario";
 import { SgMenu } from "../models/seguridad";
 import { SgSucursal } from "../models/seguridad/SgSucursal";
+import { MgTag } from "../models/producto/MgTag";
 
 interface BaseComboProps {
     name: string;
@@ -82,33 +86,18 @@ export const CategoriaComboBox: React.FC<BaseComboProps> = ({ label = "Categorí
 };
 
 // Unidad ComboBox
+// Unidad ComboBox (Updated to use shared state)
 export const UnidadComboBox: React.FC<BaseComboProps> = ({ label = "Unidad", ...props }) => {
-    const [unidades, setUnidades] = useState<MgUnidad[]>([]);
-    const [loading, setLoading] = useState(false);
+    const { unidades, loading, refresh } = useSharedUnidades();
 
-    const loadUnidades = useCallback(async () => {
-        setLoading(true);
-        try {
-            const data = await getUnidades();
-            setUnidades(data);
-        } catch (error) {
-            console.error("Error loading unidades:", error);
-            setUnidades([]);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadUnidades();
-    }, [loadUnidades]);
-
-    const options: ComboBoxOption[] = unidades.map((unidad) => ({
-        value: unidad.id,
-        label: `${unidad.nombre} (${unidad.abreviacion})`,
-        description: unidad.descripcion || `ID: ${unidad.id}`,
-        disabled: !unidad.activo,
-    }));
+    const options: ComboBoxOption[] = unidades
+        .filter((unidad) => unidad.id !== undefined) // Filter out unidades without ID
+        .map((unidad) => ({
+            value: unidad.id!, // Use non-null assertion since we filtered out undefined
+            label: `${unidad.nombre} (${unidad.sigla})`, // Changed from abreviacion to sigla
+            description: unidad.descripcion || `ID: ${unidad.id}`,
+            disabled: !unidad.activo,
+        }));
 
     return (
         <SearchableComboBox
@@ -116,7 +105,7 @@ export const UnidadComboBox: React.FC<BaseComboProps> = ({ label = "Unidad", ...
             label={label}
             options={options}
             loading={loading}
-            onRefresh={loadUnidades}
+            onRefresh={refresh}
             noOptionsText="No hay unidades disponibles"
             placeholder="Buscar unidad..."
         />
@@ -296,6 +285,110 @@ export const SucursalComboBox: React.FC<BaseComboProps> = ({ label = "Sucursal",
             onSearch={handleSearch}
             noOptionsText="No hay sucursales disponibles"
             placeholder="Buscar sucursal..."
+        />
+    );
+};
+
+// Suplidor ComboBox
+export const SuplidorComboBox: React.FC<BaseComboProps> = ({ label = "Proveedor", ...props }) => {
+    const [suplidores, setSuplidores] = useState<InSuplidor[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    const loadSuplidores = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await getSuplidoresActivos();
+            setSuplidores(data);
+        } catch (error) {
+            console.error("Error loading suplidores:", error);
+            setSuplidores([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadSuplidores();
+    }, [loadSuplidores]);
+
+    const options: ComboBoxOption[] = suplidores.map((suplidor) => ({
+        value: suplidor.id?.toString() || "",
+        label: suplidor.nombre,
+        description: `RNC: ${suplidor.rnc || "N/A"} - ${suplidor.direccion || ""}`,
+        disabled: false, // No activo field available in BaseSucursal
+    }));
+
+    const handleSearch = useCallback(
+        async (query: string): Promise<ComboBoxOption[]> => {
+            return options.filter(
+                (option) =>
+                    option.label.toLowerCase().includes(query.toLowerCase()) ||
+                    option.description?.toLowerCase().includes(query.toLowerCase())
+            );
+        },
+        [options]
+    );
+
+    return (
+        <SearchableComboBox
+            {...props}
+            label={label}
+            options={options}
+            loading={loading}
+            onRefresh={loadSuplidores}
+            onSearch={handleSearch}
+            noOptionsText="No hay proveedores disponibles"
+            placeholder="Buscar proveedor..."
+        />
+    );
+};
+
+// Tag ComboBox
+export const TagComboBox: React.FC<BaseComboProps> = ({ label = "Etiqueta", ...props }) => {
+    const [tags, setTags] = useState<MgTag[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    const loadTags = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await getTagsActivos();
+            setTags(data);
+        } catch (error) {
+            console.error("Error loading tags:", error);
+            setTags([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadTags();
+    }, [loadTags]);
+
+    const options: ComboBoxOption[] = tags.map((tag) => ({
+        value: tag.id?.toString() || "",
+        label: tag.nombre || `Tag ${tag.id}`,
+        description: `ID: ${tag.id}`,
+        disabled: !tag.activo,
+    }));
+
+    const handleSearch = useCallback(
+        async (query: string): Promise<ComboBoxOption[]> => {
+            return options.filter((option) => option.label.toLowerCase().includes(query.toLowerCase()));
+        },
+        [options]
+    );
+
+    return (
+        <SearchableComboBox
+            {...props}
+            label={label}
+            options={options}
+            loading={loading}
+            onRefresh={loadTags}
+            onSearch={handleSearch}
+            noOptionsText="No hay etiquetas disponibles"
+            placeholder="Buscar etiqueta..."
         />
     );
 };

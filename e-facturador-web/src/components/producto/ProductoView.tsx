@@ -28,6 +28,8 @@ import {
     ItbisComboBox,
     AlmacenComboBox,
     MenuComboBox,
+    SuplidorComboBox,
+    TagComboBox,
 } from "../../customers/ProductComboBoxes";
 
 const ProductoViewExample = () => {
@@ -40,38 +42,31 @@ const ProductoViewExample = () => {
         reset,
     } = useForm<MgProducto>({
         defaultValues: {
+            empresaId: 0,
+            secuencia: 0,
+            usuarioReg: "",
+            fechaReg: new Date(),
+            activo: true,
             nombreProducto: "",
             descripcion: "",
             codigoBarra: "",
-            existencia: 0,
-            precioVenta: 0,
-            precioMinimo: 0,
-            soloEnCompra: false,
-            precioCostoAvg: 0,
             trabajador: false,
             comision: 0,
-            unidadFraccions: [],
-            productosAlmacenesLimites: [],
+            itbisId: 0,
+            categoriaId: 0,
+            unidadProductorSuplidor: [],
             productosModulos: [],
+            tags: [],
         },
     });
 
     const {
-        fields: unidadFraccions,
+        fields: unidadProductorSuplidor,
         append: appendUnidad,
         remove: removeUnidad,
     } = useFieldArray({
         control,
-        name: "unidadFraccions",
-    });
-
-    const {
-        fields: almacenLimites,
-        append: appendAlmacenLimite,
-        remove: removeAlmacenLimite,
-    } = useFieldArray({
-        control,
-        name: "productosAlmacenesLimites",
+        name: "unidadProductorSuplidor",
     });
 
     const {
@@ -81,6 +76,15 @@ const ProductoViewExample = () => {
     } = useFieldArray({
         control,
         name: "productosModulos",
+    });
+
+    const {
+        fields: productTags,
+        append: appendProductoTag,
+        remove: removeProductoTag,
+    } = useFieldArray({
+        control,
+        name: "tags",
     });
 
     const onSubmit: SubmitHandler<MgProducto> = (data) => {
@@ -102,27 +106,48 @@ const ProductoViewExample = () => {
 
     const addUnidadFraccion = () => {
         appendUnidad({
+            empresaId: 0,
+            secuencia: 0,
+            usuarioReg: "",
+            fechaReg: new Date(),
+            activo: true,
             cantidad: 1,
             precioVenta: 0,
             precioMinimo: 0,
             disponibleEnCompra: true,
             disponibleEnVenta: true,
             existencia: 0,
-            unidadId: {} as MgUnidad,
-            unidadFraccionId: {} as MgUnidad,
-        });
-    };
-
-    const addAlmacenLimite = () => {
-        appendAlmacenLimite({
-            limite: 0,
-            almacenId: {} as InAlmacen,
+            precioCostoAvg: 0,
+            itbisDefault: false,
+            precio: 0,
+            unidadId: 0,
+            unidadFraccionId: 0,
+            productoId: 0,
+            productosSuplidores: [],
+            productosAlmacenesLimites: [],
         });
     };
 
     const addProductoModulo = () => {
         appendProductoModulo({
-            sgMenuId: {} as SgMenu,
+            empresaId: 0,
+            secuencia: 0,
+            usuarioReg: "",
+            fechaReg: new Date(),
+            activo: true,
+            sgMenuId: 0,
+        });
+    };
+
+    const addProductoTag = () => {
+        appendProductoTag({
+            empresaId: 0,
+            secuencia: 0,
+            usuarioReg: "",
+            fechaReg: new Date(),
+            activo: true,
+            productoId: 0,
+            tagId: 0,
         });
     };
 
@@ -208,15 +233,6 @@ const ProductoViewExample = () => {
                                 <FormControlLabel
                                     control={
                                         <Checkbox
-                                            checked={watch("soloEnCompra")}
-                                            onChange={(e) => setValue("soloEnCompra", e.target.checked)}
-                                        />
-                                    }
-                                    label="Solo disponible en compra"
-                                />
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
                                             checked={watch("trabajador")}
                                             onChange={(e) => setValue("trabajador", e.target.checked)}
                                         />
@@ -241,7 +257,9 @@ const ProductoViewExample = () => {
                     {/* Unit Fractions with Pricing and Inventory */}
                     <Accordion defaultExpanded>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="h6">Unidades, Precios e Inventario ({unidadFraccions.length})</Typography>
+                            <Typography variant="h6">
+                                Unidades, Precios e Inventario ({unidadProductorSuplidor.length})
+                            </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <Box sx={{ mb: 2 }}>
@@ -253,7 +271,7 @@ const ProductoViewExample = () => {
                                 </Button>
                             </Box>
 
-                            {unidadFraccions.map((field, index) => (
+                            {unidadProductorSuplidor.map((field, index) => (
                                 <Card key={field.id} variant="outlined" sx={{ mb: 2 }}>
                                     <CardContent>
                                         <Box
@@ -275,7 +293,7 @@ const ProductoViewExample = () => {
                                         </Typography>
                                         <Grid container spacing={2}>
                                             <UnidadComboBox
-                                                name={`unidadFraccions.${index}.unidadId`}
+                                                name={`unidadProductorSuplidor.${index}.unidadId`}
                                                 label="Unidad Base"
                                                 control={control}
                                                 size={2}
@@ -283,12 +301,12 @@ const ProductoViewExample = () => {
 
                                             <NumericInput
                                                 label="Cantidad"
-                                                name={`unidadFraccions.${index}.cantidad`}
+                                                name={`unidadProductorSuplidor.${index}.cantidad`}
                                                 control={control}
                                                 size={2}
                                             />
                                             <UnidadComboBox
-                                                name={`unidadFraccions.${index}.unidadFraccionId`}
+                                                name={`unidadProductorSuplidor.${index}.unidadFraccionId`}
                                                 label="Unidad Fracción"
                                                 control={control}
                                                 size={2}
@@ -302,29 +320,57 @@ const ProductoViewExample = () => {
                                         <Grid container spacing={2}>
                                             <MoneyInput
                                                 label="Precio de Venta"
-                                                name={`unidadFraccions.${index}.precioVenta`}
+                                                name={`unidadProductorSuplidor.${index}.precioVenta`}
                                                 control={control}
                                                 size={2}
                                             />
                                             <MoneyInput
                                                 label="Precio Mínimo"
-                                                name={`unidadFraccions.${index}.precioMinimo`}
+                                                name={`unidadProductorSuplidor.${index}.precioMinimo`}
                                                 control={control}
                                                 size={2}
                                             />
-                                            <NumericInput
-                                                label="Existencia"
-                                                name={`unidadFraccions.${index}.existencia`}
+                                            <MoneyInput
+                                                label="Precio de Costo"
+                                                name={`unidadProductorSuplidor.${index}.precio`}
                                                 control={control}
                                                 size={2}
                                             />
                                             <MoneyInput
                                                 label="Precio Costo Promedio"
-                                                name={`unidadFraccions.${index}.precioCostoAvg`}
+                                                name={`unidadProductorSuplidor.${index}.precioCostoAvg`}
+                                                control={control}
+                                                size={2}
+                                            />
+                                            <NumericInput
+                                                label="Existencia"
+                                                name={`unidadProductorSuplidor.${index}.existencia`}
                                                 control={control}
                                                 size={2}
                                             />
                                         </Grid>
+
+                                        {/* Supplier and ITBIS Configuration */}
+                                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
+                                            Configuración de Proveedor e ITBIS
+                                        </Typography>
+                                        {/* Configuración adicional */}
+                                        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mt: 2 }}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Checkbox
+                                                        checked={watch(`unidadProductorSuplidor.${index}.itbisDefault`)}
+                                                        onChange={(e) =>
+                                                            setValue(
+                                                                `unidadProductorSuplidor.${index}.itbisDefault`,
+                                                                e.target.checked
+                                                            )
+                                                        }
+                                                    />
+                                                }
+                                                label="ITBIS por defecto"
+                                            />
+                                        </Box>
 
                                         {/* Opciones de Disponibilidad */}
                                         <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
@@ -334,10 +380,10 @@ const ProductoViewExample = () => {
                                             <FormControlLabel
                                                 control={
                                                     <Checkbox
-                                                        checked={watch(`unidadFraccions.${index}.disponibleEnCompra`)}
+                                                        checked={watch(`unidadProductorSuplidor.${index}.disponibleEnCompra`)}
                                                         onChange={(e) =>
                                                             setValue(
-                                                                `unidadFraccions.${index}.disponibleEnCompra`,
+                                                                `unidadProductorSuplidor.${index}.disponibleEnCompra`,
                                                                 e.target.checked
                                                             )
                                                         }
@@ -348,10 +394,10 @@ const ProductoViewExample = () => {
                                             <FormControlLabel
                                                 control={
                                                     <Checkbox
-                                                        checked={watch(`unidadFraccions.${index}.disponibleEnVenta`)}
+                                                        checked={watch(`unidadProductorSuplidor.${index}.disponibleEnVenta`)}
                                                         onChange={(e) =>
                                                             setValue(
-                                                                `unidadFraccions.${index}.disponibleEnVenta`,
+                                                                `unidadProductorSuplidor.${index}.disponibleEnVenta`,
                                                                 e.target.checked
                                                             )
                                                         }
@@ -360,40 +406,215 @@ const ProductoViewExample = () => {
                                                 label="Disponible en venta"
                                             />
                                         </Box>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </AccordionDetails>
-                    </Accordion>
 
-                    {/* Warehouse Limits */}
-                    <Accordion>
-                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="h6">Límites por Almacén ({almacenLimites.length})</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <Box sx={{ mb: 2 }}>
-                                <Button variant="outlined" size="small" onClick={addAlmacenLimite}>
-                                    Agregar Límite de Almacén
-                                </Button>
-                            </Box>
+                                        {/* Warehouse Limits for this Unit/Supplier */}
+                                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 1 }}>
+                                            Límites por Almacén
+                                        </Typography>
+                                        <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mt: 1 }}>
+                                            <Box sx={{ mb: 2 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                    Configure límites de inventario específicos por almacén para esta
+                                                    unidad/proveedor.
+                                                </Typography>
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => {
+                                                        const currentLimits =
+                                                            watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`) ||
+                                                            [];
+                                                        setValue(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`, [
+                                                            ...currentLimits,
+                                                            {
+                                                                empresaId: 0,
+                                                                secuencia: 0,
+                                                                usuarioReg: "",
+                                                                fechaReg: new Date(),
+                                                                activo: true,
+                                                                limite: 0,
+                                                                almacenId: 0,
+                                                            },
+                                                        ]);
+                                                    }}>
+                                                    Agregar Límite de Almacén
+                                                </Button>
+                                            </Box>
 
-                            {almacenLimites.map((field, index) => (
-                                <Card key={field.id} variant="outlined" sx={{ mb: 2 }}>
-                                    <CardContent>
-                                        <Grid container spacing={2}>
-                                            <AlmacenComboBox
-                                                name={`productosAlmacenesLimites.${index}.almacenId`}
-                                                control={control}
-                                                size={8}
-                                            />
-                                            <NumericInput
-                                                label="Límite"
-                                                name={`productosAlmacenesLimites.${index}.limite`}
-                                                control={control}
-                                                size={4}
-                                            />
-                                        </Grid>
+                                            {(watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`) || []).map(
+                                                (limite: any, limiteIndex: number) => (
+                                                    <Card
+                                                        key={`limite-${index}-${limiteIndex}`}
+                                                        variant="outlined"
+                                                        sx={{ mb: 1, backgroundColor: "#f9f9f9" }}>
+                                                        <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                                                            <Box
+                                                                sx={{
+                                                                    display: "flex",
+                                                                    justifyContent: "space-between",
+                                                                    alignItems: "center",
+                                                                    mb: 1,
+                                                                }}>
+                                                                <Typography variant="body2" fontWeight="medium">
+                                                                    Límite #{limiteIndex + 1}
+                                                                </Typography>
+                                                                <Button
+                                                                    color="error"
+                                                                    size="small"
+                                                                    onClick={() => {
+                                                                        const currentLimits =
+                                                                            watch(
+                                                                                `unidadProductorSuplidor.${index}.productosAlmacenesLimites`
+                                                                            ) || [];
+                                                                        const newLimits = currentLimits.filter(
+                                                                            (_: any, i: number) => i !== limiteIndex
+                                                                        );
+                                                                        setValue(
+                                                                            `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
+                                                                            newLimits
+                                                                        );
+                                                                    }}>
+                                                                    Eliminar
+                                                                </Button>
+                                                            </Box>
+                                                            <Grid container spacing={2}>
+                                                                <AlmacenComboBox
+                                                                    name={`unidadProductorSuplidor.${index}.productosAlmacenesLimites.${limiteIndex}.almacenId`}
+                                                                    label="Almacén"
+                                                                    control={control}
+                                                                    size={8}
+                                                                />
+                                                                <NumericInput
+                                                                    label="Límite"
+                                                                    name={`unidadProductorSuplidor.${index}.productosAlmacenesLimites.${limiteIndex}.limite`}
+                                                                    control={control}
+                                                                    size={4}
+                                                                />
+                                                            </Grid>
+                                                        </CardContent>
+                                                    </Card>
+                                                )
+                                            )}
+
+                                            {(!watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`) ||
+                                                watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`)?.length ===
+                                                    0) && (
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{ textAlign: "center", py: 2 }}>
+                                                    No hay límites de almacén configurados
+                                                </Typography>
+                                            )}
+                                        </Box>
+
+                                        {/* Suppliers Section */}
+                                        <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 1 }}>
+                                            Proveedores
+                                        </Typography>
+                                        <Box sx={{ mb: 2 }}>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => {
+                                                    const currentSuplidores =
+                                                        watch(`unidadProductorSuplidor.${index}.productosSuplidores`) || [];
+                                                    setValue(`unidadProductorSuplidor.${index}.productosSuplidores`, [
+                                                        ...currentSuplidores,
+                                                        {
+                                                            empresaId: 0,
+                                                            secuencia: 0,
+                                                            usuarioReg: "",
+                                                            fechaReg: new Date(),
+                                                            activo: true,
+                                                            precio: 0,
+                                                            itbisDefault: false,
+                                                            suplidorId: 0,
+                                                        },
+                                                    ]);
+                                                }}>
+                                                Agregar Proveedor
+                                            </Button>
+                                        </Box>
+
+                                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                            {(watch(`unidadProductorSuplidor.${index}.productosSuplidores`) || []).map(
+                                                (suplidor, suplidorIndex) => (
+                                                    <Card key={suplidorIndex} variant="outlined" sx={{ p: 1 }}>
+                                                        <CardContent sx={{ p: 1, "&:last-child": { pb: 1 } }}>
+                                                            <Box
+                                                                sx={{
+                                                                    display: "flex",
+                                                                    justifyContent: "space-between",
+                                                                    alignItems: "center",
+                                                                    mb: 1,
+                                                                }}>
+                                                                <Typography variant="body2">
+                                                                    Proveedor #{suplidorIndex + 1}
+                                                                </Typography>
+                                                                <Button
+                                                                    color="error"
+                                                                    size="small"
+                                                                    onClick={() => {
+                                                                        const currentSuplidores =
+                                                                            watch(
+                                                                                `unidadProductorSuplidor.${index}.productosSuplidores`
+                                                                            ) || [];
+                                                                        setValue(
+                                                                            `unidadProductorSuplidor.${index}.productosSuplidores`,
+                                                                            currentSuplidores.filter(
+                                                                                (_, i) => i !== suplidorIndex
+                                                                            )
+                                                                        );
+                                                                    }}>
+                                                                    Eliminar
+                                                                </Button>
+                                                            </Box>
+                                                            <Grid container spacing={1}>
+                                                                <SuplidorComboBox
+                                                                    name={`unidadProductorSuplidor.${index}.productosSuplidores.${suplidorIndex}.suplidorId`}
+                                                                    label="Proveedor"
+                                                                    control={control}
+                                                                    size={4}
+                                                                />
+                                                                <MoneyInput
+                                                                    label="Precio"
+                                                                    name={`unidadProductorSuplidor.${index}.productosSuplidores.${suplidorIndex}.precio`}
+                                                                    control={control}
+                                                                    size={3}
+                                                                />
+                                                                <FormControlLabel
+                                                                    control={
+                                                                        <Checkbox
+                                                                            checked={watch(
+                                                                                `unidadProductorSuplidor.${index}.productosSuplidores.${suplidorIndex}.itbisDefault`
+                                                                            )}
+                                                                            onChange={(e) =>
+                                                                                setValue(
+                                                                                    `unidadProductorSuplidor.${index}.productosSuplidores.${suplidorIndex}.itbisDefault`,
+                                                                                    e.target.checked
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    }
+                                                                    label="ITBIS Por Defecto"
+                                                                />
+                                                            </Grid>
+                                                        </CardContent>
+                                                    </Card>
+                                                )
+                                            )}
+
+                                            {(!watch(`unidadProductorSuplidor.${index}.productosSuplidores`) ||
+                                                watch(`unidadProductorSuplidor.${index}.productosSuplidores`)?.length === 0) && (
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{ textAlign: "center", py: 2 }}>
+                                                    No hay proveedores configurados
+                                                </Typography>
+                                            )}
+                                        </Box>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -418,6 +639,50 @@ const ProductoViewExample = () => {
                                         <Grid container spacing={2}>
                                             <MenuComboBox
                                                 name={`productosModulos.${index}.sgMenuId`}
+                                                control={control}
+                                                size={12}
+                                            />
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </AccordionDetails>
+                    </Accordion>
+
+                    {/* Product Tags */}
+                    <Accordion>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <Typography variant="h6">Etiquetas del Producto ({productTags.length})</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Las etiquetas ayudan a categorizar y organizar los productos para facilitar su búsqueda.
+                                </Typography>
+                                <Button variant="outlined" size="small" onClick={addProductoTag}>
+                                    Agregar Etiqueta
+                                </Button>
+                            </Box>
+
+                            {productTags.map((field, index) => (
+                                <Card key={field.id} variant="outlined" sx={{ mb: 2 }}>
+                                    <CardContent>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                mb: 2,
+                                            }}>
+                                            <Typography variant="subtitle1">Etiqueta #{index + 1}</Typography>
+                                            <Button color="error" size="small" onClick={() => removeProductoTag(index)}>
+                                                Eliminar
+                                            </Button>
+                                        </Box>
+                                        <Grid container spacing={2}>
+                                            <TagComboBox
+                                                name={`tags.${index}.tagId`}
+                                                label="Etiqueta"
                                                 control={control}
                                                 size={12}
                                             />

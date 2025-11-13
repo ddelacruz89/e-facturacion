@@ -10,8 +10,6 @@ public interface MgUnidadFraccionService {
 
   MgUnidadFraccion getById(Integer id);
 
-  List<MgUnidadFraccion> getByProductoId(Integer productoId);
-
   MgUnidadFraccion create(MgUnidadFraccion unidadFraccion);
 
   MgUnidadFraccion update(Integer id, MgUnidadFraccion unidadFraccion);

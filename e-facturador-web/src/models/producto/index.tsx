@@ -1,12 +1,13 @@
 // Product module models
 import { MgItbis } from "../facturacion";
-import { InAlmacen } from "../inventario";
+import { InAlmacen, InSuplidor } from "../inventario";
 import { SgMenu } from "../seguridad";
+import { MgTag } from "./MgTag";
 
 export interface MgUnidad {
-    id: string;
+    id?: number; // Changed from string to number to match backend Integer
     nombre: string;
-    abreviacion: string;
+    sigla: string; // Changed from abreviacion to sigla to match backend
     descripcion?: string;
     activo: boolean;
 }
@@ -24,58 +25,102 @@ export interface MgCategoria {
     activo: boolean;
 }
 
-export interface MgUnidadFraccion {
+export interface MgProductoUnidadSuplidor {
+    // From BaseEntity
     id?: number;
-    existencia?: number;
-    precioVenta?: number;
-    precioMinimo?: number;
+    empresaId: number;
+    secuencia?: number;
+    usuarioReg: string;
+    fechaReg: Date;
+    activo: boolean;
+    // Own properties
+    existencia?: number; // Integer -> number
+    precioVenta?: number; // BigDecimal -> number
+    precioMinimo?: number; // BigDecimal -> number
     disponibleEnCompra?: boolean;
     disponibleEnVenta?: boolean;
-    precioCostoAvg?: number;
-    cantidad: number;
-    unidadId: MgUnidad;
-    unidadFraccionId: MgUnidad;
-    productoId?: MgProducto;
-    usuarioReg?: string;
-    fechaReg?: Date;
-    estadoId?: string;
+    precioCostoAvg?: number; // BigDecimal -> number
+    itbisDefault: boolean; // Required
+    precio: number; // BigDecimal -> number, Required
+    cantidad?: number; // Integer -> number
+    // Foreign keys
+    unidadFraccionId: number; // Foreign key to MgUnidad (ManyToOne, required)
+    unidadId: number; // Foreign key to MgUnidad (ManyToOne, required)
+    productoId: number; // Foreign key to MgProducto (ManyToOne, required)
+    // Relationships
+    productosSuplidores?: MgProductoSuplidor[]; // OneToMany
+    productosAlmacenesLimites?: MgProductoUnidadSuplidorLimiteAlmacen[]; // OneToMany
 }
 
-export interface MgProductoAlmacenLimite {
-    id?: number;
-    limite?: number;
-    almacenId: InAlmacen;
-    // From BaseEntity
-    usuarioReg?: string;
-    fechaReg?: Date;
+export interface MgProductoSuplidor {
+    // From BaseEntity (but has its own @Id annotation in Java)
+    id?: number; // Auto-generated
+    empresaId: number;
+    secuencia?: number;
+    usuarioReg: string;
+    fechaReg: Date;
+    activo: boolean;
     estadoId?: string;
+    // Own properties
+    precio: number; // BigDecimal -> number, Required
+    itbisDefault: boolean; // Required
+    // Foreign keys
+    suplidorId: number; // Foreign key to InSuplidor (ManyToOne, required)
+}
+
+export interface MgProductoUnidadSuplidorLimiteAlmacen {
+    // From BaseEntity
+    id?: number;
+    empresaId: number;
+    secuencia?: number;
+    usuarioReg: string;
+    fechaReg: Date;
+    activo: boolean;
+    // Own properties
+    limite?: number; // Integer -> number
+    almacenId: number; // Foreign key to InAlmacen (ManyToOne)
 }
 
 export interface MgProductoModulo {
     id?: number;
-    sgMenuId: SgMenu;
-    // From BaseEntity
-    usuarioReg?: string;
-    fechaReg?: Date;
-    estadoId?: string;
+    empresaId: number;
+    secuencia?: number;
+    usuarioReg: string;
+    fechaReg: Date;
+    activo: boolean;
+    sgMenuId: number; // Foreign key to SgMenu (ManyToOne)
+}
+
+export interface MgProductoTag {
+    id?: number;
+    empresaId: number;
+    secuencia?: number;
+    usuarioReg: string;
+    fechaReg: Date;
+    activo: boolean;
+    productoId: number; // Foreign key to MgProducto (ManyToOne)
+    tagId: number; // Foreign key to MgTag (ManyToOne)
 }
 
 export interface MgProducto {
-    id?: number;
+    // From BaseEntity
+    id?: number; // Auto-generated
+    empresaId: number;
+    secuencia?: number;
+    usuarioReg: string;
+    fechaReg: Date;
+    activo: boolean;
+    // Own properties
     codigoBarra?: string;
-    nombreProducto: string;
+    nombreProducto: string; // Required
     descripcion?: string;
-    unidadId?: string;
-    existencia?: number;
-    precioVenta?: number;
-    precioMinimo?: number;
-    soloEnCompra?: boolean;
-    precioCostoAvg?: number;
     trabajador?: boolean;
-    comision?: number;
-    itbisId: MgItbis;
-    categoriaId: MgCategoria;
-    unidadFraccions?: MgUnidadFraccion[];
-    productosAlmacenesLimites?: MgProductoAlmacenLimite[];
-    productosModulos?: MgProductoModulo[];
+    comision?: number; // BigDecimal -> number
+    // Foreign keys
+    itbisId: number; // Foreign key to MgItbis (ManyToOne, required)
+    categoriaId: number; // Foreign key to MgCategoria (ManyToOne, required)
+    // Relationships
+    unidadProductorSuplidor?: MgProductoUnidadSuplidor[]; // OneToMany (name changed from unidadFraccions)
+    productosModulos?: MgProductoModulo[]; // OneToMany
+    tags?: MgProductoTag[]; // OneToMany
 }

@@ -32,12 +32,6 @@ public class MgUnidadFraccionController {
     return ResponseEntity.ok(unidadFraccion);
   }
 
-  // Get unidades fracciones by producto ID
-  @GetMapping("/producto/{productoId}")
-  public List<MgUnidadFraccion> getByProductoId(@PathVariable Integer productoId) {
-    return unidadFraccionService.getByProductoId(productoId);
-  }
-
   @PostMapping
   public ResponseEntity<MgUnidadFraccion> create(@RequestBody MgUnidadFraccion unidadFraccion) {
     MgUnidadFraccion saved = unidadFraccionService.create(unidadFraccion);

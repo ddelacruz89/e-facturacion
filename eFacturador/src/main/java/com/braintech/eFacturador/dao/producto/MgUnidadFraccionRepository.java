@@ -8,7 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface MgUnidadFraccionRepository extends JpaRepository<MgUnidadFraccion, Integer> {
-  // MgUnidadFraccion extends BaseEntityEmpresa - filter by empresaId only
+  // MgUnidadFraccion extends BaseEntity - filter by empresaId only
+  // This entity defines unit conversions (e.g., 1 box = 12 units), not product-specific data
 
   @Query("SELECT uf FROM MgUnidadFraccion uf WHERE uf.empresaId = :empresaId")
   List<MgUnidadFraccion> findAllByEmpresaId(@Param("empresaId") Integer empresaId);
@@ -19,9 +20,4 @@ public interface MgUnidadFraccionRepository extends JpaRepository<MgUnidadFracci
   @Query("SELECT uf FROM MgUnidadFraccion uf WHERE uf.id = :id AND uf.empresaId = :empresaId")
   Optional<MgUnidadFraccion> findByIdAndEmpresaId(
       @Param("id") Integer id, @Param("empresaId") Integer empresaId);
-
-  @Query(
-      "SELECT uf FROM MgUnidadFraccion uf WHERE uf.productoId.id = :productoId AND uf.empresaId = :empresaId AND uf.activo = true")
-  List<MgUnidadFraccion> findByProductoIdAndEmpresaId(
-      @Param("productoId") Integer productoId, @Param("empresaId") Integer empresaId);
 }
