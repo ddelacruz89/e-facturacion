@@ -17,7 +17,7 @@ export function getUnidad(id: number): Promise<MgUnidad> {
 export function saveUnidad(unidad: MgUnidad): Promise<MgUnidad> {
     console.log("saveUnidad called with:", unidad);
     console.log("API endpoint:", api);
-    
+
     return apiClient
         .post(api, unidad)
         .then((x: { data: MgUnidad }) => {

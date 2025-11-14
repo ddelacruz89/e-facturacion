@@ -26,13 +26,13 @@ public class MgProductoTag extends BaseEntity implements Serializable {
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "producto_id", nullable = false)
-  @JsonBackReference
+  @JsonBackReference(value = "producto-tags")
   @Comment("Producto al que se le aplica la etiqueta")
   private MgProducto producto;
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "tag_id", nullable = false)
-  @JsonBackReference
+  @JsonBackReference(value = "tag-productos")
   @Comment("Etiqueta aplicada al producto")
   private MgTag tag;
 }

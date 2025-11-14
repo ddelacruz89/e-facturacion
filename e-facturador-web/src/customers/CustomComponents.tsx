@@ -1,5 +1,20 @@
-import { AccountCircle, Key } from "@mui/icons-material";
-import { FormControlLabel, Grid, InputAdornment, Paper, Switch, TablePagination, TextField } from "@mui/material";
+import { AccountCircle, Key, CheckCircle, Cancel } from "@mui/icons-material";
+import {
+    FormControlLabel,
+    Grid,
+    InputAdornment,
+    Paper,
+    Switch,
+    TablePagination,
+    TextField,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    Typography,
+    Box,
+} from "@mui/material";
 import { Table, TableContainer, TableHead, TableBody, TableRow, TableCell } from "@mui/material";
 import { yellow } from "@mui/material/colors";
 import React, { ReactNode } from "react";
@@ -78,6 +93,54 @@ export function TextInputPk({ name, disabled, readOnly, label, control, error, r
                     />
                 </Grid>
                 //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
+            )}
+        />
+    );
+}
+
+export function EmailInput({
+    name,
+    disabled,
+    readOnly,
+    label = "Correo Electrónico",
+    control,
+    error,
+    rules,
+    size = 12,
+    ...rest
+}: BaseProps) {
+    return (
+        <Controller
+            name={name}
+            control={control}
+            rules={{
+                pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Ingresa un correo electrónico válido",
+                },
+                ...rules,
+            }}
+            render={({ field }) => (
+                <Grid size={{ xs: 12, sm: size }}>
+                    <TextField
+                        disabled={disabled}
+                        slotProps={{
+                            input: {
+                                readOnly: readOnly,
+                            },
+                        }}
+                        id={name}
+                        type="email"
+                        fullWidth
+                        label={label}
+                        variant="outlined"
+                        error={!!error}
+                        helperText={error?.message}
+                        {...field}
+                        {...rest}
+                        size="small"
+                    />
+                </Grid>
             )}
         />
     );
@@ -197,6 +260,75 @@ export function TableComponent({ columns, rows, selected }: PropsTable) {
                 onRowsPerPageChange={handleChangeRowsPerPage}
             />
         </Paper>
+    );
+}
+
+interface ConfirmationModalProps {
+    open: boolean;
+    title?: string;
+    message?: string;
+    confirmText?: string;
+    cancelText?: string;
+    confirmColor?: "primary" | "secondary" | "error" | "info" | "success" | "warning";
+    onConfirm: () => void;
+    onCancel: () => void;
+}
+
+export function ConfirmationModal({
+    open,
+    title = "Confirmar Acción",
+    message = "¿Está seguro de que desea continuar?",
+    confirmText = "Aceptar",
+    cancelText = "Cancelar",
+    confirmColor = "primary",
+    onConfirm,
+    onCancel,
+}: ConfirmationModalProps) {
+    return (
+        <Dialog
+            open={open}
+            onClose={onCancel}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    padding: 1,
+                },
+            }}>
+            <DialogTitle
+                sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    paddingBottom: 1,
+                    fontSize: "1.25rem",
+                    fontWeight: "bold",
+                }}>
+                <CheckCircle color={confirmColor} />
+                {title}
+            </DialogTitle>
+
+            <DialogContent sx={{ paddingTop: 2 }}>
+                <Typography variant="body1" sx={{ fontSize: "1rem", lineHeight: 1.6 }}>
+                    {message}
+                </Typography>
+            </DialogContent>
+
+            <DialogActions sx={{ padding: 2, gap: 1 }}>
+                <Button onClick={onCancel} variant="outlined" color="inherit" startIcon={<Cancel />} sx={{ minWidth: 100 }}>
+                    {cancelText}
+                </Button>
+                <Button
+                    onClick={onConfirm}
+                    variant="contained"
+                    color={confirmColor}
+                    startIcon={<CheckCircle />}
+                    sx={{ minWidth: 100 }}>
+                    {confirmText}
+                </Button>
+            </DialogActions>
+        </Dialog>
     );
 }
 

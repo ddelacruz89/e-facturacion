@@ -35,7 +35,7 @@ public class MgTag extends BaseEntity implements Serializable {
   private String descripcion;
 
   @OneToMany(mappedBy = "tag", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-  @JsonManagedReference
+  @JsonManagedReference(value = "tag-productos")
   @Comment("Lista de productos asociados a esta etiqueta")
   private List<MgProductoTag> productos;
 }

@@ -20,6 +20,7 @@ const TipoComprobanteView = lazy(() => import("./components/facturacion/TipoComp
 const ProductoView = lazy(() => import("./components/producto/ProductoView"));
 const CategoriaView = lazy(() => import("./components/producto/CategoriaView"));
 const UnidadView = lazy(() => import("./components/producto/UnidadView"));
+const SuplidorView = lazy(() => import("./components/inventario/SuplidorView"));
 
 // Routes component that uses authentication context
 const AppRoutes = () => {
@@ -48,6 +49,7 @@ const AppRoutes = () => {
                     <Route path="producto" element={<ProductoView />} />
                     <Route path="categoria" element={<CategoriaView />} />
                     <Route path="unidad" element={<UnidadView />} />
+                    <Route path="suplidores" element={<SuplidorView />} />
                 </Route>
 
                 {/* Catch all route */}

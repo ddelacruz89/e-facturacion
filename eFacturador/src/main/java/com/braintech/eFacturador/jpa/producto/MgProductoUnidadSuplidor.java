@@ -38,10 +38,6 @@ public class MgProductoUnidadSuplidor extends BaseEntity implements Serializable
   @Column(name = "precio_costo_avg")
   private BigDecimal precioCostoAvg;
 
-  @NotNull(message = "Debe elegir un itbis")
-  @Column(name = "itbis_default")
-  private Boolean itbisDefault;
-
   @NotNull(message = "Preico no puede ser nulo")
   private BigDecimal precio;
 

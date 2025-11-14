@@ -40,7 +40,6 @@ export interface MgProductoUnidadSuplidor {
     disponibleEnCompra?: boolean;
     disponibleEnVenta?: boolean;
     precioCostoAvg?: number; // BigDecimal -> number
-    itbisDefault: boolean; // Required
     precio: number; // BigDecimal -> number, Required
     cantidad?: number; // Integer -> number
     // Foreign keys
@@ -63,7 +62,6 @@ export interface MgProductoSuplidor {
     estadoId?: string;
     // Own properties
     precio: number; // BigDecimal -> number, Required
-    itbisDefault: boolean; // Required
     // Foreign keys
     suplidorId: number; // Foreign key to InSuplidor (ManyToOne, required)
 }

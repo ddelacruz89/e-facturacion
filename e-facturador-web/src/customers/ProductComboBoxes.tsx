@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import { SearchableComboBox, ComboBoxOption } from "./SearchableComboBox";
 import { Control, FieldError } from "react-hook-form";
 import { useSharedUnidades } from "../hooks/useSharedUnidades";
+import { useSharedSuplidores } from "../hooks/useSharedSuplidores";
 
 // Controllers
 import { getCategorias } from "../apis/CategoriaController";
@@ -10,7 +11,7 @@ import { getItbisActivos } from "../apis/ItbisController";
 import { getAlmacenesActivos } from "../apis/AlmacenController";
 import { getMenusActivos } from "../apis/MenuController";
 import { getSucursalesActivas } from "../apis/SucursalController";
-import { getSuplidoresActivos } from "../apis/SuplidorController";
+// Remove getSuplidoresActivos import since we're using the shared hook
 import { getTagsActivos } from "../apis/TagController";
 
 // Models
@@ -289,34 +290,18 @@ export const SucursalComboBox: React.FC<BaseComboProps> = ({ label = "Sucursal",
     );
 };
 
-// Suplidor ComboBox
+// Suplidor ComboBox (Updated to use shared state)
 export const SuplidorComboBox: React.FC<BaseComboProps> = ({ label = "Proveedor", ...props }) => {
-    const [suplidores, setSuplidores] = useState<InSuplidor[]>([]);
-    const [loading, setLoading] = useState(false);
+    const { suplidores, loading, refresh } = useSharedSuplidores();
 
-    const loadSuplidores = useCallback(async () => {
-        setLoading(true);
-        try {
-            const data = await getSuplidoresActivos();
-            setSuplidores(data);
-        } catch (error) {
-            console.error("Error loading suplidores:", error);
-            setSuplidores([]);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadSuplidores();
-    }, [loadSuplidores]);
-
-    const options: ComboBoxOption[] = suplidores.map((suplidor) => ({
-        value: suplidor.id?.toString() || "",
-        label: suplidor.nombre,
-        description: `RNC: ${suplidor.rnc || "N/A"} - ${suplidor.direccion || ""}`,
-        disabled: false, // No activo field available in BaseSucursal
-    }));
+    const options: ComboBoxOption[] = suplidores
+        .filter((suplidor) => suplidor.id !== undefined) // Filter out suplidores without ID
+        .map((suplidor) => ({
+            value: suplidor.id!.toString(), // Use non-null assertion since we filtered out undefined
+            label: suplidor.nombre,
+            description: `RNC: ${suplidor.rnc || "N/A"} - ${suplidor.direccion || ""}`,
+            disabled: false, // No activo field available in InSuplidor
+        }));
 
     const handleSearch = useCallback(
         async (query: string): Promise<ComboBoxOption[]> => {
@@ -335,7 +320,7 @@ export const SuplidorComboBox: React.FC<BaseComboProps> = ({ label = "Proveedor"
             label={label}
             options={options}
             loading={loading}
-            onRefresh={loadSuplidores}
+            onRefresh={refresh}
             onSearch={handleSearch}
             noOptionsText="No hay proveedores disponibles"
             placeholder="Buscar proveedor..."

@@ -35,7 +35,7 @@ const UnidadView = () => {
         formState: { errors },
     } = useForm<MgUnidad>({
         defaultValues: {
-            id: undefined,  // Changed from "" to undefined since id is now number | undefined
+            id: undefined, // Changed from "" to undefined since id is now number | undefined
             nombre: "",
             sigla: "", // Changed from abreviacion to sigla to match backend
             descripcion: "",
@@ -61,11 +61,12 @@ const UnidadView = () => {
             nombre: data.nombre,
             sigla: data.sigla, // Changed from abreviacion to sigla
             descripcion: data.descripcion,
-            activo: data.activo
+            activo: data.activo,
         });
 
         // Check for empty values
-        if (!data.sigla || data.sigla.trim() === '') { // Changed from abreviacion to sigla
+        if (!data.sigla || data.sigla.trim() === "") {
+            // Changed from abreviacion to sigla
             alert("Error: La sigla no puede estar vacía");
             return;
         }
