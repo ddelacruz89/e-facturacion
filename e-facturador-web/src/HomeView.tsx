@@ -17,7 +17,45 @@ const HomeView = () => {
     const [moduloActivo, setModuloActivo] = useState<ModuloDto>({ id: "", menus: [], modulo: "" });
 
     useEffect(() => {
-        getModulos().then((modulos) => setModulos(modulos));
+        getModulos().then((loadedModulos) => {
+            // Add temporary Suplidores menu for testing
+            const updatedModulos = loadedModulos.map((modulo) => {
+                if (modulo.id === "INV") {
+                    return {
+                        ...modulo,
+                        menus: [
+                            ...modulo.menus,
+                            {
+                                id: 11,
+                                menu: "Suplidores",
+                                urlSql: "/suplidores",
+                                url: "/suplidores",
+                            },
+                        ],
+                    };
+                }
+                return modulo;
+            });
+
+            // If INV module doesn't exist, create it
+            const invModuleExists = updatedModulos.some((modulo) => modulo.id === "INV");
+            if (!invModuleExists) {
+                updatedModulos.push({
+                    id: "INV",
+                    modulo: "Inventario",
+                    menus: [
+                        {
+                            id: 11,
+                            menu: "Suplidores",
+                            urlSql: "/suplidores",
+                            url: "/suplidores",
+                        },
+                    ],
+                });
+            }
+
+            setModulos(updatedModulos);
+        });
     }, []);
 
     const handleNavigation = (path: string) => {
