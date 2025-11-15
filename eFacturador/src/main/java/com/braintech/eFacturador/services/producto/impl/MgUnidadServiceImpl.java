@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.services.producto.impl;
 
 import com.braintech.eFacturador.dao.producto.MgUnidadRepository;
+import com.braintech.eFacturador.dto.producto.MgUnidadSimpleDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.producto.MgUnidad;
 import com.braintech.eFacturador.services.producto.MgUnidadService;
@@ -28,6 +29,12 @@ public class MgUnidadServiceImpl implements MgUnidadService {
   public List<MgUnidad> getAllActive() {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     return unidadRepository.findAllActiveByEmpresaId(empresaId);
+  }
+
+  @Override
+  public List<MgUnidadSimpleDTO> getAllActiveSimple() {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return unidadRepository.findAllSimpleByEmpresaId(empresaId);
   }
 
   @Override

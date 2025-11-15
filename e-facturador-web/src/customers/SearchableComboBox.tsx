@@ -149,98 +149,151 @@ export const SearchableComboBox: React.FC<SearchableComboBoxProps> = ({
             name={name}
             control={control}
             rules={rules}
-            render={({ field: { onChange, value, ...field } }) => (
-                <Grid size={{ xs: 12, sm: size }}>
-                    <Autocomplete
-                        {...field}
-                        options={memoizedOptions}
-                        value={value || (multiple ? [] : null)}
-                        onChange={(_, newValue) => {
-                            onChange(newValue);
-                            onSelectionChange?.(newValue);
-                        }}
-                        onInputChange={(_, newInputValue) => {
-                            setSearchQuery(newInputValue);
-                            onInputChange?.(newInputValue);
-                        }}
-                        getOptionLabel={defaultGetOptionLabel}
-                        getOptionDisabled={getOptionDisabled}
-                        loading={isLoading}
-                        disabled={disabled}
-                        multiple={multiple}
-                        freeSolo={freeSolo}
-                        noOptionsText={noOptionsText}
-                        loadingText={loadingText}
-                        isOptionEqualToValue={(option, value) => {
-                            if (typeof option === "string" && typeof value === "string") {
-                                return option === value;
-                            }
-                            return option.value === value?.value;
-                        }}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                label={label}
-                                placeholder={placeholder}
-                                error={!!error}
-                                helperText={error?.message}
-                                size="small"
-                                InputProps={{
-                                    ...params.InputProps,
-                                    startAdornment: (
-                                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                                            {showSearchIcon && (
-                                                <SearchIcon sx={{ color: "action.active", mr: 0.5, fontSize: 20 }} />
-                                            )}
-                                            {params.InputProps.startAdornment}
-                                        </Box>
-                                    ),
-                                    endAdornment: (
-                                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                                            {params.InputProps.endAdornment}
-                                            {isLoading && <CircularProgress color="inherit" size={16} sx={{ ml: 1 }} />}
-                                            {showRefreshButton && onRefresh && (
-                                                <IconButton
-                                                    onClick={handleRefresh}
-                                                    disabled={isLoading || disabled}
-                                                    size="small"
-                                                    color="primary"
-                                                    title="Actualizar datos"
-                                                    sx={{ ml: 0.5, p: 0.5 }}>
-                                                    <RefreshIcon fontSize="small" />
-                                                </IconButton>
-                                            )}
-                                        </Box>
-                                    ),
-                                }}
-                            />
-                        )}
-                        renderOption={(props, option) => (
-                            <Box component="li" {...props}>
-                                <Box sx={{ flexGrow: 1 }}>
-                                    <Typography variant="body2">{defaultGetOptionLabel(option)}</Typography>
-                                    {option.description && (
-                                        <Typography variant="caption" color="text.secondary">
-                                            {option.description}
-                                        </Typography>
-                                    )}
-                                </Box>
-                            </Box>
-                        )}
-                        renderTags={(value, getTagProps) =>
-                            value.map((option, index) => (
-                                <Chip
-                                    variant="outlined"
-                                    label={defaultGetOptionLabel(option)}
-                                    size="small"
-                                    {...getTagProps({ index })}
-                                    key={option.value || index}
-                                />
-                            ))
+            render={({ field: { onChange, value, ...field } }) => {
+                // Convert stored value back to option object for Autocomplete
+                const getDisplayValue = () => {
+                    if (!value) return multiple ? [] : null;
+
+                    if (multiple) {
+                        if (Array.isArray(value)) {
+                            return value.map((v) => {
+                                // Handle both new format {id, nombre} and old format
+                                const searchValue = typeof v === "object" && v?.id !== undefined ? v.id : v;
+                                return memoizedOptions.find((opt) => opt.value === searchValue) || v;
+                            });
                         }
-                    />
-                </Grid>
-            )}
+                        return [];
+                    } else {
+                        // Handle both new format {id, nombre} and old format
+                        const searchValue = typeof value === "object" && value?.id !== undefined ? value.id : value;
+                        return memoizedOptions.find((opt) => opt.value === searchValue) || null;
+                    }
+                };
+
+                return (
+                    <Grid size={{ xs: 12, sm: size }}>
+                        <Autocomplete
+                            {...field}
+                            options={memoizedOptions}
+                            value={getDisplayValue()}
+                            onChange={(_, newValue) => {
+                                // Store both ID and nombre information
+                                let valueToSet;
+                                if (multiple) {
+                                    // Handle multiple selection
+                                    if (Array.isArray(newValue)) {
+                                        valueToSet = newValue.map((item: any) => {
+                                            if (typeof item === "object" && item?.value !== undefined) {
+                                                return {
+                                                    id: item.value,
+                                                    nombre: item.label, // Changed from 'name' to 'nombre'
+                                                    // Removed description
+                                                };
+                                            }
+                                            return item;
+                                        });
+                                    } else {
+                                        valueToSet = [];
+                                    }
+                                } else {
+                                    // Handle single selection - cast to ComboBoxOption to fix typing
+                                    const singleValue = newValue as ComboBoxOption | null;
+                                    if (singleValue && typeof singleValue === "object" && "value" in singleValue) {
+                                        valueToSet = {
+                                            id: singleValue.value,
+                                            nombre: singleValue.label, // Changed from 'name' to 'nombre'
+                                            // Removed description
+                                        };
+                                    } else {
+                                        valueToSet = newValue;
+                                    }
+                                }
+                                onChange(valueToSet);
+                                onSelectionChange?.(newValue);
+                            }}
+                            onInputChange={(_, newInputValue) => {
+                                setSearchQuery(newInputValue);
+                                onInputChange?.(newInputValue);
+                            }}
+                            getOptionLabel={defaultGetOptionLabel}
+                            getOptionDisabled={getOptionDisabled}
+                            loading={isLoading}
+                            disabled={disabled}
+                            multiple={multiple}
+                            freeSolo={freeSolo}
+                            noOptionsText={noOptionsText}
+                            loadingText={loadingText}
+                            isOptionEqualToValue={(option, value) => {
+                                if (typeof option === "string" && typeof value === "string") {
+                                    return option === value;
+                                }
+                                return option.value === value?.value;
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label={label}
+                                    placeholder={placeholder}
+                                    error={!!error}
+                                    helperText={error?.message}
+                                    size="small"
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        startAdornment: (
+                                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                                                {showSearchIcon && (
+                                                    <SearchIcon sx={{ color: "action.active", mr: 0.5, fontSize: 20 }} />
+                                                )}
+                                                {params.InputProps.startAdornment}
+                                            </Box>
+                                        ),
+                                        endAdornment: (
+                                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                                                {params.InputProps.endAdornment}
+                                                {isLoading && <CircularProgress color="inherit" size={16} sx={{ ml: 1 }} />}
+                                                {showRefreshButton && onRefresh && (
+                                                    <IconButton
+                                                        onClick={handleRefresh}
+                                                        disabled={isLoading || disabled}
+                                                        size="small"
+                                                        color="primary"
+                                                        title="Actualizar datos"
+                                                        sx={{ ml: 0.5, p: 0.5 }}>
+                                                        <RefreshIcon fontSize="small" />
+                                                    </IconButton>
+                                                )}
+                                            </Box>
+                                        ),
+                                    }}
+                                />
+                            )}
+                            renderOption={(props, option) => (
+                                <Box component="li" {...props}>
+                                    <Box sx={{ flexGrow: 1 }}>
+                                        <Typography variant="body2">{defaultGetOptionLabel(option)}</Typography>
+                                        {option.description && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                {option.description}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Box>
+                            )}
+                            renderTags={(value, getTagProps) =>
+                                value.map((option, index) => (
+                                    <Chip
+                                        variant="outlined"
+                                        label={defaultGetOptionLabel(option)}
+                                        size="small"
+                                        {...getTagProps({ index })}
+                                        key={option.value || index}
+                                    />
+                                ))
+                            }
+                        />
+                    </Grid>
+                );
+            }}
         />
     );
 };

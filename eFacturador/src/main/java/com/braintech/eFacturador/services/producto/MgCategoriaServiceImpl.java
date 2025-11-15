@@ -2,6 +2,7 @@ package com.braintech.eFacturador.services.producto;
 
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.dao.producto.MgCategoriaRepository;
+import com.braintech.eFacturador.dto.producto.MgCategoriaSimpleDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.producto.MgCategoria;
 import com.braintech.eFacturador.util.TenantContext;
@@ -80,5 +81,11 @@ public class MgCategoriaServiceImpl implements MgCategoriaService {
   public void delete(Integer id) {
 
     mgCategoriaRepository.deleteById(id);
+  }
+
+  @Override
+  public List<MgCategoriaSimpleDTO> getAllSimple() {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return mgCategoriaRepository.findAllSimpleByEmpresaId(empresaId);
   }
 }

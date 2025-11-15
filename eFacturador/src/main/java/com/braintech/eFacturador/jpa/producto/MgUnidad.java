@@ -6,13 +6,19 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "mg_unidades", schema = "producto")
 @Data
 @EqualsAndHashCode(callSuper = false)
+@NoArgsConstructor
 public class MgUnidad extends BaseEntity implements Serializable {
   private static final long serialVersionUID = 1L;
+
+  public MgUnidad(Integer id) {
+    this.id = id;
+  }
 
   @Basic(optional = false)
   @Column(name = "nombre")

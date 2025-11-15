@@ -2,6 +2,7 @@ package com.braintech.eFacturador.services.inventario;
 
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.dao.inventario.InSuplidorRepository;
+import com.braintech.eFacturador.dto.inventario.InSuplidorSimpleDTO;
 import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.inventario.InSuplidorService;
@@ -146,5 +147,18 @@ public class InSuplidorServiceImpl implements InSuplidorService {
   public List<InSuplidor> findAllByEmpresa() {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     return inSuplidorRepository.findAllByEmpresaId(empresaId);
+  }
+
+  @Override
+  public Response<?> getAllActiveSimple() {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    List<InSuplidorSimpleDTO> data = inSuplidorRepository.findAllActiveSimpleByEmpresaId(empresaId);
+    if (data.isEmpty()) {
+      return Response.builder()
+          .status(HttpStatus.BAD_REQUEST)
+          .error(new DataNotFoundDTO("No se encontraron suplidores activos"))
+          .build();
+    }
+    return Response.builder().status(HttpStatus.OK).content(data).build();
   }
 }

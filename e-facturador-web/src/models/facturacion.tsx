@@ -18,6 +18,12 @@ export interface MgItbis {
     activo: boolean;
 }
 
+// Simple DTO for itbis resumen endpoint
+export interface MgItbisSimpleDTO {
+    id: number;
+    nombre: string;
+}
+
 export interface MfSucursalItbis {
     // From BaseEntityPk
     id?: number;

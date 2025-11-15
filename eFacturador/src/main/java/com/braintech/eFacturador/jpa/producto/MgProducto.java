@@ -2,6 +2,7 @@ package com.braintech.eFacturador.jpa.producto;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import com.braintech.eFacturador.jpa.general.MgItbis;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -19,9 +20,14 @@ import org.hibernate.annotations.Comment;
 @Entity
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MgProducto extends BaseEntity implements Serializable {
+
+  public MgProducto(Integer id) {
+    this.id = id;
+  }
 
   @Serial private static final long serialVersionUID = 1L;
 
@@ -50,6 +56,7 @@ public class MgProducto extends BaseEntity implements Serializable {
   private MgCategoria categoriaId;
 
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "productoId", fetch = FetchType.EAGER)
+  @JsonManagedReference
   private List<MgProductoUnidadSuplidor> unidadProductorSuplidor;
 
   @OneToMany(cascade = CascadeType.ALL)

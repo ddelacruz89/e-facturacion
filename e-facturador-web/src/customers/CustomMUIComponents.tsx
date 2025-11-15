@@ -140,10 +140,11 @@ export function MoneyInput({ name, label, control, error, rules, size = 12, ...r
                 rules={rules}
                 render={({ field }) => (
                     <NumericFormat
-                        {...field}
+                        name={field.name}
+                        value={field.value}
+                        onBlur={field.onBlur}
                         decimalScale={2}
                         fixedDecimalScale
-                        value={field.value}
                         thousandSeparator=","
                         type="text"
                         prefix={"RD$ "}

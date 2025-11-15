@@ -1,5 +1,5 @@
 import apiClient from "../services/apiClient";
-import { MgUnidad } from "../models/producto";
+import { MgUnidad, MgUnidadSimpleDTO } from "../models/producto";
 
 const api = "/api/v1/producto/unidad";
 
@@ -37,4 +37,19 @@ export function updateUnidad(id: number, unidad: MgUnidad): Promise<MgUnidad> {
 
 export function deleteUnidad(id: number): Promise<void> {
     return apiClient.delete(`${api}/${id}`);
+}
+
+export function getUnidadesResumen(): Promise<MgUnidadSimpleDTO[]> {
+    console.log("getUnidadesResumen called, endpoint:", api + "/resumen");
+    return apiClient
+        .get(api + "/resumen")
+        .then((x: { data: MgUnidadSimpleDTO[] }) => {
+            console.log("getUnidadesResumen response:", x);
+            console.log("getUnidadesResumen data:", x.data);
+            return x.data;
+        })
+        .catch((error) => {
+            console.error("getUnidadesResumen error:", error);
+            throw error;
+        });
 }

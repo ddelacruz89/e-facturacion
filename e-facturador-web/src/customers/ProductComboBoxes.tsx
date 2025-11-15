@@ -1,13 +1,12 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { SearchableComboBox, ComboBoxOption } from "./SearchableComboBox";
 import { Control, FieldError } from "react-hook-form";
-import { useSharedUnidades } from "../hooks/useSharedUnidades";
-import { useSharedSuplidores } from "../hooks/useSharedSuplidores";
 
 // Controllers
-import { getCategorias } from "../apis/CategoriaController";
-// Remove getUnidades import since we're using the shared hook
-import { getItbisActivos } from "../apis/ItbisController";
+import { getCategoriasResumen } from "../apis/CategoriaController";
+import { getUnidadesResumen } from "../apis/UnidadController";
+import { getItbisResumen } from "../apis/ItbisController";
+import { getSuplidoresResumen } from "../apis/SuplidorController";
 import { getAlmacenesActivos } from "../apis/AlmacenController";
 import { getMenusActivos } from "../apis/MenuController";
 import { getSucursalesActivas } from "../apis/SucursalController";
@@ -15,9 +14,9 @@ import { getSucursalesActivas } from "../apis/SucursalController";
 import { getTagsActivos } from "../apis/TagController";
 
 // Models
-import { MgCategoria, MgUnidad } from "../models/producto";
-import { MgItbis } from "../models/facturacion";
-import { InAlmacen, InSuplidor } from "../models/inventario";
+import { MgCategoria, MgUnidad, MgCategoriaSimpleDTO, MgUnidadSimpleDTO } from "../models/producto";
+import { MgItbis, MgItbisSimpleDTO } from "../models/facturacion";
+import { InAlmacen, InSuplidor, InSuplidorSimpleDTO } from "../models/inventario";
 import { SgMenu } from "../models/seguridad";
 import { SgSucursal } from "../models/seguridad/SgSucursal";
 import { MgTag } from "../models/producto/MgTag";
@@ -36,17 +35,15 @@ interface BaseComboProps {
 
 // Categoria ComboBox
 export const CategoriaComboBox: React.FC<BaseComboProps> = ({ label = "Categoría", ...props }) => {
-    const [categorias, setCategorias] = useState<MgCategoria[]>([]);
+    const [categorias, setCategorias] = useState<MgCategoriaSimpleDTO[]>([]);
     const [loading, setLoading] = useState(false);
 
     const loadCategorias = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getCategorias();
+            const data = await getCategoriasResumen();
             setCategorias(data);
-            console.log("Categorias loaded:", data);
         } catch (error) {
-            console.error("Error loading categorias:", error);
             setCategorias([]);
         } finally {
             setLoading(false);
@@ -58,10 +55,10 @@ export const CategoriaComboBox: React.FC<BaseComboProps> = ({ label = "Categorí
     }, [loadCategorias]);
 
     const options: ComboBoxOption[] = categorias.map((categoria) => ({
-        value: categoria.secuencia || 0,
+        value: categoria.id,
         label: categoria.categoria,
-        description: `ID: ${categoria.secuencia} ${categoria.modificable ? "- Modificable" : ""}`,
-        disabled: false, // No activo field in model
+        // description: `ID: ${categoria.id}`,
+        disabled: false,
     }));
 
     const handleSearch = useCallback(
@@ -87,18 +84,41 @@ export const CategoriaComboBox: React.FC<BaseComboProps> = ({ label = "Categorí
 };
 
 // Unidad ComboBox
-// Unidad ComboBox (Updated to use shared state)
 export const UnidadComboBox: React.FC<BaseComboProps> = ({ label = "Unidad", ...props }) => {
-    const { unidades, loading, refresh } = useSharedUnidades();
+    const [unidades, setUnidades] = useState<MgUnidadSimpleDTO[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    const options: ComboBoxOption[] = unidades
-        .filter((unidad) => unidad.id !== undefined) // Filter out unidades without ID
-        .map((unidad) => ({
-            value: unidad.id!, // Use non-null assertion since we filtered out undefined
-            label: `${unidad.nombre} (${unidad.sigla})`, // Changed from abreviacion to sigla
-            description: unidad.descripcion || `ID: ${unidad.id}`,
-            disabled: !unidad.activo,
-        }));
+    const loadUnidades = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await getUnidadesResumen();
+            setUnidades(data);
+            console.log("Unidades resumen loaded:", data);
+        } catch (error) {
+            console.error("Error loading unidades resumen:", error);
+            setUnidades([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadUnidades();
+    }, [loadUnidades]);
+
+    const options: ComboBoxOption[] = unidades.map((unidad) => ({
+        value: unidad.id,
+        label: unidad.nombre,
+        description: `ID: ${unidad.id}`,
+        disabled: false,
+    }));
+
+    const handleSearch = useCallback(
+        async (query: string): Promise<ComboBoxOption[]> => {
+            return options.filter((option) => option.label.toLowerCase().includes(query.toLowerCase()));
+        },
+        [options]
+    );
 
     return (
         <SearchableComboBox
@@ -106,7 +126,8 @@ export const UnidadComboBox: React.FC<BaseComboProps> = ({ label = "Unidad", ...
             label={label}
             options={options}
             loading={loading}
-            onRefresh={refresh}
+            onRefresh={loadUnidades}
+            onSearch={handleSearch}
             noOptionsText="No hay unidades disponibles"
             placeholder="Buscar unidad..."
         />
@@ -115,16 +136,17 @@ export const UnidadComboBox: React.FC<BaseComboProps> = ({ label = "Unidad", ...
 
 // ITBIS ComboBox
 export const ItbisComboBox: React.FC<BaseComboProps> = ({ label = "ITBIS", ...props }) => {
-    const [itbisOptions, setItbisOptions] = useState<MgItbis[]>([]);
+    const [itbisOptions, setItbisOptions] = useState<MgItbisSimpleDTO[]>([]);
     const [loading, setLoading] = useState(false);
 
     const loadItbis = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getItbisActivos();
+            const data = await getItbisResumen();
             setItbisOptions(data);
+            console.log("ITBIS resumen loaded:", data);
         } catch (error) {
-            console.error("Error loading ITBIS:", error);
+            console.error("Error loading ITBIS resumen:", error);
             setItbisOptions([]);
         } finally {
             setLoading(false);
@@ -136,9 +158,9 @@ export const ItbisComboBox: React.FC<BaseComboProps> = ({ label = "ITBIS", ...pr
     }, [loadItbis]);
 
     const options: ComboBoxOption[] = itbisOptions.map((itbis) => ({
-        value: itbis.id?.toString() || "",
-        label: `${itbis.nombre} (${itbis.itbis}%)`,
-        description: `Tasa: ${itbis.itbis}%`,
+        value: itbis.id,
+        label: itbis.nombre,
+        description: `ID: ${itbis.id}`,
     }));
 
     return (
@@ -290,18 +312,35 @@ export const SucursalComboBox: React.FC<BaseComboProps> = ({ label = "Sucursal",
     );
 };
 
-// Suplidor ComboBox (Updated to use shared state)
+// Suplidor ComboBox
 export const SuplidorComboBox: React.FC<BaseComboProps> = ({ label = "Proveedor", ...props }) => {
-    const { suplidores, loading, refresh } = useSharedSuplidores();
+    const [suplidores, setSuplidores] = useState<InSuplidorSimpleDTO[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    const options: ComboBoxOption[] = suplidores
-        .filter((suplidor) => suplidor.id !== undefined) // Filter out suplidores without ID
-        .map((suplidor) => ({
-            value: suplidor.id!.toString(), // Use non-null assertion since we filtered out undefined
-            label: suplidor.nombre,
-            description: `RNC: ${suplidor.rnc || "N/A"} - ${suplidor.direccion || ""}`,
-            disabled: false, // No activo field available in InSuplidor
-        }));
+    const loadSuplidores = useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await getSuplidoresResumen();
+            setSuplidores(data);
+            console.log("Suplidores resumen loaded:", data);
+        } catch (error) {
+            console.error("Error loading suplidores resumen:", error);
+            setSuplidores([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadSuplidores();
+    }, [loadSuplidores]);
+
+    const options: ComboBoxOption[] = suplidores.map((suplidor) => ({
+        value: suplidor.id,
+        label: suplidor.nombre,
+        description: `RNC: ${suplidor.rnc || "N/A"} - ID: ${suplidor.id}`,
+        disabled: false,
+    }));
 
     const handleSearch = useCallback(
         async (query: string): Promise<ComboBoxOption[]> => {
@@ -320,7 +359,7 @@ export const SuplidorComboBox: React.FC<BaseComboProps> = ({ label = "Proveedor"
             label={label}
             options={options}
             loading={loading}
-            onRefresh={refresh}
+            onRefresh={loadSuplidores}
             onSearch={handleSearch}
             noOptionsText="No hay proveedores disponibles"
             placeholder="Buscar proveedor..."

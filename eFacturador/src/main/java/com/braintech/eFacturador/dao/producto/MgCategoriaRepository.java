@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.dao.producto;
 
+import com.braintech.eFacturador.dto.producto.MgCategoriaSimpleDTO;
 import com.braintech.eFacturador.jpa.producto.MgCategoria;
 import java.util.List;
 import java.util.Optional;
@@ -19,4 +20,8 @@ public interface MgCategoriaRepository extends JpaRepository<MgCategoria, Intege
   @Query("SELECT c FROM MgCategoria c WHERE c.id = :id AND c.empresaId = :empresaId")
   Optional<MgCategoria> findByIdAndEmpresaId(
       @Param("id") String id, @Param("empresaId") Integer empresaId);
+
+  @Query(
+      "SELECT new com.braintech.eFacturador.dto.producto.MgCategoriaSimpleDTO(c.id, c.categoria) FROM MgCategoria c WHERE c.empresaId = :empresaId")
+  List<MgCategoriaSimpleDTO> findAllSimpleByEmpresaId(@Param("empresaId") Integer empresaId);
 }

@@ -1,5 +1,5 @@
 import apiClient from "../services/apiClient";
-import { MgCategoria } from "../models/producto";
+import { MgCategoria, MgCategoriaSimpleDTO } from "../models/producto";
 
 const api = "/api/v1/producto/categoria";
 
@@ -47,4 +47,19 @@ export function updateCategoria(id: string, categoria: MgCategoria): Promise<MgC
 
 export function deleteCategoria(id: string): Promise<void> {
     return apiClient.delete(`${api}/${id}`);
+}
+
+export function getCategoriasResumen(): Promise<MgCategoriaSimpleDTO[]> {
+    console.log("getCategoriasResumen called, endpoint:", api + "/resumen");
+    return apiClient
+        .get(api + "/resumen")
+        .then((x: { data: MgCategoriaSimpleDTO[] }) => {
+            console.log("getCategoriasResumen response:", x);
+            console.log("getCategoriasResumen data:", x.data);
+            return x.data;
+        })
+        .catch((error) => {
+            console.error("getCategoriasResumen error:", error);
+            throw error;
+        });
 }

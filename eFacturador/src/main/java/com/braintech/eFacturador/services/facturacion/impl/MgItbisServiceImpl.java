@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.services.facturacion.impl;
 
 import com.braintech.eFacturador.dao.facturacion.MgItbisRepository;
+import com.braintech.eFacturador.dto.facturacion.MgItbisSimpleDTO;
 import com.braintech.eFacturador.jpa.general.MgItbis;
 import com.braintech.eFacturador.services.facturacion.MgItbisService;
 import java.util.List;
@@ -16,5 +17,10 @@ public class MgItbisServiceImpl implements MgItbisService {
   @Override
   public List<MgItbis> getAllActive() {
     return mgItbisRepository.findAllActive();
+  }
+
+  @Override
+  public List<MgItbisSimpleDTO> getAllActiveSimple() {
+    return mgItbisRepository.findAllActiveSimple();
   }
 }

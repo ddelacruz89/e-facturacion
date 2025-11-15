@@ -100,8 +100,47 @@ const ProductoViewExample = () => {
     });
 
     const onSubmit: SubmitHandler<MgProducto> = (data) => {
-        console.log("Saving producto:", data);
-        saveProducto(data)
+        console.log("Raw form data:", data);
+
+        // Transform ComboBox objects - keep categoria and itbis objects
+        const transformedData: MgProducto = {
+            ...data,
+            // Keep the complete categoria object instead of just ID
+            categoriaId:
+                typeof data.categoriaId === "object" && data.categoriaId !== null
+                    ? (data.categoriaId as any) // Send the complete {id, name, description} object
+                    : data.categoriaId,
+            // Keep the complete itbis object instead of just ID
+            itbisId:
+                typeof data.itbisId === "object" && data.itbisId !== null
+                    ? (data.itbisId as any) // Send the complete {id, name, description} object
+                    : data.itbisId,
+
+            // Transform nested arrays - keep unidad objects
+            unidadProductorSuplidor: data.unidadProductorSuplidor?.map((item) => ({
+                ...item,
+                // Keep the complete unidad objects instead of just IDs
+                unidadId:
+                    typeof item.unidadId === "object" && item.unidadId !== null
+                        ? (item.unidadId as any) // Send the complete {id, name, description} object
+                        : item.unidadId,
+                unidadFraccionId:
+                    typeof item.unidadFraccionId === "object" && item.unidadFraccionId !== null
+                        ? (item.unidadFraccionId as any) // Send the complete {id, name, description} object
+                        : item.unidadFraccionId,
+                productosSuplidores: item.productosSuplidores?.map((suplidor) => ({
+                    ...suplidor,
+                    // Keep the complete suplidor object instead of just ID
+                    suplidorId:
+                        typeof suplidor.suplidorId === "object" && suplidor.suplidorId !== null
+                            ? (suplidor.suplidorId as any) // Send the complete {id, name, description} object
+                            : suplidor.suplidorId,
+                })),
+            })),
+        };
+
+        console.log("Transformed data for API:", transformedData);
+        saveProducto(transformedData)
             .then((response) => {
                 alert("Producto guardado correctamente");
                 reset();
@@ -540,6 +579,7 @@ const ProductoViewExample = () => {
                                                                     fechaReg: new Date(),
                                                                     activo: true,
                                                                     precio: 0,
+                                                                    itbisDefault: false, // Default to false
                                                                     suplidorId: 0,
                                                                 },
                                                             ]);

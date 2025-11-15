@@ -12,12 +12,12 @@ public class BaseEntityPk {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
-  private Integer id;
+  protected Integer id;
 
   @Column(name = "empresa_id", updatable = false)
   @NotNull(message = "La empresa no puede ser nulo")
-  private Integer empresaId;
+  protected Integer empresaId;
 
   @Column(name = "secuencia")
-  private Integer secuencia;
+  protected Integer secuencia;
 }

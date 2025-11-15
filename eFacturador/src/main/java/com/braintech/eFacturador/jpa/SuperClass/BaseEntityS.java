@@ -12,11 +12,11 @@ import lombok.Setter;
 public class BaseEntityS extends BaseEntityPkS {
 
   @Column(name = "usuario_reg", nullable = false)
-  private String usuarioReg;
+  protected String usuarioReg;
 
   @Column(name = "fecha_reg", nullable = false)
-  private LocalDateTime fechaReg;
+  protected LocalDateTime fechaReg;
 
   @Column(name = "activo")
-  private Boolean activo;
+  protected Boolean activo;
 }

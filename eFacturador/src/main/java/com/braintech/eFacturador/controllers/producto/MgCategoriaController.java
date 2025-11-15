@@ -1,9 +1,11 @@
 package com.braintech.eFacturador.controllers.producto;
 
+import com.braintech.eFacturador.dto.producto.MgCategoriaSimpleDTO;
 import com.braintech.eFacturador.jpa.producto.MgCategoria;
 import com.braintech.eFacturador.services.producto.MgCategoriaService;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -40,5 +42,10 @@ public class MgCategoriaController {
   @DeleteMapping("/{id}")
   public void delete(@PathVariable Integer id) {
     mgCategoriaService.delete(id);
+  }
+
+  @GetMapping("/resumen")
+  public ResponseEntity<List<MgCategoriaSimpleDTO>> getAllSimpleCategorias() {
+    return ResponseEntity.ok(mgCategoriaService.getAllSimple());
   }
 }

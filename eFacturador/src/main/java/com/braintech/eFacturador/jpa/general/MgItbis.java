@@ -5,11 +5,13 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "mg_itbis", schema = "general")
 @Data
 @EqualsAndHashCode(callSuper = false)
+@NoArgsConstructor
 public class MgItbis implements Serializable {
 
   private static final long serialVersionUID = 1L;

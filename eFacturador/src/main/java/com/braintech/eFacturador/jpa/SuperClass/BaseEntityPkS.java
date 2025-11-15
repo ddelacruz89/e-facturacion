@@ -11,11 +11,11 @@ public class BaseEntityPkS {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
-  private Integer id;
+  protected Integer id;
 
   @Column(name = "empresa_id")
-  private Integer empresaId;
+  protected Integer empresaId;
 
   @Column(name = "secuencia")
-  private String secuencia;
+  protected String secuencia;
 }

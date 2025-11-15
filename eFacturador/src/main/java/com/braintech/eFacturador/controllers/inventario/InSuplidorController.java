@@ -49,4 +49,9 @@ public class InSuplidorController {
   public ResponseEntity<Response<?>> disable(@PathVariable Integer id) {
     return ResponseEntity.ok(inSuplidorService.disable(id));
   }
+
+  @GetMapping("/resumen")
+  public ResponseEntity<Response<?>> getAllActiveSimple() {
+    return ResponseEntity.ok(inSuplidorService.getAllActiveSimple());
+  }
 }

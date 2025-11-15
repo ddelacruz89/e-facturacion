@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.dao.inventario;
 
+import com.braintech.eFacturador.dto.inventario.InSuplidorSimpleDTO;
 import com.braintech.eFacturador.jpa.inventario.InSuplidor;
 import java.util.List;
 import java.util.Optional;
@@ -22,4 +23,8 @@ public interface InSuplidorRepository extends JpaRepository<InSuplidor, Integer>
   @Query("SELECT s FROM InSuplidor s WHERE s.rnc = :rnc AND s.empresaId = :empresaId")
   Optional<InSuplidor> findByRncAndEmpresaId(
       @Param("rnc") String rnc, @Param("empresaId") Integer empresaId);
+
+  @Query(
+      "SELECT new com.braintech.eFacturador.dto.inventario.InSuplidorSimpleDTO(s.id, s.nombre, s.rnc) FROM InSuplidor s WHERE s.empresaId = :empresaId AND s.activo = true")
+  List<InSuplidorSimpleDTO> findAllActiveSimpleByEmpresaId(@Param("empresaId") Integer empresaId);
 }

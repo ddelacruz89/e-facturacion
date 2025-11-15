@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.controllers.producto;
 
+import com.braintech.eFacturador.dto.producto.MgUnidadSimpleDTO;
 import com.braintech.eFacturador.jpa.producto.MgUnidad;
 import com.braintech.eFacturador.services.producto.MgUnidadService;
 import java.util.List;
@@ -49,5 +50,10 @@ public class MgUnidadController {
   public ResponseEntity<Void> delete(@PathVariable Integer id) {
     unidadService.delete(id);
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/resumen")
+  public ResponseEntity<List<MgUnidadSimpleDTO>> getAllActiveSimple() {
+    return ResponseEntity.ok(unidadService.getAllActiveSimple());
   }
 }

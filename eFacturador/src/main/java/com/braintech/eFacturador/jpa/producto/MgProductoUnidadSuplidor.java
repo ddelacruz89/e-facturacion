@@ -1,12 +1,15 @@
 package com.braintech.eFacturador.jpa.producto;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Comment;
 
@@ -14,6 +17,8 @@ import org.hibernate.annotations.Comment;
 @Table(name = "mg_producto_unidad_suplidor", schema = "producto")
 @Getter
 @Setter
+@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MgProductoUnidadSuplidor extends BaseEntity implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -56,6 +61,7 @@ public class MgProductoUnidadSuplidor extends BaseEntity implements Serializable
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "producto_id", nullable = false)
+  @JsonBackReference
   private MgProducto productoId;
 
   @OneToMany(cascade = CascadeType.ALL)

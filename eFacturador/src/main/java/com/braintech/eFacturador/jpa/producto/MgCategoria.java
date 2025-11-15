@@ -14,6 +14,10 @@ import lombok.*;
 @AllArgsConstructor
 public class MgCategoria extends BaseEntityS implements Serializable {
 
+  public MgCategoria(Integer id) {
+    this.id = id;
+  }
+
   private static final long serialVersionUID = 1L;
 
   @Column(name = "categoria", nullable = false)

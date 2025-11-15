@@ -11,5 +11,12 @@ export interface InAlmacen {
     estadoId?: string;
 }
 
+// Simple DTO for suplidor resumen endpoint
+export interface InSuplidorSimpleDTO {
+    id: number;
+    nombre: string;
+    rnc?: string;
+}
+
 // Re-export from individual files
 export type { InSuplidor } from "./InSuplidor";

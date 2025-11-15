@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.services.producto;
 
+import com.braintech.eFacturador.dto.producto.MgUnidadSimpleDTO;
 import com.braintech.eFacturador.jpa.producto.MgUnidad;
 import java.util.List;
 
@@ -15,4 +16,6 @@ public interface MgUnidadService {
   MgUnidad update(Integer id, MgUnidad unidad);
 
   void delete(Integer id);
+
+  List<MgUnidadSimpleDTO> getAllActiveSimple();
 }

@@ -22,4 +22,6 @@ public interface InSuplidorService {
   InSuplidor findById(Integer id);
 
   List<InSuplidor> findAllByEmpresa();
+
+  Response<?> getAllActiveSimple();
 }

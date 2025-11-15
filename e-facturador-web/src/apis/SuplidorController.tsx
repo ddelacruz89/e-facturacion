@@ -1,5 +1,5 @@
 import apiClient from "../services/apiClient";
-import { InSuplidor } from "../models/inventario";
+import { InSuplidor, InSuplidorSimpleDTO } from "../models/inventario";
 import { DataNotFound } from "../models/ServerErros";
 
 const api = "/api/v1/inventario/suplidores";
@@ -91,6 +91,21 @@ export function deleteSuplidor(id: number): Promise<void> {
         .catch((error) => {
             const response: DataNotFound = error.response.data.error;
             console.error("Mensaje:", response.message);
+            throw error;
+        });
+}
+
+export function getSuplidoresResumen(): Promise<InSuplidorSimpleDTO[]> {
+    console.log("getSuplidoresResumen called, endpoint:", api + "/resumen");
+    return apiClient
+        .get(api + "/resumen")
+        .then((x: { data: ApiResponse<InSuplidorSimpleDTO[]> }) => {
+            console.log("getSuplidoresResumen response:", x);
+            console.log("getSuplidoresResumen data:", x.data.content);
+            return x.data.content;
+        })
+        .catch((error) => {
+            console.error("getSuplidoresResumen error:", error);
             throw error;
         });
 }
