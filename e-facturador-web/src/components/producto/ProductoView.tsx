@@ -192,10 +192,22 @@ const ProductoViewExample = () => {
         };
 
         console.log("Transformed data for API:", transformedData);
+
+        const isUpdate = transformedData.id && transformedData.id > 0;
+        const successMessage = isUpdate ? "Producto actualizado correctamente" : "Producto creado correctamente";
+
         saveProducto(transformedData)
             .then((response) => {
-                alert("Producto guardado correctamente");
-                reset();
+                alert(successMessage);
+                // Actualizar el producto seleccionado con la respuesta del servidor
+                setSelectedProduct(response);
+                // Recargar el formulario con los datos actualizados del servidor
+                reset({
+                    ...response,
+                    unidadProductorSuplidor: response.unidadProductorSuplidor || [],
+                    productosModulos: response.productosModulos || [],
+                    tags: response.tags || [],
+                });
             })
             .catch((error) => {
                 console.error("Error al guardar el producto:", error);
@@ -287,7 +299,7 @@ const ProductoViewExample = () => {
                                         variant="input"
                                         size="small"
                                         label="Buscar Producto"
-                                        displayValue={selectedProduct?.nombreProducto || ""}
+                                        displayValue={selectedProduct?.id || ""}
                                         placeholder="Seleccione un producto..."
                                         initialValues={{ estado: "activo" }}
                                     />
@@ -352,6 +364,15 @@ const ProductoViewExample = () => {
                                 Configuración General
                             </Typography>
                             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={watch("activo")}
+                                            onChange={(e) => setValue("activo", e.target.checked)}
+                                        />
+                                    }
+                                    label="Activo"
+                                />
                                 <FormControlLabel
                                     control={
                                         <Checkbox

@@ -77,19 +77,45 @@ public class MgProductoServiceImpl implements MgProductoService {
   public MgProducto create(MgProducto producto) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     String username = tenantContext.getCurrentUsername();
+    boolean isUpdate = producto.getId() != null && producto.getId() > 0;
 
-    producto.setEmpresaId(empresaId);
-    producto.setUsuarioReg(username);
-    producto.setFechaReg(LocalDateTime.now());
-    producto.setActivo(true);
+    // Si es actualización, verificar que el producto existe y preservar datos de auditoría
+    if (isUpdate) {
+      MgProducto existing =
+          productoRepository
+              .findById(producto.getId())
+              .orElseThrow(() -> new RecordNotFoundException("Producto no encontrado"));
+
+      // Mantener datos de registro original
+      producto.setEmpresaId(existing.getEmpresaId());
+      producto.setUsuarioReg(existing.getUsuarioReg());
+      producto.setFechaReg(existing.getFechaReg());
+      producto.setSecuencia(existing.getSecuencia());
+    } else {
+      // Es creación nueva
+      producto.setEmpresaId(empresaId);
+      producto.setUsuarioReg(username);
+      producto.setFechaReg(LocalDateTime.now());
+      // Solo establecer activo si no viene del frontend
+      if (producto.getActivo() == null) {
+        producto.setActivo(true);
+      }
+    }
 
     // Set audit fields for unidad fracciones (MgProductoUnidadSuplidor)
     for (MgProductoUnidadSuplidor unidadSuplidor : producto.getUnidadProductorSuplidor()) {
       unidadSuplidor.setProductoId(producto);
-      unidadSuplidor.setEmpresaId(empresaId);
-      unidadSuplidor.setUsuarioReg(username);
-      unidadSuplidor.setFechaReg(LocalDateTime.now());
-      unidadSuplidor.setActivo(true);
+
+      if (unidadSuplidor.getId() == null || unidadSuplidor.getId() == 0) {
+        // Nueva unidad
+        unidadSuplidor.setEmpresaId(empresaId);
+        unidadSuplidor.setUsuarioReg(username);
+        unidadSuplidor.setFechaReg(LocalDateTime.now());
+        // Solo establecer activo si no viene del frontend
+        if (unidadSuplidor.getActivo() == null) {
+          unidadSuplidor.setActivo(true);
+        }
+      }
 
       // Set audit fields for productosSuplidores within each unidadSuplidor
       if (unidadSuplidor.getProductosSuplidores() != null) {
@@ -97,10 +123,15 @@ public class MgProductoServiceImpl implements MgProductoService {
             .getProductosSuplidores()
             .forEach(
                 suplidor -> {
-                  suplidor.setEmpresaId(empresaId);
-                  suplidor.setUsuarioReg(username);
-                  suplidor.setFechaReg(LocalDateTime.now());
-                  suplidor.setActivo(true);
+                  if (suplidor.getId() == null || suplidor.getId() == 0) {
+                    suplidor.setEmpresaId(empresaId);
+                    suplidor.setUsuarioReg(username);
+                    suplidor.setFechaReg(LocalDateTime.now());
+                    // Solo establecer activo si no viene del frontend
+                    if (suplidor.getActivo() == null) {
+                      suplidor.setActivo(true);
+                    }
+                  }
                 });
       }
 
@@ -110,10 +141,15 @@ public class MgProductoServiceImpl implements MgProductoService {
             .getProductosAlmacenesLimites()
             .forEach(
                 limite -> {
-                  limite.setEmpresaId(empresaId);
-                  limite.setUsuarioReg(username);
-                  limite.setFechaReg(LocalDateTime.now());
-                  limite.setActivo(true);
+                  if (limite.getId() == null || limite.getId() == 0) {
+                    limite.setEmpresaId(empresaId);
+                    limite.setUsuarioReg(username);
+                    limite.setFechaReg(LocalDateTime.now());
+                    // Solo establecer activo si no viene del frontend
+                    if (limite.getActivo() == null) {
+                      limite.setActivo(true);
+                    }
+                  }
                 });
       }
     }
@@ -124,10 +160,15 @@ public class MgProductoServiceImpl implements MgProductoService {
           .getProductosModulos()
           .forEach(
               modulo -> {
-                modulo.setEmpresaId(empresaId);
-                modulo.setUsuarioReg(username);
-                modulo.setFechaReg(LocalDateTime.now());
-                modulo.setActivo(true);
+                if (modulo.getId() == null || modulo.getId() == 0) {
+                  modulo.setEmpresaId(empresaId);
+                  modulo.setUsuarioReg(username);
+                  modulo.setFechaReg(LocalDateTime.now());
+                  // Solo establecer activo si no viene del frontend
+                  if (modulo.getActivo() == null) {
+                    modulo.setActivo(true);
+                  }
+                }
               });
     }
 
@@ -138,18 +179,23 @@ public class MgProductoServiceImpl implements MgProductoService {
           .forEach(
               tag -> {
                 tag.setProducto(producto);
-                tag.setEmpresaId(empresaId);
-                tag.setUsuarioReg(username);
-                tag.setFechaReg(LocalDateTime.now());
-                tag.setActivo(true);
+                if (tag.getId() == null || tag.getId() == 0) {
+                  tag.setEmpresaId(empresaId);
+                  tag.setUsuarioReg(username);
+                  tag.setFechaReg(LocalDateTime.now());
+                  // Solo establecer activo si no viene del frontend
+                  if (tag.getActivo() == null) {
+                    tag.setActivo(true);
+                  }
+                }
               });
     }
 
-    // Guardar el producto primero
+    // Guardar el producto
     MgProducto prod = productoRepository.save(producto);
 
-    // Si la secuencia no fue proporcionada o es 0, generar y actualizar
-    if (prod.getSecuencia() == null || prod.getSecuencia() == 0) {
+    // Si es creación nueva y la secuencia no fue proporcionada o es 0, generar y actualizar
+    if (!isUpdate && (prod.getSecuencia() == null || prod.getSecuencia() == 0)) {
       Integer nuevaSecuencia =
           secuenciasDao.getNextSecuencia(
               empresaId, MgProducto.class.getSimpleName().toUpperCase(Locale.ROOT));

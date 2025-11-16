@@ -13,7 +13,7 @@ interface SearchButtonProps {
     tooltip?: string;
     children?: React.ReactNode;
     // New props for input variant
-    displayValue?: string;
+    displayValue?: string | number;
     placeholder?: string;
     label?: string;
     readOnly?: boolean;

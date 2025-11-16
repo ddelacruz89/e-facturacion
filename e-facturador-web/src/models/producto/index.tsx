@@ -123,7 +123,7 @@ export interface MgProductoTag {
 export interface MgProducto {
     // From BaseEntity
     id?: number; // Auto-generated
-    empresaId: number;
+    empresaId?: number;
     secuencia?: number;
     usuarioReg: string;
     fechaReg: Date;
@@ -138,7 +138,7 @@ export interface MgProducto {
     itbisId: number; // Foreign key to MgItbis (ManyToOne, required)
     categoriaId: number; // Foreign key to MgCategoria (ManyToOne, required)
     // Relationships
-    unidadProductorSuplidor?: MgProductoUnidadSuplidor[]; // OneToMany (name changed from unidadFraccions)
+    unidadProductorSuplidor: MgProductoUnidadSuplidor[]; // OneToMany (name changed from unidadFraccions)
     productosModulos?: MgProductoModulo[]; // OneToMany
     tags?: MgProductoTag[]; // OneToMany
 }

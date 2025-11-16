@@ -52,6 +52,7 @@ export function getProductosPaginated(
 
 export function saveProducto(producto: MgProducto): Promise<MgProducto> {
     console.log("saveProducto", producto);
+    // Siempre usa POST, el backend determina si es crear o actualizar basado en el ID
     return apiClient.post(api, producto).then((x: { data: MgProducto }) => x.data);
 }
 
