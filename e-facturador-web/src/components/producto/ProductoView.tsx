@@ -81,6 +81,9 @@ const ProductoViewExample = () => {
     // State to manage expanded cards for unidad/fracción items
     const [expandedCards, setExpandedCards] = useState<{ [key: number]: boolean }>({});
 
+    // State for selected product (to display in search input)
+    const [selectedProduct, setSelectedProduct] = useState<MgProducto | null>(null);
+
     // Modal search hook
     const modalSearch = useModalSearch();
 
@@ -93,6 +96,7 @@ const ProductoViewExample = () => {
 
     // Function to clear the form and search
     const clearForm = () => {
+        setSelectedProduct(null);
         reset({
             empresaId: 0,
             secuencia: 0,
@@ -114,6 +118,9 @@ const ProductoViewExample = () => {
 
     // Handle product selection from modal search
     const handleProductSelect = modalSearch.handleSelect((product) => {
+        // Update the selected product state for display (cast to MgProducto)
+        setSelectedProduct(product as MgProducto);
+
         // Load the selected product into the form
         reset({
             ...product,
@@ -273,15 +280,17 @@ const ProductoViewExample = () => {
                                 Información Básica
                             </Typography>
                             <Grid container spacing={2}>
-                                <Box sx={{ width: `${(3 / 12) * 100}%`, mb: 2, display: "flex", alignItems: "center" }}>
+                                <Box sx={{ width: `${(3 / 12) * 100}%`, mb: 2 }}>
                                     <SearchButton
                                         config={SEARCH_CONFIGS.PRODUCTO}
                                         onOpenSearch={modalSearch.openModal}
-                                        variant="button"
+                                        variant="input"
                                         size="small"
-                                        initialValues={{ estado: "activo" }}>
-                                        Buscar Producto
-                                    </SearchButton>
+                                        label="Buscar Producto"
+                                        displayValue={selectedProduct?.nombreProducto || ""}
+                                        placeholder="Seleccione un producto..."
+                                        initialValues={{ estado: "activo" }}
+                                    />
                                 </Box>
                                 <AlphanumericInput
                                     label="Código de Barra"

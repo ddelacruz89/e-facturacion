@@ -2,7 +2,6 @@ package com.braintech.eFacturador.jpa.producto;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import com.braintech.eFacturador.jpa.inventario.InSuplidor;
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -41,7 +40,6 @@ public class MgProductoSuplidor extends BaseEntity implements Serializable {
   @JoinColumn(name = "suplidor_id", referencedColumnName = "id")
   @ManyToOne(optional = false)
   @NotNull(message = "Suplidor no puede ser null")
-  @JsonBackReference
   private InSuplidor suplidorId;
 
   @Column(name = "estado_id")

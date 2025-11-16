@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.producto;
 
+import com.braintech.eFacturador.annotations.FieldDescription;
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import com.braintech.eFacturador.jpa.general.MgItbis;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -19,7 +20,11 @@ import org.hibernate.annotations.Comment;
 @Table(
     name = "mg_producto",
     schema = "producto",
-    uniqueConstraints = {@UniqueConstraint(columnNames = {"empresa_id", "secuencia"})})
+    uniqueConstraints = {
+      @UniqueConstraint(columnNames = {"empresa_id", "secuencia"}),
+      @UniqueConstraint(columnNames = {"empresa_id", "nombre_producto"}),
+      @UniqueConstraint(columnNames = {"empresa_id", "codigoBarra"})
+    })
 @Entity
 @Getter
 @Setter
@@ -35,6 +40,7 @@ public class MgProducto extends BaseEntity implements Serializable {
   @Serial private static final long serialVersionUID = 1L;
 
   @Column(name = "codigoBarra")
+  @FieldDescription("Codigo de Barra")
   private String codigoBarra;
 
   @NotNull
@@ -70,10 +76,4 @@ public class MgProducto extends BaseEntity implements Serializable {
   @JsonManagedReference(value = "producto-tags")
   @Comment("Lista de etiquetas/tags asociadas al producto")
   private List<MgProductoTag> tags;
-
-  @Column(name = "empresa_id", nullable = false)
-  private Integer empresaId;
-
-  @Column(name = "secuencia", nullable = false)
-  private Integer secuencia;
 }

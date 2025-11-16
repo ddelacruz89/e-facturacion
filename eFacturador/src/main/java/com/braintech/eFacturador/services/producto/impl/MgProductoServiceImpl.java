@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.services.producto.impl;
 
+import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
@@ -19,16 +20,17 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@AllArgsConstructor
 public class MgProductoServiceImpl implements MgProductoService {
 
-  @Autowired private MgProductoRepository productoRepository;
-
-  @Autowired private TenantContext tenantContext;
+  private final MgProductoRepository productoRepository;
+  private final SecuenciasDao secuenciasDao;
+  private final TenantContext tenantContext;
   @PersistenceContext private EntityManager entityManager;
 
   @Override
@@ -75,6 +77,11 @@ public class MgProductoServiceImpl implements MgProductoService {
   public MgProducto create(MgProducto producto) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     String username = tenantContext.getCurrentUsername();
+
+    producto.setEmpresaId(empresaId);
+    producto.setUsuarioReg(username);
+    producto.setFechaReg(LocalDateTime.now());
+    producto.setActivo(true);
 
     // Set audit fields for unidad fracciones (MgProductoUnidadSuplidor)
     for (MgProductoUnidadSuplidor unidadSuplidor : producto.getUnidadProductorSuplidor()) {
@@ -138,7 +145,19 @@ public class MgProductoServiceImpl implements MgProductoService {
               });
     }
 
-    return productoRepository.save(producto);
+    // Guardar el producto primero
+    MgProducto prod = productoRepository.save(producto);
+
+    // Si la secuencia no fue proporcionada o es 0, generar y actualizar
+    if (prod.getSecuencia() == null || prod.getSecuencia() == 0) {
+      Integer nuevaSecuencia =
+          secuenciasDao.getNextSecuencia(
+              empresaId, MgProducto.class.getSimpleName().toUpperCase(Locale.ROOT));
+      productoRepository.updateSecuencia(prod.getId(), nuevaSecuencia);
+      prod.setSecuencia(nuevaSecuencia);
+    }
+
+    return prod;
   }
 
   @Override

@@ -1,12 +1,9 @@
 package com.braintech.eFacturador.jpa.inventario;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
-import com.braintech.eFacturador.jpa.producto.MgProductoSuplidor;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import java.io.Serializable;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -51,8 +48,4 @@ public class InSuplidor extends BaseEntity implements Serializable {
 
   @Column(name = "estado_id")
   private String estadoId;
-
-  @OneToMany(mappedBy = "suplidorId", fetch = FetchType.LAZY)
-  @JsonManagedReference
-  private List<MgProductoSuplidor> productosSuplidores;
 }

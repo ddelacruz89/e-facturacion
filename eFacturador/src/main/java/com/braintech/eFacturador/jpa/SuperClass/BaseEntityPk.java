@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.SuperClass;
 
+import com.braintech.eFacturador.annotations.FieldDescription;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -14,10 +15,12 @@ public class BaseEntityPk {
   @Column(name = "id")
   protected Integer id;
 
-  @Column(name = "empresa_id", updatable = false)
   @NotNull(message = "La empresa no puede ser nulo")
+  @FieldDescription("Empresa")
+  @Column(name = "empresa_id", updatable = false)
   protected Integer empresaId;
 
+  @FieldDescription("Secuencia")
   @Column(name = "secuencia")
   protected Integer secuencia;
 }

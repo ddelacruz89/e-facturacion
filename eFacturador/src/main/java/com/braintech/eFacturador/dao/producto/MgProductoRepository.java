@@ -4,6 +4,7 @@ import com.braintech.eFacturador.jpa.producto.MgProducto;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -33,4 +34,8 @@ public interface MgProductoRepository extends JpaRepository<MgProducto, Integer>
 
   @Query("SELECT p FROM MgProducto p WHERE p.trabajador = true")
   List<MgProducto> findAllWorkerProducts();
+
+  @Modifying
+  @Query("UPDATE MgProducto p SET p.secuencia = :secuencia WHERE p.id = :id")
+  void updateSecuencia(@Param("id") Integer id, @Param("secuencia") Integer secuencia);
 }
