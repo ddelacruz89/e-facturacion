@@ -1,5 +1,7 @@
 package com.braintech.eFacturador.services.producto;
 
+import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
+import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import java.util.List;
 
@@ -21,4 +23,9 @@ public interface MgProductoService {
   MgProducto create(MgProducto producto);
 
   void delete(Integer id);
+
+  // Advanced search
+  List<MgProducto> searchAdvancedResumen(MgProductoSearchCriteria criteria);
+
+  List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria);
 }

@@ -1,22 +1,53 @@
 import apiClient from "../services/apiClient";
+import searchService from "../services/searchService";
+import { searchByQuery, searchById, getAll, searchByParent } from "../utils/searchUtils";
 import { MgProducto } from "../models/producto";
 
-const api = "/api/producto/producto";
+const api = "/api/producto";
 
+// Using the new search service - these are examples of different approaches
 export function getProductos(): Promise<MgProducto[]> {
-    return apiClient.get(api.concat("/all")).then((x: { data: MgProducto[] }) => x.data);
+    return getAll<MgProducto[]>(api);
 }
 
 export function getProducto(id: number): Promise<MgProducto> {
-    return apiClient.get(`${api}/${id}`).then((x: { data: MgProducto }) => x.data);
+    return searchById<MgProducto>(api, id);
 }
 
 export function getProductosByCategoria(categoriaId: string): Promise<MgProducto[]> {
-    return apiClient.get(`${api}/categoria/${categoriaId}`).then((x: { data: MgProducto[] }) => x.data);
+    return searchByParent<MgProducto[]>(api, "categoria", categoriaId);
 }
 
 export function searchProductos(query: string): Promise<MgProducto[]> {
-    return apiClient.get(`${api}/search?q=${encodeURIComponent(query)}`).then((x: { data: MgProducto[] }) => x.data);
+    return searchByQuery<MgProducto[]>(`${api}/search`, query);
+}
+
+// Additional search functions using the new search service
+export function searchProductosAdvanced(filters: {
+    q?: string;
+    categoria?: string;
+    precio_min?: number;
+    precio_max?: number;
+    estado?: string;
+}): Promise<MgProducto[]> {
+    return searchService.search<MgProducto[]>({
+        url: `${api}/search/advanced`,
+        params: filters,
+    });
+}
+
+export function getProductosPaginated(
+    page: number = 0,
+    size: number = 10
+): Promise<{
+    content: MgProducto[];
+    totalElements: number;
+    totalPages: number;
+}> {
+    return searchService.search({
+        url: `${api}/paginated`,
+        params: { page, size },
+    });
 }
 
 export function saveProducto(producto: MgProducto): Promise<MgProducto> {

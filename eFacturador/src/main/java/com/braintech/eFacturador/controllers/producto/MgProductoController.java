@@ -1,5 +1,7 @@
 package com.braintech.eFacturador.controllers.producto;
 
+import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
+import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.services.producto.MgProductoService;
 import java.util.List;
@@ -8,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/producto/producto")
+@RequestMapping("/api/producto")
 @RequiredArgsConstructor
 public class MgProductoController {
 
@@ -62,5 +64,15 @@ public class MgProductoController {
   public ResponseEntity<Void> delete(@PathVariable Integer id) {
     productoService.delete(id);
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/search/advanced")
+  public List<MgProducto> searchAdvancedResumen(MgProductoSearchCriteria criteria) {
+    return productoService.searchAdvancedResumen(criteria);
+  }
+
+  @GetMapping("/search/advanced/full")
+  public List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria) {
+    return productoService.searchAdvanced(criteria);
   }
 }

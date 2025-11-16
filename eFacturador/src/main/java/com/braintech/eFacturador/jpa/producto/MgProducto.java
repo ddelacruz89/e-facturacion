@@ -16,7 +16,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.Comment;
 
-@Table(name = "mg_producto", schema = "producto")
+@Table(
+    name = "mg_producto",
+    schema = "producto",
+    uniqueConstraints = {@UniqueConstraint(columnNames = {"empresa_id", "secuencia"})})
 @Entity
 @Getter
 @Setter
@@ -67,4 +70,10 @@ public class MgProducto extends BaseEntity implements Serializable {
   @JsonManagedReference(value = "producto-tags")
   @Comment("Lista de etiquetas/tags asociadas al producto")
   private List<MgProductoTag> tags;
+
+  @Column(name = "empresa_id", nullable = false)
+  private Integer empresaId;
+
+  @Column(name = "secuencia", nullable = false)
+  private Integer secuencia;
 }

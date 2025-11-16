@@ -1,13 +1,24 @@
 package com.braintech.eFacturador.services.producto.impl;
 
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
+import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
+import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
+import com.braintech.eFacturador.exceptions.ApplicationException;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.jpa.producto.MgProductoUnidadSuplidor;
 import com.braintech.eFacturador.services.producto.MgProductoService;
 import com.braintech.eFacturador.util.TenantContext;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +29,7 @@ public class MgProductoServiceImpl implements MgProductoService {
   @Autowired private MgProductoRepository productoRepository;
 
   @Autowired private TenantContext tenantContext;
+  @PersistenceContext private EntityManager entityManager;
 
   @Override
   public List<MgProducto> getAll() {
@@ -139,5 +151,77 @@ public class MgProductoServiceImpl implements MgProductoService {
 
     // Hard delete (puede cambiar a soft delete si es necesario)
     productoRepository.delete(existing);
+  }
+
+  @Override
+  public List<MgProducto> searchAdvancedResumen(MgProductoSearchCriteria criteria) {
+    CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+    CriteriaQuery<MgProducto> query = cb.createQuery(MgProducto.class);
+    Root<MgProducto> product = query.from(MgProducto.class);
+    List<Predicate> predicates = new ArrayList<>();
+
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    if (empresaId != null) {
+      predicates.add(cb.equal(product.get("empresaId"), empresaId));
+    } else throw new ApplicationException("Empresa no encontrada");
+
+    if (criteria.getNombreProducto() != null && !criteria.getNombreProducto().trim().isEmpty()) {
+      predicates.add(
+          cb.like(
+              cb.lower(product.get("nombreProducto")),
+              "%" + criteria.getNombreProducto().toLowerCase(Locale.ROOT) + "%"));
+    }
+    if (criteria.getCodigoBarra() != null && !criteria.getCodigoBarra().trim().isEmpty()) {
+      predicates.add(cb.equal(product.get("codigoBarra"), criteria.getCodigoBarra()));
+    }
+    if (criteria.getDescripcion() != null && !criteria.getDescripcion().trim().isEmpty()) {
+      predicates.add(
+          cb.like(
+              cb.lower(product.get("descripcion")),
+              "%" + criteria.getDescripcion().toLowerCase(Locale.ROOT) + "%"));
+    }
+
+    if (!predicates.isEmpty()) {
+      query.where(cb.and(predicates.toArray(new Predicate[0])));
+    }
+    query.orderBy(cb.asc(product.get("nombreProducto")));
+    return entityManager.createQuery(query).getResultList();
+  }
+
+  @Override
+  public List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria) {
+    CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+    CriteriaQuery<MgProductoResumenDTO> query = cb.createQuery(MgProductoResumenDTO.class);
+    Root<MgProducto> product = query.from(MgProducto.class);
+    List<Predicate> predicates = new ArrayList<>();
+
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    if (empresaId != null) {
+      predicates.add(cb.equal(product.get("empresaId"), empresaId));
+    } else throw new ApplicationException("Empresa no encontrada");
+
+    if (criteria.getNombreProducto() != null && !criteria.getNombreProducto().trim().isEmpty()) {
+      predicates.add(
+          cb.like(
+              cb.lower(product.get("nombreProducto")),
+              "%" + criteria.getNombreProducto().toLowerCase(Locale.ROOT) + "%"));
+    }
+    if (criteria.getCodigoBarra() != null && !criteria.getCodigoBarra().trim().isEmpty()) {
+      predicates.add(cb.equal(product.get("codigoBarra"), criteria.getCodigoBarra()));
+    }
+    if (criteria.getDescripcion() != null && !criteria.getDescripcion().trim().isEmpty()) {
+      predicates.add(
+          cb.like(
+              cb.lower(product.get("descripcion")),
+              "%" + criteria.getDescripcion().toLowerCase(Locale.ROOT) + "%"));
+    }
+
+    if (!predicates.isEmpty()) {
+      query.where(cb.and(predicates.toArray(new Predicate[0])));
+    }
+    query.select(
+        cb.construct(MgProductoResumenDTO.class, product.get("id"), product.get("nombreProducto")));
+    query.orderBy(cb.asc(product.get("nombreProducto")));
+    return entityManager.createQuery(query).getResultList();
   }
 }

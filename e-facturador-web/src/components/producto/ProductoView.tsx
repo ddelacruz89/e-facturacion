@@ -18,10 +18,17 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { AlphanumericInput, NumericInput, MoneyInput } from "../../customers/CustomMUIComponents";
 import ActionBar from "../../customers/ActionBar";
-import { saveProducto } from "../../apis/ProductoController";
+import { saveProducto, getProducto } from "../../apis/ProductoController";
+import searchService from "../../services/searchService";
 import { MgProducto, MgUnidad } from "../../models/producto";
 import { InAlmacen } from "../../models/inventario";
 import { SgMenu } from "../../models/seguridad";
+
+// Import the new modal search components
+import ModalSearch from "../search/ModalSearch";
+import SearchButton from "../search/SearchButton";
+import useModalSearch from "../../hooks/useModalSearch";
+import { SEARCH_CONFIGS } from "../../types/modalSearchTypes";
 
 // Import the new ComboBox components
 import {
@@ -74,12 +81,50 @@ const ProductoViewExample = () => {
     // State to manage expanded cards for unidad/fracción items
     const [expandedCards, setExpandedCards] = useState<{ [key: number]: boolean }>({});
 
+    // Modal search hook
+    const modalSearch = useModalSearch();
+
     const toggleCardExpansion = (index: number) => {
         setExpandedCards((prev) => ({
             ...prev,
             [index]: !prev[index],
         }));
     };
+
+    // Function to clear the form and search
+    const clearForm = () => {
+        reset({
+            empresaId: 0,
+            secuencia: 0,
+            usuarioReg: "",
+            fechaReg: new Date(),
+            activo: true,
+            nombreProducto: "",
+            descripcion: "",
+            codigoBarra: "",
+            trabajador: false,
+            comision: 0,
+            itbisId: 0,
+            categoriaId: 0,
+            unidadProductorSuplidor: [],
+            productosModulos: [],
+            tags: [],
+        });
+    };
+
+    // Handle product selection from modal search
+    const handleProductSelect = modalSearch.handleSelect((product) => {
+        // Load the selected product into the form
+        reset({
+            ...product,
+            // Ensure arrays exist
+            unidadProductorSuplidor: product.unidadProductorSuplidor || [],
+            productosModulos: product.productosModulos || [],
+            tags: product.tags || [],
+        });
+
+        console.log("Producto seleccionado desde modal:", product);
+    });
 
     const {
         fields: productModulos,
@@ -215,7 +260,7 @@ const ProductoViewExample = () => {
                     <Button size="small" color="primary" type="submit">
                         Guardar
                     </Button>
-                    <Button size="small" type="button" onClick={() => reset()}>
+                    <Button size="small" type="button" onClick={clearForm}>
                         Nuevo
                     </Button>
                 </ActionBar>
@@ -228,16 +273,27 @@ const ProductoViewExample = () => {
                                 Información Básica
                             </Typography>
                             <Grid container spacing={2}>
+                                <Box sx={{ width: `${(3 / 12) * 100}%`, mb: 2, display: "flex", alignItems: "center" }}>
+                                    <SearchButton
+                                        config={SEARCH_CONFIGS.PRODUCTO}
+                                        onOpenSearch={modalSearch.openModal}
+                                        variant="button"
+                                        size="small"
+                                        initialValues={{ estado: "activo" }}>
+                                        Buscar Producto
+                                    </SearchButton>
+                                </Box>
                                 <AlphanumericInput
                                     label="Código de Barra"
-                                    size={4}
+                                    size={3}
                                     name="codigoBarra"
                                     control={control}
                                     error={errors.codigoBarra}
                                 />
+
                                 <AlphanumericInput
                                     label="Nombre del Producto"
-                                    size={8}
+                                    size={6}
                                     name="nombreProducto"
                                     control={control}
                                     error={errors.nombreProducto}
@@ -732,6 +788,17 @@ const ProductoViewExample = () => {
                     </Accordion>
                 </section>
             </Box>
+
+            {/* Modal Search Component */}
+            {modalSearch.config && (
+                <ModalSearch
+                    open={modalSearch.isOpen}
+                    onClose={modalSearch.closeModal}
+                    onSelect={handleProductSelect}
+                    config={modalSearch.config}
+                    initialValues={modalSearch.initialValues}
+                />
+            )}
         </main>
     );
 };
