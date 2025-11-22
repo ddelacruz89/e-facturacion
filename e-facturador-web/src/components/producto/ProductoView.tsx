@@ -15,6 +15,7 @@ import {
     IconButton,
     Snackbar,
     Alert,
+    Switch,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -506,297 +507,344 @@ const ProductoViewExample = () => {
                                 </Button>
                             </Box>
 
-                            {unidadProductorSuplidor.map((field, index) => (
-                                <Card
-                                    key={field.id}
-                                    variant="outlined"
-                                    sx={{
-                                        mb: 2,
-                                        border: duplicateRows.has(index) ? "2px solid #ffcdd2" : undefined,
-                                        backgroundColor: duplicateRows.has(index) ? "#ffebee" : undefined,
-                                        transition: "all 0.3s ease",
-                                    }}>
-                                    <CardContent>
-                                        <Grid container spacing={2} alignItems="flex-end">
-                                            <UnidadComboBox
-                                                name={`unidadProductorSuplidor.${index}.unidadId`}
-                                                label="Unidad Base"
-                                                control={control}
-                                                size={3}
-                                                onSelectionChange={(value) => {
-                                                    setTimeout(() => {
-                                                        const cantidad = watch(`unidadProductorSuplidor.${index}.cantidad`);
-                                                        const unidadFraccionId = watch(
-                                                            `unidadProductorSuplidor.${index}.unidadFraccionId`
-                                                        );
-                                                        validateUnidadCombination(index, value, cantidad, unidadFraccionId);
-                                                    }, 50);
-                                                }}
-                                            />
-                                            <Box sx={{ mb: 0, "& > div": { mb: 0 } }}>
-                                                <NumericInput
-                                                    label="Cantidad"
-                                                    name={`unidadProductorSuplidor.${index}.cantidad`}
+                            {unidadProductorSuplidor.map((field, index) => {
+                                const isActive = watch(`unidadProductorSuplidor.${index}.activo`);
+                                const isDuplicate = duplicateRows.has(index);
+
+                                return (
+                                    <Card
+                                        key={field.id}
+                                        variant="outlined"
+                                        sx={{
+                                            mb: 2,
+                                            border: isDuplicate ? "2px solid #ffcdd2" : undefined,
+                                            backgroundColor: isDuplicate ? "#ffebee" : !isActive ? "#f5f5f5" : undefined,
+                                            opacity: isActive ? 1 : 0.6,
+                                            transition: "all 0.3s ease",
+                                        }}>
+                                        <CardContent>
+                                            <Grid container spacing={2} alignItems="flex-end">
+                                                <UnidadComboBox
+                                                    name={`unidadProductorSuplidor.${index}.unidadId`}
+                                                    label="Unidad Base"
                                                     control={control}
-                                                    size={12}
-                                                    onBlur={(value) => {
-                                                        const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
-                                                        const unidadFraccionId = watch(
-                                                            `unidadProductorSuplidor.${index}.unidadFraccionId`
-                                                        );
-                                                        validateUnidadCombination(index, unidadId, value, unidadFraccionId);
+                                                    size={3}
+                                                    disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                    onSelectionChange={(value: any) => {
+                                                        setTimeout(() => {
+                                                            const cantidad = watch(`unidadProductorSuplidor.${index}.cantidad`);
+                                                            const unidadFraccionId = watch(
+                                                                `unidadProductorSuplidor.${index}.unidadFraccionId`
+                                                            );
+                                                            validateUnidadCombination(index, value, cantidad, unidadFraccionId);
+                                                        }, 50);
                                                     }}
                                                 />
-                                            </Box>
-                                            <UnidadComboBox
-                                                name={`unidadProductorSuplidor.${index}.unidadFraccionId`}
-                                                label="Unidad Fracción"
-                                                control={control}
-                                                size={3}
-                                                onSelectionChange={(value) => {
-                                                    setTimeout(() => {
-                                                        const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
-                                                        const cantidad = watch(`unidadProductorSuplidor.${index}.cantidad`);
-                                                        validateUnidadCombination(index, unidadId, cantidad, value);
-                                                    }, 50);
-                                                }}
-                                            />{" "}
-                                            {/* Action buttons in the same row, aligned to the right */}
-                                            <Grid
-                                                size={{ xs: 12, sm: "auto" }}
-                                                sx={{ marginLeft: "auto", display: "flex", gap: 1, alignItems: "center" }}>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => toggleCardExpansion(index)}
-                                                    sx={{
-                                                        transform: expandedCards[index] ? "rotate(180deg)" : "rotate(0deg)",
-                                                        transition: "transform 0.3s",
-                                                    }}>
-                                                    <ExpandMoreIcon />
-                                                </IconButton>
-                                                <IconButton size="small" color="error" onClick={() => removeUnidad(index)}>
-                                                    <DeleteIcon />
-                                                </IconButton>
-                                            </Grid>
-                                        </Grid>
-
-                                        {/* Expandable sections */}
-                                        {expandedCards[index] && (
-                                            <>
-                                                {/* Precios e Inventario */}
-                                                <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
-                                                    Precios e Inventario
-                                                </Typography>
-                                                <Grid container spacing={2}>
-                                                    <MoneyInput
-                                                        label="Precio de Venta"
-                                                        name={`unidadProductorSuplidor.${index}.precioVenta`}
-                                                        control={control}
-                                                        size={2}
-                                                    />
-                                                    <MoneyInput
-                                                        label="Precio Mínimo"
-                                                        name={`unidadProductorSuplidor.${index}.precioMinimo`}
-                                                        control={control}
-                                                        size={2}
-                                                    />
-                                                    <MoneyInput
-                                                        label="Precio de Costo"
-                                                        name={`unidadProductorSuplidor.${index}.precio`}
-                                                        control={control}
-                                                        size={2}
-                                                    />
-                                                    <MoneyInput
-                                                        label="Precio Costo Promedio"
-                                                        name={`unidadProductorSuplidor.${index}.precioCostoAvg`}
-                                                        control={control}
-                                                        size={2}
-                                                    />
+                                                <Box sx={{ mb: 0, "& > div": { mb: 0 } }}>
                                                     <NumericInput
-                                                        label="Existencia"
-                                                        name={`unidadProductorSuplidor.${index}.existencia`}
+                                                        label="Cantidad"
+                                                        name={`unidadProductorSuplidor.${index}.cantidad`}
                                                         control={control}
-                                                        size={2}
-                                                    />
-                                                </Grid>
-
-                                                {/* Opciones de Disponibilidad */}
-                                                <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
-                                                    Disponibilidad
-                                                </Typography>
-                                                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                                                    <FormControlLabel
-                                                        control={
-                                                            <Checkbox
-                                                                checked={watch(
-                                                                    `unidadProductorSuplidor.${index}.disponibleEnCompra`
-                                                                )}
-                                                                onChange={(e) =>
-                                                                    setValue(
-                                                                        `unidadProductorSuplidor.${index}.disponibleEnCompra`,
-                                                                        e.target.checked
-                                                                    )
-                                                                }
-                                                            />
-                                                        }
-                                                        label="Disponible en compra"
-                                                    />
-                                                    <FormControlLabel
-                                                        control={
-                                                            <Checkbox
-                                                                checked={watch(
-                                                                    `unidadProductorSuplidor.${index}.disponibleEnVenta`
-                                                                )}
-                                                                onChange={(e) =>
-                                                                    setValue(
-                                                                        `unidadProductorSuplidor.${index}.disponibleEnVenta`,
-                                                                        e.target.checked
-                                                                    )
-                                                                }
-                                                            />
-                                                        }
-                                                        label="Disponible en venta"
+                                                        size={12}
+                                                        disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                        onBlur={(value: any) => {
+                                                            const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
+                                                            const unidadFraccionId = watch(
+                                                                `unidadProductorSuplidor.${index}.unidadFraccionId`
+                                                            );
+                                                            validateUnidadCombination(index, unidadId, value, unidadFraccionId);
+                                                        }}
                                                     />
                                                 </Box>
+                                                <UnidadComboBox
+                                                    name={`unidadProductorSuplidor.${index}.unidadFraccionId`}
+                                                    label="Unidad Fracción"
+                                                    control={control}
+                                                    size={3}
+                                                    disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                    onSelectionChange={(value: any) => {
+                                                        setTimeout(() => {
+                                                            const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
+                                                            const cantidad = watch(`unidadProductorSuplidor.${index}.cantidad`);
+                                                            validateUnidadCombination(index, unidadId, cantidad, value);
+                                                        }, 50);
+                                                    }}
+                                                />{" "}
+                                                {/* Action buttons in the same row, aligned to the right */}
+                                                <Grid
+                                                    size={{ xs: 12, sm: "auto" }}
+                                                    sx={{ marginLeft: "auto", display: "flex", gap: 1, alignItems: "center" }}>
+                                                    <FormControlLabel
+                                                        control={
+                                                            <Switch
+                                                                checked={watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                                onChange={(e) =>
+                                                                    setValue(
+                                                                        `unidadProductorSuplidor.${index}.activo`,
+                                                                        e.target.checked
+                                                                    )
+                                                                }
+                                                                size="small"
+                                                            />
+                                                        }
+                                                        label="Activo"
+                                                        labelPlacement="top"
+                                                        sx={{
+                                                            margin: 0,
+                                                            "& .MuiFormControlLabel-label": {
+                                                                fontSize: "0.75rem",
+                                                                lineHeight: 1,
+                                                            },
+                                                        }}
+                                                    />
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => toggleCardExpansion(index)}
+                                                        sx={{
+                                                            transform: expandedCards[index] ? "rotate(180deg)" : "rotate(0deg)",
+                                                            transition: "transform 0.3s",
+                                                        }}>
+                                                        <ExpandMoreIcon />
+                                                    </IconButton>
+                                                    {/* Solo mostrar botón eliminar si no ha sido guardado (no tiene ID) */}
+                                                    {!watch(`unidadProductorSuplidor.${index}.id`) && (
+                                                        <IconButton
+                                                            size="small"
+                                                            color="error"
+                                                            onClick={() => removeUnidad(index)}>
+                                                            <DeleteIcon />
+                                                        </IconButton>
+                                                    )}
+                                                </Grid>
+                                            </Grid>
 
-                                                {/* Warehouse Limits for this Unit/Supplier */}
-                                                <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 1 }}>
-                                                    Límites por Almacén
-                                                </Typography>
-                                                <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mt: 1 }}>
+                                            {/* Expandable sections */}
+                                            {expandedCards[index] && (
+                                                <>
+                                                    {/* Precios e Inventario */}
+                                                    <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
+                                                        Precios e Inventario
+                                                    </Typography>
+                                                    <Grid container spacing={2}>
+                                                        <MoneyInput
+                                                            label="Precio de Venta"
+                                                            name={`unidadProductorSuplidor.${index}.precioVenta`}
+                                                            control={control}
+                                                            size={2}
+                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                        />
+                                                        <MoneyInput
+                                                            label="Precio Mínimo"
+                                                            name={`unidadProductorSuplidor.${index}.precioMinimo`}
+                                                            control={control}
+                                                            size={2}
+                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                        />
+                                                        <MoneyInput
+                                                            label="Precio de Costo"
+                                                            name={`unidadProductorSuplidor.${index}.precio`}
+                                                            control={control}
+                                                            size={2}
+                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                        />
+                                                        <MoneyInput
+                                                            label="Precio Costo Promedio"
+                                                            name={`unidadProductorSuplidor.${index}.precioCostoAvg`}
+                                                            control={control}
+                                                            size={2}
+                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                        />
+                                                        <NumericInput
+                                                            label="Existencia"
+                                                            name={`unidadProductorSuplidor.${index}.existencia`}
+                                                            control={control}
+                                                            size={2}
+                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                        />
+                                                    </Grid>
+
+                                                    {/* Opciones de Disponibilidad */}
+                                                    <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
+                                                        Disponibilidad
+                                                    </Typography>
+                                                    <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                                                        <FormControlLabel
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={watch(
+                                                                        `unidadProductorSuplidor.${index}.disponibleEnCompra`
+                                                                    )}
+                                                                    disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                                    onChange={(e) =>
+                                                                        setValue(
+                                                                            `unidadProductorSuplidor.${index}.disponibleEnCompra`,
+                                                                            e.target.checked
+                                                                        )
+                                                                    }
+                                                                />
+                                                            }
+                                                            label="Disponible en compra"
+                                                        />
+                                                        <FormControlLabel
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={watch(
+                                                                        `unidadProductorSuplidor.${index}.disponibleEnVenta`
+                                                                    )}
+                                                                    disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                                    onChange={(e) =>
+                                                                        setValue(
+                                                                            `unidadProductorSuplidor.${index}.disponibleEnVenta`,
+                                                                            e.target.checked
+                                                                        )
+                                                                    }
+                                                                />
+                                                            }
+                                                            label="Disponible en venta"
+                                                        />
+                                                    </Box>
+
+                                                    {/* Warehouse Limits for this Unit/Supplier */}
+                                                    <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 1 }}>
+                                                        Límites por Almacén
+                                                    </Typography>
+                                                    <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mt: 1 }}>
+                                                        <Box sx={{ mb: 2 }}>
+                                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                                                Configure límites de inventario específicos por almacén para esta
+                                                                unidad/proveedor.
+                                                            </Typography>
+                                                            <Button
+                                                                variant="outlined"
+                                                                size="small"
+                                                                onClick={() => {
+                                                                    const currentLimits =
+                                                                        watch(
+                                                                            `unidadProductorSuplidor.${index}.productosAlmacenesLimites`
+                                                                        ) || [];
+                                                                    setValue(
+                                                                        `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
+                                                                        [
+                                                                            ...currentLimits,
+                                                                            {
+                                                                                empresaId: 0,
+                                                                                secuencia: 0,
+                                                                                usuarioReg: "",
+                                                                                fechaReg: new Date(),
+                                                                                activo: true,
+                                                                                limite: 0,
+                                                                                almacenId: 0,
+                                                                            },
+                                                                        ]
+                                                                    );
+                                                                }}>
+                                                                Agregar Límite de Almacén
+                                                            </Button>
+                                                        </Box>
+
+                                                        {(
+                                                            watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`) ||
+                                                            []
+                                                        ).map((limite: any, limiteIndex: number) => (
+                                                            <Card
+                                                                key={`limite-${index}-${limiteIndex}`}
+                                                                variant="outlined"
+                                                                sx={{ mb: 1, backgroundColor: "#f9f9f9" }}>
+                                                                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+                                                                    <Box
+                                                                        sx={{
+                                                                            display: "flex",
+                                                                            justifyContent: "space-between",
+                                                                            alignItems: "center",
+                                                                            mb: 1,
+                                                                        }}>
+                                                                        <Typography variant="body2" fontWeight="medium">
+                                                                            Límite #{limiteIndex + 1}
+                                                                        </Typography>
+                                                                        <Button
+                                                                            color="error"
+                                                                            size="small"
+                                                                            onClick={() => {
+                                                                                const currentLimits =
+                                                                                    watch(
+                                                                                        `unidadProductorSuplidor.${index}.productosAlmacenesLimites`
+                                                                                    ) || [];
+                                                                                const newLimits = currentLimits.filter(
+                                                                                    (_: any, i: number) => i !== limiteIndex
+                                                                                );
+                                                                                setValue(
+                                                                                    `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
+                                                                                    newLimits
+                                                                                );
+                                                                            }}>
+                                                                            Eliminar
+                                                                        </Button>
+                                                                    </Box>
+                                                                    <Grid container spacing={2}>
+                                                                        <AlmacenComboBox
+                                                                            name={`unidadProductorSuplidor.${index}.productosAlmacenesLimites.${limiteIndex}.almacenId`}
+                                                                            label="Almacén"
+                                                                            control={control}
+                                                                            size={8}
+                                                                        />
+                                                                        <NumericInput
+                                                                            label="Límite"
+                                                                            name={`unidadProductorSuplidor.${index}.productosAlmacenesLimites.${limiteIndex}.limite`}
+                                                                            control={control}
+                                                                            size={4}
+                                                                        />
+                                                                    </Grid>
+                                                                </CardContent>
+                                                            </Card>
+                                                        ))}
+
+                                                        {(!watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`) ||
+                                                            watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`)
+                                                                ?.length === 0) && (
+                                                            <Typography
+                                                                variant="body2"
+                                                                color="text.secondary"
+                                                                sx={{ textAlign: "center", py: 2 }}>
+                                                                No hay límites de almacén configurados
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+
+                                                    {/* Suppliers Section */}
+                                                    <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 1 }}>
+                                                        Proveedores
+                                                    </Typography>
                                                     <Box sx={{ mb: 2 }}>
-                                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                                            Configure límites de inventario específicos por almacén para esta
-                                                            unidad/proveedor.
-                                                        </Typography>
                                                         <Button
                                                             variant="outlined"
                                                             size="small"
                                                             onClick={() => {
-                                                                const currentLimits =
+                                                                const currentSuplidores =
                                                                     watch(
-                                                                        `unidadProductorSuplidor.${index}.productosAlmacenesLimites`
+                                                                        `unidadProductorSuplidor.${index}.productosSuplidores`
                                                                     ) || [];
-                                                                setValue(
-                                                                    `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
-                                                                    [
-                                                                        ...currentLimits,
-                                                                        {
-                                                                            empresaId: 0,
-                                                                            secuencia: 0,
-                                                                            usuarioReg: "",
-                                                                            fechaReg: new Date(),
-                                                                            activo: true,
-                                                                            limite: 0,
-                                                                            almacenId: 0,
-                                                                        },
-                                                                    ]
-                                                                );
+                                                                setValue(`unidadProductorSuplidor.${index}.productosSuplidores`, [
+                                                                    ...currentSuplidores,
+                                                                    {
+                                                                        empresaId: 0,
+                                                                        secuencia: 0,
+                                                                        usuarioReg: "",
+                                                                        fechaReg: new Date(),
+                                                                        activo: true,
+                                                                        precio: 0,
+                                                                        itbisDefault: false, // Default to false
+                                                                        suplidorId: 0,
+                                                                    },
+                                                                ]);
                                                             }}>
-                                                            Agregar Límite de Almacén
+                                                            Agregar Proveedor
                                                         </Button>
                                                     </Box>
 
-                                                    {(
-                                                        watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`) || []
-                                                    ).map((limite: any, limiteIndex: number) => (
-                                                        <Card
-                                                            key={`limite-${index}-${limiteIndex}`}
-                                                            variant="outlined"
-                                                            sx={{ mb: 1, backgroundColor: "#f9f9f9" }}>
-                                                            <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                                                                <Box
-                                                                    sx={{
-                                                                        display: "flex",
-                                                                        justifyContent: "space-between",
-                                                                        alignItems: "center",
-                                                                        mb: 1,
-                                                                    }}>
-                                                                    <Typography variant="body2" fontWeight="medium">
-                                                                        Límite #{limiteIndex + 1}
-                                                                    </Typography>
-                                                                    <Button
-                                                                        color="error"
-                                                                        size="small"
-                                                                        onClick={() => {
-                                                                            const currentLimits =
-                                                                                watch(
-                                                                                    `unidadProductorSuplidor.${index}.productosAlmacenesLimites`
-                                                                                ) || [];
-                                                                            const newLimits = currentLimits.filter(
-                                                                                (_: any, i: number) => i !== limiteIndex
-                                                                            );
-                                                                            setValue(
-                                                                                `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
-                                                                                newLimits
-                                                                            );
-                                                                        }}>
-                                                                        Eliminar
-                                                                    </Button>
-                                                                </Box>
-                                                                <Grid container spacing={2}>
-                                                                    <AlmacenComboBox
-                                                                        name={`unidadProductorSuplidor.${index}.productosAlmacenesLimites.${limiteIndex}.almacenId`}
-                                                                        label="Almacén"
-                                                                        control={control}
-                                                                        size={8}
-                                                                    />
-                                                                    <NumericInput
-                                                                        label="Límite"
-                                                                        name={`unidadProductorSuplidor.${index}.productosAlmacenesLimites.${limiteIndex}.limite`}
-                                                                        control={control}
-                                                                        size={4}
-                                                                    />
-                                                                </Grid>
-                                                            </CardContent>
-                                                        </Card>
-                                                    ))}
-
-                                                    {(!watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`) ||
-                                                        watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`)
-                                                            ?.length === 0) && (
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="text.secondary"
-                                                            sx={{ textAlign: "center", py: 2 }}>
-                                                            No hay límites de almacén configurados
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-
-                                                {/* Suppliers Section */}
-                                                <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 1 }}>
-                                                    Proveedores
-                                                </Typography>
-                                                <Box sx={{ mb: 2 }}>
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        onClick={() => {
-                                                            const currentSuplidores =
-                                                                watch(`unidadProductorSuplidor.${index}.productosSuplidores`) ||
-                                                                [];
-                                                            setValue(`unidadProductorSuplidor.${index}.productosSuplidores`, [
-                                                                ...currentSuplidores,
-                                                                {
-                                                                    empresaId: 0,
-                                                                    secuencia: 0,
-                                                                    usuarioReg: "",
-                                                                    fechaReg: new Date(),
-                                                                    activo: true,
-                                                                    precio: 0,
-                                                                    itbisDefault: false, // Default to false
-                                                                    suplidorId: 0,
-                                                                },
-                                                            ]);
-                                                        }}>
-                                                        Agregar Proveedor
-                                                    </Button>
-                                                </Box>
-
-                                                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                                    {(watch(`unidadProductorSuplidor.${index}.productosSuplidores`) || []).map(
-                                                        (suplidor, suplidorIndex) => (
+                                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                                        {(
+                                                            watch(`unidadProductorSuplidor.${index}.productosSuplidores`) || []
+                                                        ).map((suplidor, suplidorIndex) => (
                                                             <Card key={suplidorIndex} variant="outlined" sx={{ p: 1 }}>
                                                                 <CardContent sx={{ p: 1, "&:last-child": { pb: 1 } }}>
                                                                     <Box
@@ -843,25 +891,25 @@ const ProductoViewExample = () => {
                                                                     </Grid>
                                                                 </CardContent>
                                                             </Card>
-                                                        )
-                                                    )}
+                                                        ))}
 
-                                                    {(!watch(`unidadProductorSuplidor.${index}.productosSuplidores`) ||
-                                                        watch(`unidadProductorSuplidor.${index}.productosSuplidores`)?.length ===
-                                                            0) && (
-                                                        <Typography
-                                                            variant="body2"
-                                                            color="text.secondary"
-                                                            sx={{ textAlign: "center", py: 2 }}>
-                                                            No hay proveedores configurados
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                            </>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            ))}
+                                                        {(!watch(`unidadProductorSuplidor.${index}.productosSuplidores`) ||
+                                                            watch(`unidadProductorSuplidor.${index}.productosSuplidores`)
+                                                                ?.length === 0) && (
+                                                            <Typography
+                                                                variant="body2"
+                                                                color="text.secondary"
+                                                                sx={{ textAlign: "center", py: 2 }}>
+                                                                No hay proveedores configurados
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                </>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
                         </AccordionDetails>
                     </Accordion>
 
