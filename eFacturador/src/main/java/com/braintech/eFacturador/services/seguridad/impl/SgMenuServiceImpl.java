@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.services.seguridad.impl;
 
 import com.braintech.eFacturador.dao.seguridad.SgMenuRepository;
+import com.braintech.eFacturador.dto.seguridad.SgMenuResumenDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.seguridad.SgMenu;
 import com.braintech.eFacturador.services.seguridad.SgMenuService;
@@ -43,6 +44,11 @@ public class SgMenuServiceImpl implements SgMenuService {
   @Override
   public List<SgMenu> getByTipoMenuId(Integer tipoMenuId) {
     return menuRepository.findByTipoMenuIdAndActive(tipoMenuId);
+  }
+
+  @Override
+  public List<SgMenuResumenDTO> getMenusAsignablesAProductos() {
+    return menuRepository.findMenusAsignablesAProductos();
   }
 
   @Override

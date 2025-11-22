@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.services.seguridad;
 
+import com.braintech.eFacturador.dto.seguridad.SgMenuResumenDTO;
 import com.braintech.eFacturador.jpa.seguridad.SgMenu;
 import java.util.List;
 
@@ -13,6 +14,8 @@ public interface SgMenuService {
   List<SgMenu> getByModuloId(String moduloId);
 
   List<SgMenu> getByTipoMenuId(Integer tipoMenuId);
+
+  List<SgMenuResumenDTO> getMenusAsignablesAProductos();
 
   SgMenu create(SgMenu menu);
 

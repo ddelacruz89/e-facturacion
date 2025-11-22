@@ -1,5 +1,5 @@
 import apiClient from "../services/apiClient";
-import { SgMenu } from "../models/seguridad";
+import { SgMenu, SgMenuResumenDTO } from "../models/seguridad";
 
 const api = "/api/v1/seguridad/menu";
 
@@ -13,6 +13,10 @@ export function getMenu(id: number): Promise<SgMenu> {
 
 export function getMenusActivos(): Promise<SgMenu[]> {
     return apiClient.get(`${api}/activos`).then((x: { data: SgMenu[] }) => x.data);
+}
+
+export function getMenusAsignablesAProductos(): Promise<SgMenuResumenDTO[]> {
+    return apiClient.get(`${api}/asignables-productos`).then((x: { data: SgMenuResumenDTO[] }) => x.data);
 }
 
 export function saveMenu(menu: SgMenu): Promise<SgMenu> {

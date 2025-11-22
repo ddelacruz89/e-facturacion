@@ -8,7 +8,7 @@ import { getUnidadesResumen } from "../apis/UnidadController";
 import { getItbisResumen } from "../apis/ItbisController";
 import { getSuplidoresResumen } from "../apis/SuplidorController";
 import { getAlmacenesActivos } from "../apis/AlmacenController";
-import { getMenusActivos } from "../apis/MenuController";
+import { getMenusActivos, getMenusAsignablesAProductos } from "../apis/MenuController";
 import { getSucursalesActivas } from "../apis/SucursalController";
 // Remove getSuplidoresActivos import since we're using the shared hook
 import { getTagsActivos } from "../apis/TagController";
@@ -17,7 +17,7 @@ import { getTagsActivos } from "../apis/TagController";
 import { MgCategoria, MgUnidad, MgCategoriaSimpleDTO, MgUnidadSimpleDTO } from "../models/producto";
 import { MgItbis, MgItbisSimpleDTO } from "../models/facturacion";
 import { InAlmacen, InSuplidor, InSuplidorSimpleDTO } from "../models/inventario";
-import { SgMenu } from "../models/seguridad";
+import { SgMenu, SgMenuResumenDTO } from "../models/seguridad";
 import { SgSucursal } from "../models/seguridad/SgSucursal";
 import { MgTag } from "../models/producto/MgTag";
 
@@ -219,13 +219,13 @@ export const AlmacenComboBox: React.FC<BaseComboProps> = ({ label = "Almacén", 
 
 // Menu ComboBox
 export const MenuComboBox: React.FC<BaseComboProps> = ({ label = "Menú/Módulo", ...props }) => {
-    const [menus, setMenus] = useState<SgMenu[]>([]);
+    const [menus, setMenus] = useState<SgMenuResumenDTO[]>([]);
     const [loading, setLoading] = useState(false);
 
     const loadMenus = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await getMenusActivos();
+            const data = await getMenusAsignablesAProductos();
             setMenus(data);
         } catch (error) {
             console.error("Error loading menus:", error);
@@ -241,8 +241,8 @@ export const MenuComboBox: React.FC<BaseComboProps> = ({ label = "Menú/Módulo"
 
     const options: ComboBoxOption[] = menus.map((menu) => ({
         value: menu.id?.toString() || "",
-        label: menu.nombre,
-        description: menu.descripcion || `ID: ${menu.id}`,
+        label: menu.menu,
+        description: menu.menu || `ID: ${menu.id}`,
     }));
 
     return (

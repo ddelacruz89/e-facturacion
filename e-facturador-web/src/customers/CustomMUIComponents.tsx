@@ -17,12 +17,13 @@ type BaseProps = {
     size?: Size;
     placeholder?: string;
     disabled?: boolean;
+    onBlur?: (value: any) => void;
 };
 
 // ───────────────────────────────────────────────
 // NumericInput
 // ───────────────────────────────────────────────
-export function NumericInput({ name, label, control, error, rules, size = 12, ...rest }: BaseProps) {
+export function NumericInput({ name, label, control, error, rules, size = 12, onBlur: customOnBlur, ...rest }: BaseProps) {
     return (
         <Box sx={{ width: `${(size / 12) * 100}%`, mb: 2 }}>
             <Controller
@@ -45,6 +46,12 @@ export function NumericInput({ name, label, control, error, rules, size = 12, ..
                         fullWidth
                         error={!!error}
                         helperText={error?.message}
+                        onBlur={(e) => {
+                            field.onBlur();
+                            if (customOnBlur) {
+                                customOnBlur(field.value);
+                            }
+                        }}
                         onKeyDown={(e: React.KeyboardEvent) => {
                             const allowed = ["Backspace", "Tab", "ArrowLeft", "ArrowRight", "Delete"];
                             if (!/[0-9]/.test(e.key) && !allowed.includes(e.key)) {
@@ -128,10 +135,13 @@ export function SelectInput({ name, label, control, error, options, rules, size 
 // ───────────────────────────────────────────────
 // MoneyInput
 // ───────────────────────────────────────────────
+// Custom input component for NumericFormat - defined outside to prevent re-renders
+const MoneyCustomInput = forwardRef<HTMLInputElement, any>((props, ref) => {
+    const { error, helperText, ...otherProps } = props;
+    return <TextField {...otherProps} ref={ref} size="small" fullWidth error={error} helperText={helperText} />;
+});
+
 export function MoneyInput({ name, label, control, error, rules, size = 12, ...rest }: BaseProps) {
-    const CustomInput = forwardRef<HTMLInputElement, any>((props, ref) => (
-        <TextField {...props} ref={ref} label={label} size="small" fullWidth error={!!error} helperText={error?.message} />
-    ));
     return (
         <Box sx={{ width: `${(size / 12) * 100}%`, mb: 2 }}>
             <Controller
@@ -140,15 +150,19 @@ export function MoneyInput({ name, label, control, error, rules, size = 12, ...r
                 rules={rules}
                 render={({ field }) => (
                     <NumericFormat
+                        {...rest}
                         name={field.name}
                         value={field.value}
                         onBlur={field.onBlur}
+                        label={label}
                         decimalScale={2}
                         fixedDecimalScale
                         thousandSeparator=","
                         type="text"
                         prefix={"RD$ "}
-                        customInput={CustomInput}
+                        customInput={MoneyCustomInput}
+                        error={!!error}
+                        helperText={error?.message}
                         onValueChange={(values: NumberFormatValues) => {
                             field.onChange(values.floatValue || 0);
                         }}

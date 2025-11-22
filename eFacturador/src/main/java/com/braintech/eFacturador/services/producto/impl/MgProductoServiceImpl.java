@@ -107,7 +107,7 @@ public class MgProductoServiceImpl implements MgProductoService {
       unidadSuplidor.setProductoId(producto);
 
       if (unidadSuplidor.getId() == null || unidadSuplidor.getId() == 0) {
-        // Nueva unidad
+        // Nueva unidad*9
         unidadSuplidor.setEmpresaId(empresaId);
         unidadSuplidor.setUsuarioReg(username);
         unidadSuplidor.setFechaReg(LocalDateTime.now());

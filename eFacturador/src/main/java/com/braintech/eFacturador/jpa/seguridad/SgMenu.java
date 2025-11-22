@@ -4,6 +4,7 @@ import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import lombok.*;
+import org.hibernate.annotations.Comment;
 
 @Entity
 @Table(name = "SgMenu", schema = "seguridad")
@@ -30,18 +31,27 @@ public class SgMenu extends BaseEntity implements Serializable {
   private SgModulo moduloId;
 
   @Column(name = "menu")
+  @Comment("Nombre del menú")
   private String menu;
 
   @Column(name = "url")
+  @Comment("URL de navegación del menú")
   private String url;
 
   @Column(name = "url_sql")
+  @Comment("Consulta SQL asociada al menú")
   private String urlSql;
 
   @Column(name = "activo")
+  @Comment("Indica si el menú está activo")
   private Boolean activo;
 
+  @Column(name = "productoAssignable")
+  @Comment("Indica si el menú puede ser asignado a productos, en el modulo de productos")
+  private Boolean productoAsignable;
+
   @Column(name = "orden")
+  @Comment("Orden de visualización del menú")
   private Integer orden;
 
   @Transient

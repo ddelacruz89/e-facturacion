@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.controllers.seguridad;
 
+import com.braintech.eFacturador.dto.seguridad.SgMenuResumenDTO;
 import com.braintech.eFacturador.jpa.seguridad.SgMenu;
 import com.braintech.eFacturador.services.seguridad.SgMenuService;
 import java.util.List;
@@ -42,6 +43,12 @@ public class SgMenuController {
   @GetMapping("/tipo-menu/{tipoMenuId}")
   public List<SgMenu> getByTipoMenuId(@PathVariable Integer tipoMenuId) {
     return menuService.getByTipoMenuId(tipoMenuId);
+  }
+
+  // Get menus that can be assigned to products (productoAsignable = true)
+  @GetMapping("/asignables-productos")
+  public List<SgMenuResumenDTO> getMenusAsignablesAProductos() {
+    return menuService.getMenusAsignablesAProductos();
   }
 
   @PostMapping

@@ -46,7 +46,7 @@ export interface ModuloDto {
 
 export interface SgMenu {
     id?: number;
-    nombre: string;
+    menu: string;
     descripcion?: string;
     url?: string;
     icono?: string;
@@ -56,4 +56,9 @@ export interface SgMenu {
     usuarioReg?: string;
     fechaReg?: Date;
     estadoId?: string;
+}
+
+export interface SgMenuResumenDTO {
+    id?: number;
+    menu: string;
 }

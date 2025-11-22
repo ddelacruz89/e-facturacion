@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.dao.seguridad;
 
+import com.braintech.eFacturador.dto.seguridad.SgMenuResumenDTO;
 import com.braintech.eFacturador.jpa.seguridad.SgMenu;
 import java.util.List;
 import java.util.Optional;
@@ -23,4 +24,9 @@ public interface SgMenuRepository extends JpaRepository<SgMenu, Integer> {
   @Query(
       "SELECT m FROM SgMenu m WHERE m.tipoMenuId.id = :tipoMenuId AND m.activo = true ORDER BY m.orden")
   List<SgMenu> findByTipoMenuIdAndActive(@Param("tipoMenuId") Integer tipoMenuId);
+
+  @Query(
+      "SELECT new com.braintech.eFacturador.dto.seguridad.SgMenuResumenDTO(m.id, m.menu) "
+          + "FROM SgMenu m WHERE m.productoAsignable = true AND m.activo = true ORDER BY m.orden")
+  List<SgMenuResumenDTO> findMenusAsignablesAProductos();
 }

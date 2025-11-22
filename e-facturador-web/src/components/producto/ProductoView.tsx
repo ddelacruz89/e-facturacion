@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useForm, SubmitHandler, FieldErrors, useFieldArray } from "react-hook-form";
+import React, { useState, useEffect } from "react";
+import { useForm, SubmitHandler, FieldErrors, useFieldArray, Controller } from "react-hook-form";
 import {
     Box,
     Grid,
@@ -13,6 +13,8 @@ import {
     AccordionSummary,
     AccordionDetails,
     IconButton,
+    Snackbar,
+    Alert,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -81,11 +83,103 @@ const ProductoViewExample = () => {
     // State to manage expanded cards for unidad/fracción items
     const [expandedCards, setExpandedCards] = useState<{ [key: number]: boolean }>({});
 
+    // State to track duplicate rows
+    const [duplicateRows, setDuplicateRows] = useState<Set<number>>(new Set());
+
     // State for selected product (to display in search input)
     const [selectedProduct, setSelectedProduct] = useState<MgProducto | null>(null);
 
+    // Snackbar state
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: "success" | "error" | "warning" | "info";
+    }>({
+        open: false,
+        message: "",
+        severity: "info",
+    });
+
     // Modal search hook
     const modalSearch = useModalSearch();
+
+    const handleCloseSnackbar = () => {
+        setSnackbar({ ...snackbar, open: false });
+    };
+
+    const showSnackbar = (message: string, severity: "success" | "error" | "warning" | "info") => {
+        setSnackbar({ open: true, message, severity });
+    };
+
+    // Validar que la combinación unidadId + cantidad + unidadFraccionId sea única
+    const validateUnidadCombination = (currentIndex: number, unidadId: any, cantidad: any, unidadFraccionId: any): boolean => {
+        // Extraer el ID del objeto verificando si tiene propiedades en lugar de usar typeof
+        const unidadIdValue = (unidadId && (unidadId.id || unidadId.value)) || unidadId;
+        const unidadFraccionIdValue = (unidadFraccionId && (unidadFraccionId.id || unidadFraccionId.value)) || unidadFraccionId;
+        const cantidadValue = Number(cantidad) || 0; // Convertir a número
+
+        // Si alguno es 0 o undefined, no validar aún
+        if (
+            !unidadIdValue ||
+            !unidadFraccionIdValue ||
+            unidadIdValue === 0 ||
+            unidadFraccionIdValue === 0 ||
+            cantidadValue === 0
+        ) {
+            return true;
+        }
+
+        // Verificar todas las combinaciones duplicadas en el array completo
+        const allUnidades = watch("unidadProductorSuplidor");
+        const duplicateIndexes = new Set<number>();
+
+        allUnidades.forEach((unidad, idx) => {
+            const existingUnidadId =
+                (unidad.unidadId && ((unidad.unidadId as any).id || (unidad.unidadId as any).value)) || unidad.unidadId;
+            const existingUnidadFraccionId =
+                (unidad.unidadFraccionId && ((unidad.unidadFraccionId as any).id || (unidad.unidadFraccionId as any).value)) ||
+                unidad.unidadFraccionId;
+            const existingCantidad = Number(unidad.cantidad) || 0;
+
+            // Si esta fila tiene valores completos
+            if (existingUnidadId && existingUnidadFraccionId && existingCantidad > 0) {
+                // Buscar si hay otra fila con la misma combinación
+                const hasDuplicate = allUnidades.some((otherUnidad, otherIdx) => {
+                    if (idx === otherIdx) return false;
+
+                    const otherUnidadId =
+                        (otherUnidad.unidadId && ((otherUnidad.unidadId as any).id || (otherUnidad.unidadId as any).value)) ||
+                        otherUnidad.unidadId;
+                    const otherUnidadFraccionId =
+                        (otherUnidad.unidadFraccionId &&
+                            ((otherUnidad.unidadFraccionId as any).id || (otherUnidad.unidadFraccionId as any).value)) ||
+                        otherUnidad.unidadFraccionId;
+                    const otherCantidad = Number(otherUnidad.cantidad) || 0;
+
+                    return (
+                        existingUnidadId === otherUnidadId &&
+                        existingCantidad === otherCantidad &&
+                        existingUnidadFraccionId === otherUnidadFraccionId
+                    );
+                });
+
+                if (hasDuplicate) {
+                    duplicateIndexes.add(idx);
+                }
+            }
+        });
+
+        // Actualizar el estado de duplicados
+        setDuplicateRows(duplicateIndexes);
+
+        // Mostrar mensaje si hay duplicados
+        if (duplicateIndexes.size > 0) {
+            showSnackbar("Hay combinaciones duplicadas de Unidad Base, Cantidad y Unidad Fracción", "warning");
+            return false;
+        }
+
+        return true;
+    };
 
     const toggleCardExpansion = (index: number) => {
         setExpandedCards((prev) => ({
@@ -198,20 +292,18 @@ const ProductoViewExample = () => {
 
         saveProducto(transformedData)
             .then((response) => {
-                alert(successMessage);
+                showSnackbar(successMessage, "success");
                 // Actualizar el producto seleccionado con la respuesta del servidor
                 setSelectedProduct(response);
-                // Recargar el formulario con los datos actualizados del servidor
-                reset({
-                    ...response,
-                    unidadProductorSuplidor: response.unidadProductorSuplidor || [],
-                    productosModulos: response.productosModulos || [],
-                    tags: response.tags || [],
-                });
+
+                // Actualizar solo los campos básicos sin recargar los combos
+                if (response.id) setValue("id", response.id);
+                if (response.secuencia) setValue("secuencia", response.secuencia);
+                if (response.fechaReg) setValue("fechaReg", response.fechaReg);
             })
             .catch((error) => {
                 console.error("Error al guardar el producto:", error);
-                alert("Error al guardar el producto");
+                showSnackbar("Error al guardar el producto", "error");
             });
     };
 
@@ -415,7 +507,15 @@ const ProductoViewExample = () => {
                             </Box>
 
                             {unidadProductorSuplidor.map((field, index) => (
-                                <Card key={field.id} variant="outlined" sx={{ mb: 2 }}>
+                                <Card
+                                    key={field.id}
+                                    variant="outlined"
+                                    sx={{
+                                        mb: 2,
+                                        border: duplicateRows.has(index) ? "2px solid #ffcdd2" : undefined,
+                                        backgroundColor: duplicateRows.has(index) ? "#ffebee" : undefined,
+                                        transition: "all 0.3s ease",
+                                    }}>
                                     <CardContent>
                                         <Grid container spacing={2} alignItems="flex-end">
                                             <UnidadComboBox
@@ -423,24 +523,44 @@ const ProductoViewExample = () => {
                                                 label="Unidad Base"
                                                 control={control}
                                                 size={3}
+                                                onSelectionChange={(value) => {
+                                                    setTimeout(() => {
+                                                        const cantidad = watch(`unidadProductorSuplidor.${index}.cantidad`);
+                                                        const unidadFraccionId = watch(
+                                                            `unidadProductorSuplidor.${index}.unidadFraccionId`
+                                                        );
+                                                        validateUnidadCombination(index, value, cantidad, unidadFraccionId);
+                                                    }, 50);
+                                                }}
                                             />
-
                                             <Box sx={{ mb: 0, "& > div": { mb: 0 } }}>
                                                 <NumericInput
                                                     label="Cantidad"
                                                     name={`unidadProductorSuplidor.${index}.cantidad`}
                                                     control={control}
                                                     size={12}
+                                                    onBlur={(value) => {
+                                                        const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
+                                                        const unidadFraccionId = watch(
+                                                            `unidadProductorSuplidor.${index}.unidadFraccionId`
+                                                        );
+                                                        validateUnidadCombination(index, unidadId, value, unidadFraccionId);
+                                                    }}
                                                 />
                                             </Box>
-
                                             <UnidadComboBox
                                                 name={`unidadProductorSuplidor.${index}.unidadFraccionId`}
                                                 label="Unidad Fracción"
                                                 control={control}
                                                 size={3}
-                                            />
-
+                                                onSelectionChange={(value) => {
+                                                    setTimeout(() => {
+                                                        const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
+                                                        const cantidad = watch(`unidadProductorSuplidor.${index}.cantidad`);
+                                                        validateUnidadCombination(index, unidadId, cantidad, value);
+                                                    }, 50);
+                                                }}
+                                            />{" "}
                                             {/* Action buttons in the same row, aligned to the right */}
                                             <Grid
                                                 size={{ xs: 12, sm: "auto" }}
@@ -829,6 +949,17 @@ const ProductoViewExample = () => {
                     initialValues={modalSearch.initialValues}
                 />
             )}
+
+            {/* Snackbar for notifications */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: "top", horizontal: "right" }}>
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </main>
     );
 };
