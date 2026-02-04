@@ -1,7 +1,8 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseDgII;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import java.io.Serial;
 import java.io.Serializable;
@@ -11,12 +12,14 @@ import lombok.*;
 
 @Entity
 @Table(name = "mf_factura", schema = "facturacion")
-@Data
+@Getter
+@Setter
+@JsonIdentityInfo(
+    scope = MfFactura.class,
+    generator = ObjectIdGenerators.PropertyGenerator.class,
+    property = "id")
 @EqualsAndHashCode(callSuper = false)
-@NoArgsConstructor
-@AllArgsConstructor
 public class MfFactura extends BaseDgII implements Serializable {
-
   @Serial private static final long serialVersionUID = 1L;
 
   @Column(name = "tipo_factura_id")
@@ -24,9 +27,6 @@ public class MfFactura extends BaseDgII implements Serializable {
 
   @Column(name = "cliente_id")
   private Integer clienteId;
-
-  @Column(name = "sucursal_id")
-  private Integer sucursalId;
 
   @Column(name = "razon_social")
   private String razonSocial;
@@ -55,7 +55,15 @@ public class MfFactura extends BaseDgII implements Serializable {
   @Column(name = "total")
   private BigDecimal total;
 
-  @OneToMany(mappedBy = "facturaId", cascade = CascadeType.ALL, orphanRemoval = true)
-  @JsonManagedReference
+  @OneToMany(cascade = CascadeType.ALL, mappedBy = "facturaId", fetch = FetchType.LAZY)
+  @OrderBy("id asc")
   private List<MfFacturaDetalle> detalles;
+
+  public MfFactura(int i) {
+    super(i);
+  }
+
+  public MfFactura() {
+    super();
+  }
 }

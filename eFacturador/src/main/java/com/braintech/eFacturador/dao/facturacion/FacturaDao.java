@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.dao.facturacion;
 
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
+import com.braintech.eFacturador.models.IProductoVenta;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -39,4 +40,10 @@ public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
       @Param("numeroFactura") Integer numeroFactura,
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId);
+
+  @Query(
+      """
+            select p from MgProducto p
+            """)
+  List<IProductoVenta> findProductoVenta();
 }

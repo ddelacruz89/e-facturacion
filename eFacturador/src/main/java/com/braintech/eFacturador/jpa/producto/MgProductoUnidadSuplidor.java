@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.Getter;
@@ -19,7 +18,7 @@ import org.hibernate.annotations.Comment;
 @Setter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class MgProductoUnidadSuplidor extends BaseEntity implements Serializable {
+public class MgProductoUnidadSuplidor extends BaseEntity {
 
   private static final long serialVersionUID = 1L;
 

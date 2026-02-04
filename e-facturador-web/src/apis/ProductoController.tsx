@@ -3,6 +3,7 @@ import searchService from "../services/searchService";
 import { searchByQuery, searchById, getAll, searchByParent } from "../utils/searchUtils";
 import { MgProducto } from "../models/producto";
 
+
 const api = "/api/producto";
 
 // Using the new search service - these are examples of different approaches
@@ -63,3 +64,4 @@ export function updateProducto(id: number, producto: MgProducto): Promise<MgProd
 export function deleteProducto(id: number): Promise<void> {
     return apiClient.delete(`${api}/${id}`);
 }
+

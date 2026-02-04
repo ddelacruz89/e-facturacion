@@ -1,3 +1,5 @@
+import { ProductoVenta } from "./producto/productoVenta";
+
 export interface TipoFactura {
     id?: number; // opcional si lo generas automáticamente
     secuencia?: number; // opcional si lo generas automáticamente
@@ -49,6 +51,7 @@ export interface Factura {
     qrUrl?: string;
     aprobada?: boolean;
     razonSocial?: string;
+    secuencia?: number;
     rnc?: string;
     tipoComprobanteId: string;
     ncf?: string;
@@ -66,18 +69,21 @@ export interface Factura {
 }
 
 export interface FacturaDetalle {
-    id: number;
-    facturaId: number;
+    id?: number;
+    facturaId?: number;
     linea: number;
     productoId: number;
+    producto?: ProductoVenta;
     precioCosto: number;
     precioVentaUnd: number;
     precioVenta: number;
-    montoDescueto: number;
+    precioItbis: number;
+    montoDescuento: number;
     cantidad: number;
     montoVenta: number;
     itbisId: number;
     montoItbis: number;
+    montoTotal?: number;
     retencionItbis: number;
     retencionIsr: number;
     almacenId: number;

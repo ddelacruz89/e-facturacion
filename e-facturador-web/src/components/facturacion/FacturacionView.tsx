@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
-import { Factura, TipoFactura } from "../../models/facturacion";
+import { Factura, FacturaDetalle, TipoFactura } from "../../models/facturacion";
 import { Button, Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { TextInput, TextInputPk, TableComponent, GridRow } from "../../customers/CustomComponents";
+import { TextInput, TextInputPk, TableComponent, GridRow, TableComponentFacturacion } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
 import { TipoComprobanteSelect, TipoFacturaSelect } from "../../customers/ComboBox";
+import { getProductosVentas, saveFactura } from "../../apis/FacturaController";
+import ListaProductoVenta from "./ListaProductoVenta";
+import { ProductoVenta } from "../../models/producto/productoVenta";
+import { detalleItbis, formatCurrency } from "../../utils/FacturaUtils";
+import { toast } from "react-toastify";
+import { getValue } from "@testing-library/user-event/dist/utils";
 // import { saveFactura, getFacturas } from "../../apis/FacturaController";
 
 export default function FacturacionView() {
-    const { control, handleSubmit, setValue, formState: { errors } } = useForm<Factura>({
+    const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<Factura>({
         defaultValues: {
             usuarioReg: "",
             fechaReg: undefined,
@@ -33,20 +39,46 @@ export default function FacturacionView() {
         }
     });
 
-    const [facturas, setFacturas] = useState<Factura[]>([]);
+    const [factura, setFactura] = useState<Factura>({
+        activo: true,
+        empresaId: 0,
+        trackId: "",
+        qrUrl: "",
+        aprobada: false,
+        razonSocial: "",
+        rnc: "",
+        tipoComprobanteId: "",
+        ncf: "",
+        id: 0,
+        numeroFactura: 0,
+        tipoFacturaId: 0,
+        clienteId: 0,
+        monto: 0,
+        descuento: 0,
+        itbis: 0,
+        retencionItbis: 0,
+        retencionIsr: 0,
+        total: 0,
+        detalles: [],
+    });
 
     useEffect(() => {
-        // getFacturas().then((data) => setFacturas(data));
+
     }, []);
 
     const onSubmit: SubmitHandler<Factura> = (data) => {
-        // saveFactura(data).then((response) => {
-        //     Object.keys(response).forEach(key => setValue(key as any, response[key]));
-        //     alert("Factura guardada correctamente");
-        // }).catch((error) => {
-        //     console.error("Error al guardar la factura:", error);
-        //     alert("Error al guardar la factura");
-        // });
+        debugger;
+        saveFactura(data).then((response) => {
+            toast.success("Factura guardada correctamente");
+            factura.id = response.id;
+            factura.secuencia = response.secuencia;
+            setValue('id', response.id);
+            setValue('secuencia', response.secuencia);
+
+        }).catch((error) => {
+            console.error("Error al guardar la factura:", error);
+            toast.error("Error al guardar la factura");
+        });
         if (data.id) {
             console.log("Factura actualizada", data);
         } else {
@@ -59,7 +91,8 @@ export default function FacturacionView() {
     };
 
     const handleClean = () => {
-        setValue('id', 0);
+        setValue('id', undefined);
+        setValue('secuencia', undefined);
         setValue('numeroFactura', 0);
         setValue('clienteId', 0);
         setValue('tipoFacturaId', 0);
@@ -81,6 +114,8 @@ export default function FacturacionView() {
         setValue('fechaReg', undefined);
         setValue('activo', true);
         setValue('detalles', []);
+
+
     };
 
     const handleOnSelect = (row: Factura) => {
@@ -90,11 +125,62 @@ export default function FacturacionView() {
     const handleSelectTipoFactura = (item: TipoFactura) => {
         console.log("TipoFactura", item)
     }
+
+    const handleSelectProducto = (producto: ProductoVenta) => {
+
+        if (factura.detalles.find((detalle) => detalle.productoId === producto.id)) {
+            toast.error("Producto ya agregado a la factura");
+            return;
+        }
+
+        let detalleFactura: FacturaDetalle = {
+            linea: 0,
+            productoId: producto.id,
+            producto: producto,
+            precioCosto: 0,
+            precioVentaUnd: 0,
+            precioVenta: 0,
+            montoDescuento: 0,
+            precioItbis: 0,
+            cantidad: 2,
+            montoVenta: 0,
+            itbisId: 0,
+            montoItbis: 0,
+            retencionItbis: 0,
+            retencionIsr: 0,
+            almacenId: 0,
+        };
+        let detalles = factura.detalles
+        detalles.push(detalleFactura);
+
+        detalleFactura = detalleItbis(producto, detalleFactura);
+        detalleFactura.linea = detalles.length;
+        // factura.detalles = detalles;
+        // setFactura({ ...factura, detalles: detalles });
+        toast.success("Producto agregado a la factura");
+
+        setValue('detalles', detalles);
+
+    }
+    function handleOnChangeCantidad(value: string, row: any, column: string) {
+        if (isNaN(Number(value)) || Number(value) <= 0) {
+            return;
+        }
+        let detalles = factura.detalles;
+        let detalle = detalles[row.linea - 1];
+        detalle.cantidad = Number(value);
+        detalle = detalleItbis(detalle.producto!, detalle);
+        detalles[row.linea - 1] = detalle;
+        setValue('detalles', detalles);
+
+    }
+
     return (
-        <main>
+        <main style={{ display: 'flex', flexDirection: 'row', gap: 20 }}>
+            <ListaProductoVenta onSelectProducto={handleSelectProducto} />
             <form onSubmit={handleSubmit(onSubmit, onError)}>
                 <ActionBar title='Factura'>
-                    <Button variant="contained" color="primary" type="submit">Guardar</Button>
+                    <Button variant="contained" color="primary" type="submit" disabled={factura.id !== undefined}>Guardar</Button>
                     <Button variant="contained" color="primary" onClick={handleClean}>Nuevo</Button>
                 </ActionBar>
 
@@ -103,9 +189,9 @@ export default function FacturacionView() {
                         <TextInputPk
                             readOnly
                             control={control}
-                            name="numeroFactura"
+                            name="secuencia"
                             label="No. Factura"
-                            error={errors.numeroFactura}
+                            error={errors.secuencia}
                             size={2}
                         />
                         <TipoFacturaSelect
@@ -158,15 +244,17 @@ export default function FacturacionView() {
                     </GridRow>
                 </Grid>
                 <Divider>Listado</Divider>
-                <TableComponent
+                <TableComponentFacturacion
                     selected={handleOnSelect}
-                    rows={facturas}
+                    rows={watch('detalles')}
                     columns={[
-                        { id: "id", label: "ID" },
-                        { id: "numeroFactura", label: "No. Factura" },
-                        { id: "razonSocial", label: "Razón Social" },
-                        { id: "rnc", label: "RNC" },
-                        { id: "total", label: "Total" }
+                        { id: "linea", label: "Linea" },
+                        { id: "productoId", label: "Producto ID" },
+                        { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
+                        { id: "cantidad", label: "Cantidad", onChange: (value: string, row: any, column: string) => handleOnChangeCantidad(value, row, column) },
+                        { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
+                        { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },
+                        { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) }
                     ]}
                 />
             </form>

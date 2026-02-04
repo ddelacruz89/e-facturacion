@@ -1,6 +1,5 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.io.Serial;
 import java.io.Serializable;
@@ -25,9 +24,8 @@ public class MfFacturaDetalle implements Serializable {
   @Column(name = "id")
   private Integer id;
 
-  @ManyToOne
+  @ManyToOne(optional = false)
   @JoinColumn(name = "factura_id")
-  @JsonManagedReference
   private MfFactura facturaId;
 
   @Column(name = "linea")

@@ -32,7 +32,7 @@ public class MgProductoSuplidor extends BaseEntity implements Serializable {
   @Column(name = "precio")
   private BigDecimal precio;
 
-  @NotNull(message = "Debe elegir un itbis")
+  //  @NotNull(message = "Debe elegir un itbis")
   @Column(name = "itbis_default")
   @Comment("Indica si este suplidor aplica ITBIS por defecto para esta unidad de fracción")
   private Boolean itbisDefault;

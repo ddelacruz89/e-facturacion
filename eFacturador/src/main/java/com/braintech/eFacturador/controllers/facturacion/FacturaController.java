@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.controllers.facturacion;
 
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
+import com.braintech.eFacturador.models.IProductoVenta;
 import com.braintech.eFacturador.services.facturacion.FacturacionServices;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class FacturaController {
 
   @PostMapping
   public ResponseEntity<MfFactura> create(@RequestBody MfFactura factura) {
+    MfFactura f = new MfFactura(1);
     MfFactura saved = facturacionServices.create(factura);
     return ResponseEntity.ok(saved);
   }
@@ -55,5 +57,11 @@ public class FacturaController {
   public ResponseEntity<Void> disable(@PathVariable Integer id) {
     facturacionServices.disable(id);
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/productos/ventas")
+  public ResponseEntity<List<IProductoVenta>> getProductosVentas() {
+    List<IProductoVenta> productoVenta = facturacionServices.getProductoVenta();
+    return ResponseEntity.ok(productoVenta);
   }
 }

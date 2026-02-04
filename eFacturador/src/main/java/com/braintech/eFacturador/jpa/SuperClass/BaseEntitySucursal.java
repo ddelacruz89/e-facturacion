@@ -3,6 +3,7 @@ package com.braintech.eFacturador.jpa.SuperClass;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @MappedSuperclass
-public class BaseEntitySucursal extends BaseEntityPk {
+public class BaseEntitySucursal extends BaseEntityPk implements Serializable {
   @Column(name = "usuario_reg", nullable = false)
   private String usuarioReg;
 
@@ -23,4 +24,12 @@ public class BaseEntitySucursal extends BaseEntityPk {
 
   @Column(name = "activo")
   private Boolean activo;
+
+  public BaseEntitySucursal(int i) {
+    super(i);
+  }
+
+  public BaseEntitySucursal() {
+    super();
+  }
 }

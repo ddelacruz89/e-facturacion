@@ -14,11 +14,13 @@ import {
     Button,
     Typography,
     Box,
+    TableFooter,
 } from "@mui/material";
 import { Table, TableContainer, TableHead, TableBody, TableRow, TableCell } from "@mui/material";
 import { yellow } from "@mui/material/colors";
 import React, { ReactNode } from "react";
 import { Controller, Control, FieldError } from "react-hook-form";
+import { formatCurrency } from "../utils/FacturaUtils";
 type Size = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 type BaseProps = {
     disabled?: boolean;
@@ -185,11 +187,13 @@ export interface Column {
     minWidth?: number;
     align?: "right" | "left" | "center";
     format?: (value: number) => string;
+    onChange?: (value: string, row: any, column: string) => void;
 }
 export interface PropsTable {
     columns: Column[];
     rows: any[];
     selected?: (selected: any) => void;
+
 }
 export function TableComponent({ columns, rows, selected }: PropsTable) {
     const [page, setPage] = React.useState(0);
@@ -240,7 +244,18 @@ export function TableComponent({ columns, rows, selected }: PropsTable) {
 
                                         return (
                                             <TableCell key={column.id} align={column.align}>
-                                                {column.format && typeof value === "number" ? column.format(value) : displayValue}
+                                                {column.onChange && typeof value === 'number' && column.id !== 'id' ? (
+                                                    <TextField
+                                                        value={value}
+                                                        onChange={(e) => column.onChange && column.onChange(e.target.value, row, column.id)}
+                                                        type="number"
+                                                        size="small"
+                                                        variant="standard"
+                                                        fullWidth
+                                                    />
+                                                ) : (
+                                                    column.format && typeof value === "number" ? column.format(value) : displayValue
+                                                )}
                                             </TableCell>
                                         );
                                     })}
@@ -263,6 +278,101 @@ export function TableComponent({ columns, rows, selected }: PropsTable) {
     );
 }
 
+export function TableComponentFacturacion({ columns, rows, selected }: PropsTable) {
+    const [page, setPage] = React.useState(0);
+    const [rowsPerPage, setRowsPerPage] = React.useState(10);
+
+    const handleChangePage = (event: unknown, newPage: number) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRowsPerPage(+event.target.value);
+        setPage(0);
+    };
+    return (
+        <Paper sx={{ width: "100%" }}>
+            <TableContainer sx={{ maxHeight: 440 }}>
+                <Table stickyHeader aria-label="sticky table">
+                    <TableHead>
+                        <TableRow>
+                            {columns.map((column) => (
+                                <TableCell
+                                    key={column.id}
+                                    align={column.align}
+                                    style={{ minWidth: column.minWidth, backgroundColor: "#263238", color: "white" }}>
+                                    {column.label}
+                                </TableCell>
+                            ))}
+                        </TableRow>
+                    </TableHead>
+                    <TableBody>
+                        {(rows || []).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                            return (
+                                <TableRow
+                                    style={{ cursor: "pointer" }}
+                                    hover
+                                    role="checkbox"
+                                    tabIndex={-1}
+                                    key={row.code}
+                                    onClick={() => selected && selected(row)}>
+                                    {columns.map((column) => {
+                                        const value = row[column.id];
+                                        let displayValue = value;
+
+                                        // Handle boolean values
+                                        if (typeof value === "boolean") {
+                                            displayValue = value ? "Sí" : "No";
+                                        }
+
+                                        return (
+                                            <TableCell key={column.id} align={column.align}>
+                                                {column.onChange && typeof value === 'number' && column.id !== 'id' ? (
+                                                    <TextField
+                                                        value={value}
+                                                        onChange={(e) => column.onChange && column.onChange(e.target.value, row, column.id)}
+                                                        type="number"
+                                                        size="small"
+                                                        variant="standard"
+                                                        fullWidth
+                                                    />
+                                                ) : (
+                                                    column.format && typeof value === "number" ? column.format(value) : displayValue
+                                                )}
+                                            </TableCell>
+                                        );
+                                    })}
+                                </TableRow>
+                            );
+                        })}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+            {rows.length > 0 && (
+                <Box sx={{ p: 2, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, borderTop: "1px solid #e0e0e0" }}>
+                    <Typography variant="h6" color="text.secondary">
+                        SubTotal: {formatCurrency(rows.reduce((acc, row) => acc + row.montoVenta, 0))}
+                    </Typography>
+                    <Typography variant="h6" color="text.secondary">
+                        ITBIS: {formatCurrency(rows.reduce((acc, row) => acc + row.montoItbis, 0))}
+                    </Typography>
+                    <Typography variant="h5" color="text.primary" fontWeight="bold">
+                        Total: {formatCurrency(rows.reduce((acc, row) => acc + row.montoTotal, 0))}
+                    </Typography>
+                </Box>
+            )}
+            <TablePagination
+                rowsPerPageOptions={[10, 25, 100]}
+                component="div"
+                count={(rows || []).length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+            />
+        </Paper>
+    );
+}
 interface ConfirmationModalProps {
     open: boolean;
     title?: string;

@@ -37,4 +37,12 @@ public class BaseDgII extends BaseEntitySucursal implements Serializable {
 
   @Column(name = "ncf")
   private String ncf;
+
+  public BaseDgII(int i) {
+    super(i);
+  }
+
+  public BaseDgII() {
+    super();
+  }
 }

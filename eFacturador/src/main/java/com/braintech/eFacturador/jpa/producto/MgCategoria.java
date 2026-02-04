@@ -29,6 +29,9 @@ public class MgCategoria extends BaseEntityS implements Serializable {
   @Column(name = "tieneModulo", nullable = false)
   private Boolean tieneModulo;
 
+  @Column(name = "inventario")
+  private Boolean inventario;
+
   @Column(name = "ingreso_venta_id")
   private Integer ingresoVentaId;
 }

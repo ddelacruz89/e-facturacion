@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.services.facturacion;
 
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
+import com.braintech.eFacturador.models.IProductoVenta;
 import java.util.List;
 
 public interface IFacturacion {
@@ -17,4 +18,6 @@ public interface IFacturacion {
   MfFactura update(Integer id, MfFactura entity);
 
   void disable(Integer id);
+
+  List<IProductoVenta> getProductoVenta();
 }

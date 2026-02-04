@@ -8,6 +8,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 // Import debug utility
 import "./utils/debugAuth";
+import { ToastContainer } from 'react-toastify';
 
 // Lazy imports
 const HomeView = lazy(() => import("./HomeView"));
@@ -28,6 +29,7 @@ const AppRoutes = () => {
 
     return (
         <Suspense fallback={<div>Cargando...</div>}>
+            <ToastContainer />
             <Routes>
                 {/* Login route - redirect to home if already authenticated */}
                 <Route path="/login" element={user?.isAuthenticated ? <Navigate to="/" replace /> : <LoginView />} />
