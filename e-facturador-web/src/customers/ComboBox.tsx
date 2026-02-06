@@ -1,4 +1,4 @@
-import { FormControl, InputLabel, Select, MenuItem, Grid } from "@mui/material";
+import { FormControl, InputLabel, Select, MenuItem, Grid, FormHelperText } from "@mui/material";
 import { TipoComprobante, TipoFactura } from "../models/facturacion";
 import { useEffect, useState } from "react";
 import { getTipoFacturas } from "../apis/TipoFacturaController";
@@ -34,7 +34,7 @@ export function TipoFacturaSelect({ handleGetItem, name, disabled, readOnly, lab
             rules={{ ...rules }}
             render={({ field }) => (
                 <Grid size={{ xs: 12, sm: size }}>
-                    <FormControl fullWidth>
+                    <FormControl fullWidth error={!!error}>
                         <InputLabel id="demo-simple-select-label">TipoFactura</InputLabel>
                         <Select
                             size="small"
@@ -43,7 +43,7 @@ export function TipoFacturaSelect({ handleGetItem, name, disabled, readOnly, lab
                             label="tipoFactura"
                             {...field}
                             {...rest}>
-                            <MenuItem value="0">Elegir</MenuItem>
+                            <MenuItem value="">Elegir</MenuItem>
                             {
                                 tipoFacturas.map((option: TipoFactura) =>
                                     <MenuItem
@@ -53,9 +53,9 @@ export function TipoFacturaSelect({ handleGetItem, name, disabled, readOnly, lab
                             }
 
                         </Select>
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
                     </FormControl>
                 </Grid>
-                //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
 
             )}
         />
@@ -77,7 +77,7 @@ export function TipoComprobanteSelect({ handleGetItem, name, disabled, readOnly,
             rules={{ ...rules }}
             render={({ field }) => (
                 <Grid size={{ xs: 12, sm: size }}>
-                    <FormControl fullWidth>
+                    <FormControl fullWidth error={!!error}>
                         <InputLabel id="demo-simple-select-label">Tipo Comprobante</InputLabel>
                         <Select
                             size="small"
@@ -96,9 +96,9 @@ export function TipoComprobanteSelect({ handleGetItem, name, disabled, readOnly,
                             }
 
                         </Select>
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
                     </FormControl>
                 </Grid>
-                //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
 
             )}
         />

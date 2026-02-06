@@ -12,7 +12,7 @@ export default function ListaProductoVenta({ onSelectProducto }: ListaProductoVe
     const [productos, setProductos] = useState<ProductoVenta[]>([]);
     useEffect(() => {
         getProductosVentas().then((data) => {
-            setProductos([...data, ...data]);
+            setProductos(data);
         });
     }, []);
     return (

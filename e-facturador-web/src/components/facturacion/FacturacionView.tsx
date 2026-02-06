@@ -39,28 +39,28 @@ export default function FacturacionView() {
         }
     });
 
-    const [factura, setFactura] = useState<Factura>({
-        activo: true,
-        empresaId: 0,
-        trackId: "",
-        qrUrl: "",
-        aprobada: false,
-        razonSocial: "",
-        rnc: "",
-        tipoComprobanteId: "",
-        ncf: "",
-        id: 0,
-        numeroFactura: 0,
-        tipoFacturaId: 0,
-        clienteId: 0,
-        monto: 0,
-        descuento: 0,
-        itbis: 0,
-        retencionItbis: 0,
-        retencionIsr: 0,
-        total: 0,
-        detalles: [],
-    });
+    // const [factura, setFactura] = useState<Factura>({
+    //     activo: true,
+    //     empresaId: 0,
+    //     trackId: "",
+    //     qrUrl: "",
+    //     aprobada: false,
+    //     razonSocial: "",
+    //     rnc: "",
+    //     tipoComprobanteId: "",
+    //     ncf: "",
+    //     id: 0,
+    //     numeroFactura: 0,
+    //     tipoFacturaId: 0,
+    //     clienteId: 0,
+    //     monto: 0,
+    //     descuento: 0,
+    //     itbis: 0,
+    //     retencionItbis: 0,
+    //     retencionIsr: 0,
+    //     total: 0,
+    //     detalles: [],
+    // });
 
     useEffect(() => {
 
@@ -69,9 +69,16 @@ export default function FacturacionView() {
     const onSubmit: SubmitHandler<Factura> = (data) => {
         debugger;
         saveFactura(data).then((response) => {
-            toast.success("Factura guardada correctamente");
-            factura.id = response.id;
-            factura.secuencia = response.secuencia;
+
+            setValue('id', response.id);
+            setValue('secuencia', response.secuencia);
+            setValue('ncf', response.ncf);
+
+            if (Number(response.id) > 0) {
+                toast.success("Factura guardada correctamente");
+            } else {
+                toast.error("Error al guardar la factura");
+            }
             setValue('id', response.id);
             setValue('secuencia', response.secuencia);
 
@@ -87,6 +94,7 @@ export default function FacturacionView() {
     };
 
     const onError = (errors: FieldErrors<Factura>) => {
+        toast.error("Errores de validación");
         console.log("Errores de validación:", errors);
     };
 
@@ -122,41 +130,45 @@ export default function FacturacionView() {
         Object.entries(row).forEach(([key, value]) => setValue(key as any, value));
     };
 
+    const handleOnDelete = (row: FacturaDetalle) => {
+        let detalles = watch('detalles');
+        detalles = detalles.filter((detalle) => detalle.linea !== row.linea);
+        setValue('detalles', detalles);
+    };
+
     const handleSelectTipoFactura = (item: TipoFactura) => {
         console.log("TipoFactura", item)
     }
 
     const handleSelectProducto = (producto: ProductoVenta) => {
 
-        if (factura.detalles.find((detalle) => detalle.productoId === producto.id)) {
-            toast.error("Producto ya agregado a la factura");
-            return;
-        }
+        // if (watch('detalles').find((detalle) => detalle.productoId === producto.id)) {
+        //     toast.error("Producto ya agregado a la factura");
+        //     return;
+        // }
 
         let detalleFactura: FacturaDetalle = {
             linea: 0,
             productoId: producto.id,
             producto: producto,
-            precioCosto: 0,
+            precioCosto: producto.precioCostoAvg,
             precioVentaUnd: 0,
             precioVenta: 0,
             montoDescuento: 0,
             precioItbis: 0,
-            cantidad: 2,
+            cantidad: 1,
             montoVenta: 0,
-            itbisId: 0,
+            itbisId: producto.itbisId.id,
             montoItbis: 0,
             retencionItbis: 0,
             retencionIsr: 0,
             almacenId: 0,
         };
-        let detalles = factura.detalles
+        let detalles = watch('detalles');
         detalles.push(detalleFactura);
 
         detalleFactura = detalleItbis(producto, detalleFactura);
         detalleFactura.linea = detalles.length;
-        // factura.detalles = detalles;
-        // setFactura({ ...factura, detalles: detalles });
         toast.success("Producto agregado a la factura");
 
         setValue('detalles', detalles);
@@ -166,7 +178,7 @@ export default function FacturacionView() {
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
-        let detalles = factura.detalles;
+        let detalles = watch('detalles');
         let detalle = detalles[row.linea - 1];
         detalle.cantidad = Number(value);
         detalle = detalleItbis(detalle.producto!, detalle);
@@ -180,7 +192,7 @@ export default function FacturacionView() {
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
             <form onSubmit={handleSubmit(onSubmit, onError)}>
                 <ActionBar title='Factura'>
-                    <Button variant="contained" color="primary" type="submit" disabled={factura.id !== undefined}>Guardar</Button>
+                    <Button variant="contained" color="primary" type="submit" disabled={Number(watch('id')) !== 0 || watch('detalles').length === 0}>Guardar</Button>
                     <Button variant="contained" color="primary" onClick={handleClean}>Nuevo</Button>
                 </ActionBar>
 
@@ -199,6 +211,10 @@ export default function FacturacionView() {
                             name="tipoFacturaId"
                             label="Tipo Factura ID"
                             error={errors.tipoFacturaId}
+                            rules={{
+                                required: "Debe seleccionar un tipo de factura",
+                                validate: (value: any) => (value !== 0 && value !== "0") || "Debe seleccionar un tipo de factura"
+                            }}
                             size={2}
                             handleGetItem={handleSelectTipoFactura}
                         />
@@ -206,6 +222,10 @@ export default function FacturacionView() {
                             control={control}
                             name="tipoComprobanteId"
                             label="Tipo Comprobante ID"
+                            rules={{
+                                required: "Debe seleccionar un tipo de comprobante",
+                                validate: (value: any) => (value !== 0 && value !== "0") || "Debe seleccionar un tipo de comprobante"
+                            }}
                             error={errors.tipoComprobanteId}
                             size={5}
                             handleGetItem={handleSelectTipoFactura}
@@ -225,6 +245,10 @@ export default function FacturacionView() {
                             name="clienteId"
                             label="Cliente ID"
                             error={errors.clienteId}
+                            rules={{
+                                required: "Debe seleccionar un cliente",
+                                validate: (value: any) => (Number(value) === 0 && Number(watch('tipoComprobanteId')) !== 32) || "Debe seleccionar un cliente"
+                            }}
                             size={2}
                         />
                         <TextInput
@@ -232,6 +256,10 @@ export default function FacturacionView() {
                             name="razonSocial"
                             label="Razón Social"
                             error={errors.razonSocial}
+                            rules={{
+                                required: "Debe seleccionar un cliente",
+                                validate: (value: any) => (Number(value) === 0 && Number(watch('tipoComprobanteId')) !== 32) || "Debe seleccionar un cliente"
+                            }}
                             size={6}
                         />
                         <TextInput
@@ -239,6 +267,10 @@ export default function FacturacionView() {
                             name="rnc"
                             label="RNC"
                             error={errors.rnc}
+                            rules={{
+                                required: "Debe seleccionar un cliente",
+                                validate: (value: any) => (Number(value) === 0 && Number(watch('tipoComprobanteId')) !== 32) || "Debe seleccionar un cliente"
+                            }}
                             size={2}
                         />
                     </GridRow>
@@ -247,6 +279,7 @@ export default function FacturacionView() {
                 <TableComponentFacturacion
                     selected={handleOnSelect}
                     rows={watch('detalles')}
+                    handleDelete={handleOnDelete}
                     columns={[
                         { id: "linea", label: "Linea" },
                         { id: "productoId", label: "Producto ID" },

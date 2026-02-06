@@ -66,4 +66,8 @@ public class MfFactura extends BaseDgII implements Serializable {
   public MfFactura() {
     super();
   }
+
+  public void sumTotal() {
+    this.total = this.monto.subtract(this.descuento).add(this.itbis);
+  }
 }

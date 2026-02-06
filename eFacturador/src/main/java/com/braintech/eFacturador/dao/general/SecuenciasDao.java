@@ -20,4 +20,20 @@ public class SecuenciasDao {
 
     return nextNumero != null ? nextNumero : 0;
   }
+
+  public String getNextSecuenciaEcf(int empresaId, String tipoComprobante) {
+    Integer nextNumero =
+        (Integer)
+            entityManager
+                .createNativeQuery(
+                    "SELECT general.get_next_secuencia_ecf(:empresaId, :tipoComprobante)")
+                .setParameter("empresaId", empresaId)
+                .setParameter("tipoComprobante", tipoComprobante)
+                .getSingleResult();
+
+    String serie = "E";
+    String paddedNumber = String.format("%010d", nextNumero); // left-pad with zeros to 10 chars
+
+    return serie.concat(tipoComprobante).concat(paddedNumber);
+  }
 }

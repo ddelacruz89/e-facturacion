@@ -15,7 +15,11 @@ import {
     Typography,
     Box,
     TableFooter,
+    FormHelperText,
+    FormControl,
+    IconButton,
 } from "@mui/material";
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import { Table, TableContainer, TableHead, TableBody, TableRow, TableCell } from "@mui/material";
 import { yellow } from "@mui/material/colors";
 import React, { ReactNode } from "react";
@@ -42,23 +46,27 @@ export function TextInput({ name, disabled, readOnly, label, control, error, rul
             }}
             render={({ field }) => (
                 <Grid size={{ xs: 12, sm: size }}>
-                    <TextField
-                        disabled={disabled}
-                        slotProps={{
-                            input: {
-                                readOnly: readOnly, // ✅ ahora se usa aquí
-                            },
-                        }}
-                        id={name}
-                        fullWidth
-                        label={label}
-                        variant="outlined"
-                        {...field}
-                        {...rest}
-                        size="small"
-                    />
+                    <FormControl fullWidth error={!!error}>
+                        <TextField
+                            disabled={disabled}
+                            slotProps={{
+                                input: {
+                                    readOnly: readOnly,
+                                },
+                            }}
+                            id={name}
+                            fullWidth
+                            label={label}
+                            error={!!error}
+                            variant="outlined"
+                            {...field}
+                            {...rest}
+                            size="small"
+                        />
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
+                    </FormControl>
                 </Grid>
-                //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
+
             )}
         />
     );
@@ -142,6 +150,7 @@ export function EmailInput({
                         {...rest}
                         size="small"
                     />
+                    {error && <FormHelperText>{error.message}</FormHelperText>}
                 </Grid>
             )}
         />
@@ -193,6 +202,7 @@ export interface PropsTable {
     columns: Column[];
     rows: any[];
     selected?: (selected: any) => void;
+    handleDelete?: (selected: any) => void;
 
 }
 export function TableComponent({ columns, rows, selected }: PropsTable) {
@@ -278,7 +288,7 @@ export function TableComponent({ columns, rows, selected }: PropsTable) {
     );
 }
 
-export function TableComponentFacturacion({ columns, rows, selected }: PropsTable) {
+export function TableComponentFacturacion({ columns, rows, selected, handleDelete }: PropsTable) {
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
@@ -304,6 +314,11 @@ export function TableComponentFacturacion({ columns, rows, selected }: PropsTabl
                                     {column.label}
                                 </TableCell>
                             ))}
+                            <TableCell
+                                align="center"
+                                style={{ minWidth: 100, backgroundColor: "#263238", color: "white" }}>
+                                Acciones
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -334,7 +349,7 @@ export function TableComponentFacturacion({ columns, rows, selected }: PropsTabl
                                                         type="number"
                                                         size="small"
                                                         variant="standard"
-                                                        fullWidth
+                                                        sx={{ width: 50 }}
                                                     />
                                                 ) : (
                                                     column.format && typeof value === "number" ? column.format(value) : displayValue
@@ -342,6 +357,11 @@ export function TableComponentFacturacion({ columns, rows, selected }: PropsTabl
                                             </TableCell>
                                         );
                                     })}
+                                    <TableCell align="center">
+                                        <IconButton color="error" aria-label="delete" onClick={() => handleDelete && handleDelete(row)}>
+                                            <DeleteOutlinedIcon />
+                                        </IconButton>
+                                    </TableCell>
                                 </TableRow>
                             );
                         })}

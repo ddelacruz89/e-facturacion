@@ -24,6 +24,8 @@ public interface IProductoVenta {
 
   BigDecimal getPrecioVenta();
 
+  BigDecimal getPrecioCostoAvg();;
+
   default BigDecimal getItbis() {
     if (getItbisId() != null) {
       return getItbisId()

@@ -7,6 +7,7 @@ export interface ProductoVenta {
     secuencia: number
     itbis: number
     precioVenta: number
+    precioCostoAvg: number
     inventarios: Inventario[]
     itbisId: ItbisId
     precioItbis: number

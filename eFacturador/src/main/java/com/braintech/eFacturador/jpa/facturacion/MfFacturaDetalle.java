@@ -66,8 +66,4 @@ public class MfFacturaDetalle implements Serializable {
 
   @Column(name = "almacen_id")
   private Integer almacenId;
-
-  public Integer getFacturaId() {
-    return facturaId != null ? facturaId.getId() : null;
-  }
 }
