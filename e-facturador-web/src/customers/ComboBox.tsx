@@ -105,3 +105,47 @@ export function TipoComprobanteSelect({ handleGetItem, name, disabled, readOnly,
 
     )
 }
+
+
+export function TipoIdentificacionSelect({ handleGetItem, name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: SelectOption) {
+
+    return (
+        <Controller
+            name={name}
+            control={control}
+            rules={{ ...rules }}
+            render={({ field }) => (
+                <Grid size={{ xs: 12, sm: size }}>
+                    <FormControl fullWidth error={!!error}>
+                        <InputLabel id="demo-simple-select-label">Tipo Identificacion</InputLabel>
+                        <Select
+                            size="small"
+                            labelId="demo-simple-select-label"
+                            id="demo-simple-select"
+                            label="tipoIdentificacion"
+                            {...field}
+                            {...rest}>
+                            <MenuItem value="">Elegir</MenuItem>
+                            <MenuItem
+                                onClick={() => handleGetItem && handleGetItem(1)}
+                                key={1}
+                                value={1}>1 - Cedula</MenuItem>
+                            <MenuItem
+                                onClick={() => handleGetItem && handleGetItem(2)}
+                                key={2}
+                                value={2}>2 - RNC</MenuItem>
+                            <MenuItem
+                                onClick={() => handleGetItem && handleGetItem(3)}
+                                key={3}
+                                value={3}>3 - Pasaporte</MenuItem>
+
+                        </Select>
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
+                    </FormControl>
+                </Grid>
+
+            )}
+        />
+
+    )
+}

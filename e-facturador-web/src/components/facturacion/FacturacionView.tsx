@@ -13,6 +13,10 @@ import { detalleItbis, formatCurrency } from "../../utils/FacturaUtils";
 import { toast } from "react-toastify";
 import { getValue } from "@testing-library/user-event/dist/utils";
 // import { saveFactura, getFacturas } from "../../apis/FacturaController";
+import SaveIcon from '@mui/icons-material/Save';
+import ArticleIcon from '@mui/icons-material/Article';
+import ModalSearchClientes from "../../customers/search/ModalSearchClientes";
+import { Cliente } from "../../models/cliente/Cliente";
 
 export default function FacturacionView() {
     const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<Factura>({
@@ -67,7 +71,7 @@ export default function FacturacionView() {
     }, []);
 
     const onSubmit: SubmitHandler<Factura> = (data) => {
-        debugger;
+        debugger
         saveFactura(data).then((response) => {
 
             setValue('id', response.id);
@@ -94,6 +98,7 @@ export default function FacturacionView() {
     };
 
     const onError = (errors: FieldErrors<Factura>) => {
+        debugger;
         toast.error("Errores de validación");
         console.log("Errores de validación:", errors);
     };
@@ -187,13 +192,19 @@ export default function FacturacionView() {
 
     }
 
+    function handleSelectCliente(cliente: Cliente): void {
+        setValue('clienteId', cliente.id);
+        setValue('razonSocial', cliente.razonSocial);
+        setValue('rnc', cliente.numeroIdentificacion);
+    }
+
     return (
-        <main style={{ display: 'flex', flexDirection: 'row', gap: 20 }}>
+        <main style={{ display: 'flex', flexDirection: 'row', gap: 20, padding: 10 }}>
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
-            <form onSubmit={handleSubmit(onSubmit, onError)}>
+            <form style={{ flexGrow: 1 }} onSubmit={handleSubmit(onSubmit, onError)}>
                 <ActionBar title='Factura'>
-                    <Button variant="contained" color="primary" type="submit" disabled={Number(watch('id')) !== 0 || watch('detalles').length === 0}>Guardar</Button>
-                    <Button variant="contained" color="primary" onClick={handleClean}>Nuevo</Button>
+                    <Button variant="contained" color="success" type="submit" disabled={Number(watch('id')) !== 0 || watch('detalles').length === 0}> <SaveIcon /> Guardar</Button>
+                    <Button variant="contained" color="primary" onClick={handleClean}><ArticleIcon /> Nuevo</Button>
                 </ActionBar>
 
                 <Grid container spacing={2} style={{ padding: 20 }}>
@@ -240,7 +251,8 @@ export default function FacturacionView() {
                         />
                     </GridRow>
                     <GridRow>
-                        <TextInput
+                        <ModalSearchClientes control={control} name="clienteId" label="Cliente ID" size={2} onSelect={handleSelectCliente} pk={false} />
+                        {/* <TextInput
                             control={control}
                             name="clienteId"
                             label="Cliente ID"
@@ -250,7 +262,7 @@ export default function FacturacionView() {
                                 validate: (value: any) => (Number(value) === 0 && Number(watch('tipoComprobanteId')) !== 32) || "Debe seleccionar un cliente"
                             }}
                             size={2}
-                        />
+                        /> */}
                         <TextInput
                             control={control}
                             name="razonSocial"
@@ -258,7 +270,14 @@ export default function FacturacionView() {
                             error={errors.razonSocial}
                             rules={{
                                 required: "Debe seleccionar un cliente",
-                                validate: (value: any) => (Number(value) === 0 && Number(watch('tipoComprobanteId')) !== 32) || "Debe seleccionar un cliente"
+                                minLength: {
+                                    value: 3,
+                                    message: "Debe tener al menos 3 caracteres"
+                                },
+                                maxLength: {
+                                    value: 100,
+                                    message: "Debe tener menos de 100 caracteres"
+                                }
                             }}
                             size={6}
                         />
@@ -269,7 +288,18 @@ export default function FacturacionView() {
                             error={errors.rnc}
                             rules={{
                                 required: "Debe seleccionar un cliente",
-                                validate: (value: any) => (Number(value) === 0 && Number(watch('tipoComprobanteId')) !== 32) || "Debe seleccionar un cliente"
+                                minLength: {
+                                    value: 7,
+                                    message: "Debe tener al menos 7 caracteres"
+                                },
+                                maxLength: {
+                                    value: 11,
+                                    message: "Debe tener menos de 11 caracteres"
+                                },
+                                pattern: {
+                                    value: /^[0-9]+$/,
+                                    message: "Debe tener solo numeros"
+                                }
                             }}
                             size={2}
                         />

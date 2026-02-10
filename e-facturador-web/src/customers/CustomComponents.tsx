@@ -25,6 +25,8 @@ import { yellow } from "@mui/material/colors";
 import React, { ReactNode } from "react";
 import { Controller, Control, FieldError } from "react-hook-form";
 import { formatCurrency } from "../utils/FacturaUtils";
+import { NumericFormat } from 'react-number-format';
+import SearchIcon from '@mui/icons-material/Search';
 type Size = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 type BaseProps = {
     disabled?: boolean;
@@ -34,6 +36,7 @@ type BaseProps = {
     control: Control<any>;
     error?: FieldError;
     rules?: object;
+    prefix?: string;
     size: Size;
 };
 export function TextInput({ name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: BaseProps) {
@@ -71,6 +74,91 @@ export function TextInput({ name, disabled, readOnly, label, control, error, rul
         />
     );
 }
+
+export function NumberInput({ name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: BaseProps) {
+    return (
+        <Controller
+            name={name}
+            control={control}
+            rules={{
+                ...rules,
+            }}
+            render={({ field }) => (
+                <Grid size={{ xs: 12, sm: size }}>
+                    <FormControl fullWidth error={!!error}>
+                        <TextField
+                            disabled={disabled}
+                            slotProps={{
+                                input: {
+                                    readOnly: readOnly,
+                                },
+                            }}
+                            id={name}
+                            type="number"
+                            fullWidth
+                            label={label}
+                            error={!!error}
+                            variant="outlined"
+                            {...field}
+                            {...rest}
+                            size="small"
+                        />
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
+                    </FormControl>
+                </Grid>
+
+            )}
+        />
+    );
+}
+
+export function MoneyInput({ name, disabled, readOnly, label, control, error, rules, prefix, size = 12, ...rest }: BaseProps) {
+    return (
+        <Controller
+            name={name}
+            control={control}
+            rules={{
+                ...rules,
+            }}
+            render={({ field: { onChange, name, value, ref } }) => (
+                <Grid size={{ xs: 12, sm: size }}>
+                    <FormControl fullWidth error={!!error}>
+                        <NumericFormat
+                            customInput={TextField}
+                            thousandSeparator={true}
+                            decimalScale={2}
+                            fixedDecimalScale={true}
+                            allowNegative={false}
+                            disabled={disabled}
+                            getInputRef={ref}
+                            fullWidth
+                            label={label}
+                            error={!!error}
+                            variant="outlined"
+                            name={name}
+                            value={Number(value) <= 0 ? "" : value}
+                            onValueChange={(values) => {
+                                onChange(values.floatValue);
+                            }}
+                            slotProps={{
+                                input: {
+                                    readOnly: readOnly,
+                                    startAdornment: (
+                                        <InputAdornment position="start">{prefix}</InputAdornment>
+                                    ),
+                                },
+                            }}
+                            {...rest}
+                            size="small"
+                        />
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
+                    </FormControl>
+                </Grid>
+            )}
+        />
+    );
+}
+
 export function TextInputPk({ name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: BaseProps) {
     return (
         <Controller
@@ -89,6 +177,88 @@ export function TextInputPk({ name, disabled, readOnly, label, control, error, r
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <Key sx={{ color: yellow[700], rotate: "90  deg" }} />
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                        id={name}
+                        fullWidth
+                        label={label}
+                        variant="outlined"
+                        {...field}
+                        {...rest}
+                        size="small"
+                    />
+                </Grid>
+                //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
+            )}
+        />
+    );
+}
+interface TextInputPkSearchProps extends BaseProps {
+    handleSearch: () => void;
+}
+
+export function TextInputPkSearch({ name, disabled, readOnly, label, control, error, rules, size, handleSearch, ...rest }: TextInputPkSearchProps) {
+    return (
+        <Controller
+            name={name}
+            control={control}
+            rules={{
+                ...rules,
+            }}
+            render={({ field }) => (
+                <Grid size={{ xs: 12, sm: size }}>
+                    <TextField
+                        disabled={disabled}
+                        slotProps={{
+                            input: {
+                                readOnly: readOnly,
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Key sx={{ color: yellow[700], rotate: "90  deg" }} />
+                                    </InputAdornment>
+                                ),
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <SearchIcon color="primary" style={{ cursor: "pointer" }} onClick={handleSearch} />
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                        id={name}
+                        fullWidth
+                        label={label}
+                        variant="outlined"
+                        {...field}
+                        {...rest}
+                        size="small"
+                    />
+                </Grid>
+                //   {/* {error && <FormFeedback>{error.message}</FormFeedback>} */}
+            )}
+        />
+    );
+}
+
+export function TextInputSearch({ name, disabled, readOnly, label, control, error, rules, size, handleSearch, ...rest }: TextInputPkSearchProps) {
+    return (
+        <Controller
+            name={name}
+            control={control}
+            rules={{
+                ...rules,
+            }}
+            render={({ field }) => (
+                <Grid size={{ xs: 12, sm: size }}>
+                    <TextField
+                        disabled={disabled}
+                        slotProps={{
+                            input: {
+                                readOnly: readOnly,
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <SearchIcon color="primary" style={{ cursor: "pointer" }} onClick={handleSearch} />
                                     </InputAdornment>
                                 ),
                             },
