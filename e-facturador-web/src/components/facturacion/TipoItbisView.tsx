@@ -2,10 +2,11 @@ import { Button, Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { TableComponent, TextInput, TextInputPk, SwitchInput } from "../../customers/CustomComponents";
 import { FieldErrors, SubmitHandler, useForm } from "react-hook-form";
-import { MfSucursalItbis } from "../../models/facturacion";
+import { MfSucursalItbis, MgItbis } from "../../models/facturacion";
 import { ItbisComboBox, SucursalComboBox } from "../../customers/ProductComboBoxes";
 import ActionBar from "../../customers/ActionBar";
 import { saveMfSucursalItbis, getMfSucursalItbis } from "../../apis/MfSucursalItbisController";
+import { getItbisActivos } from "../../apis/ItbisController";
 import { useEffect, useState } from "react";
 
 export default function TipoItbisView() {
@@ -23,11 +24,11 @@ export default function TipoItbisView() {
             sucursalId: 0,
         },
     });
-    const [tipoItbis, setTipoItbis] = useState<MfSucursalItbis[]>([]);
+    const [tipoItbis, setTipoItbis] = useState<MgItbis[]>([]);
 
     useEffect(() => {
-        getMfSucursalItbis()
-            .then((data: MfSucursalItbis[]) => {
+        getItbisActivos()
+            .then((data: MgItbis[]) => {
                 // Asegurar que data sea un array válido
                 setTipoItbis(Array.isArray(data) ? data : []);
             })
@@ -123,7 +124,7 @@ export default function TipoItbisView() {
                     selected={handleOnSelect}
                     rows={tipoItbis}
                     columns={[
-                        { id: "secuencia", label: "No." },
+                        { id: "id", label: "No." },
                         { id: "nombre", label: "Nombre" },
                         { id: "itbis", label: "ITBIS (%)" },
                         { id: "sucursalId", label: "Sucursal" },

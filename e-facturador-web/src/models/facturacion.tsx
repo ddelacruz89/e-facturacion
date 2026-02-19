@@ -88,3 +88,22 @@ export interface FacturaDetalle {
     retencionIsr: number;
     almacenId: number;
 }
+
+export interface Recibo {
+    id: number;
+    empresaId: number;
+    secuencia: number | null;
+    cheque: string | null;           // numeric(38,2) -> string para evitar pérdida de precisión
+    comentario: string | null;
+    efectivo: string | null;         // numeric(38,2)
+    facturaId: number | null;
+    notaCredito: string | null;      // numeric(38,2)
+    otros: string | null;            // numeric(38,2)
+    tarjeta: string | null;          // numeric(38,2)
+    total: string | null;            // numeric(38,2)
+    transferencia: string | null;    // numeric(38,2)
+    activo: boolean | null;
+    fechaReg: Date | null;
+    usuarioReg: string | null;
+}
+
