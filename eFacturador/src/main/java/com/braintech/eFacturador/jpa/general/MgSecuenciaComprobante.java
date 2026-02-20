@@ -16,6 +16,8 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 public class MgSecuenciaComprobante extends BaseEntityPk {
+  private static final long serialVersionUID = 1L;
+
   @NotBlank
   @Column(name = "tipo_comprobante_id")
   String tipoComprobanteId;
@@ -23,10 +25,6 @@ public class MgSecuenciaComprobante extends BaseEntityPk {
   @Column(name = "secuencia_inicial")
   @NotBlank
   Integer secuenciaInicial;
-
-  @Column(name = "secuencia")
-  @NotBlank
-  Integer secuencia;
 
   @Column(name = "secuencia_final")
   @NotBlank

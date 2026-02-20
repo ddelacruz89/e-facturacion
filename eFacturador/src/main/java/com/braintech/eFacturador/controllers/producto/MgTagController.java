@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.controllers.producto;
 
+import com.braintech.eFacturador.dto.TagResumeDto;
 import com.braintech.eFacturador.jpa.producto.MgTag;
 import com.braintech.eFacturador.services.producto.MgTagService;
 import java.util.List;
@@ -79,5 +80,10 @@ public class MgTagController {
   @GetMapping("/producto/{productoId}")
   public List<MgTag> getTagsByProducto(@PathVariable Integer productoId) {
     return tagService.getTagsByProducto(productoId);
+  }
+
+  @GetMapping("/resumen")
+  public List<TagResumeDto> getTagResynen() {
+    return tagService.getTagResumes();
   }
 }

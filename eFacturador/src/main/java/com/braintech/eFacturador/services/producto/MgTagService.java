@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.services.producto;
 
+import com.braintech.eFacturador.dto.TagResumeDto;
 import com.braintech.eFacturador.jpa.producto.MgTag;
 import java.util.List;
 
@@ -24,4 +25,6 @@ public interface MgTagService {
   void removeTagFromProduct(Integer productoId, Integer tagId);
 
   List<MgTag> getTagsByProducto(Integer productoId);
+
+  List<TagResumeDto> getTagResumes();
 }

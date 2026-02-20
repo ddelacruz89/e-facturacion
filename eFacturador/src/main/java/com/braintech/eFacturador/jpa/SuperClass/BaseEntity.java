@@ -10,6 +10,8 @@ import lombok.Setter;
 @Setter
 @MappedSuperclass
 public class BaseEntity extends BaseEntityPk {
+  private static final long serialVersionUID = 1L;
+
   @Column(name = "usuario_reg", nullable = false)
   protected String usuarioReg;
 

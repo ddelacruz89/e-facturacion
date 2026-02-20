@@ -102,6 +102,23 @@ public class MgProductoServiceImpl implements MgProductoService {
       }
     }
 
+    if (producto.getProductosAlmacenesLimites() != null) {
+      producto
+          .getProductosAlmacenesLimites()
+          .forEach(
+              limite -> {
+                if (limite.getId() == null || limite.getId() == 0) {
+                  limite.setEmpresaId(empresaId);
+                  limite.setUsuarioReg(username);
+                  limite.setFechaReg(LocalDateTime.now());
+                  // Solo establecer activo si no viene del frontend
+                  if (limite.getActivo() == null) {
+                    limite.setActivo(true);
+                  }
+                }
+              });
+    }
+
     // Set audit fields for unidad fracciones (MgProductoUnidadSuplidor)
     for (MgProductoUnidadSuplidor unidadSuplidor : producto.getUnidadProductorSuplidor()) {
       unidadSuplidor.setProductoId(producto);
@@ -136,22 +153,7 @@ public class MgProductoServiceImpl implements MgProductoService {
       }
 
       // Set audit fields for almacen limites within each unidadSuplidor
-      if (unidadSuplidor.getProductosAlmacenesLimites() != null) {
-        unidadSuplidor
-            .getProductosAlmacenesLimites()
-            .forEach(
-                limite -> {
-                  if (limite.getId() == null || limite.getId() == 0) {
-                    limite.setEmpresaId(empresaId);
-                    limite.setUsuarioReg(username);
-                    limite.setFechaReg(LocalDateTime.now());
-                    // Solo establecer activo si no viene del frontend
-                    if (limite.getActivo() == null) {
-                      limite.setActivo(true);
-                    }
-                  }
-                });
-      }
+
     }
 
     // Set audit fields for producto modulos

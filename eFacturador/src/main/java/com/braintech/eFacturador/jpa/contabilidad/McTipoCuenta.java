@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 @Table(name = "mc_tipo_cuenta", schema = "contabilidad")
 @Entity
 public class McTipoCuenta extends BaseEntity {
+  private static final long serialVersionUID = 1L;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")

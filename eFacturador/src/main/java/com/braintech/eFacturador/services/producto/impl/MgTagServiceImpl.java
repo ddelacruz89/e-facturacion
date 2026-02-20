@@ -3,6 +3,7 @@ package com.braintech.eFacturador.services.producto.impl;
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
 import com.braintech.eFacturador.dao.producto.MgProductoTagRepository;
 import com.braintech.eFacturador.dao.producto.MgTagRepository;
+import com.braintech.eFacturador.dto.TagResumeDto;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.jpa.producto.MgProductoTag;
@@ -31,6 +32,12 @@ public class MgTagServiceImpl implements MgTagService {
   public List<MgTag> getAll() {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     return tagRepository.findAllByEmpresaId(empresaId);
+  }
+
+  @Override
+  public List<TagResumeDto> getTagResumes() {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return tagRepository.findResumeByEmpresaId(empresaId);
   }
 
   @Override

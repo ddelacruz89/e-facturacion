@@ -1,3 +1,5 @@
+import { TipoComprobante } from "../facturacion";
+
 export interface InSuplidor {
     // From BaseEntityPk
     id?: number;
@@ -21,5 +23,6 @@ export interface InSuplidor {
     correo2?: string; // @Email validated
     servicio?: boolean;
     producto?: boolean;
-    estadoId?: string; // @Column(name = "estado_id")
+    estadoId: string; // @Column(name = "estado_id")
+    tipoComprobante: TipoComprobante;
 }

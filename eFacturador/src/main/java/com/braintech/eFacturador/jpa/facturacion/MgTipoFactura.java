@@ -13,5 +13,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MgTipoFactura extends BaseEntity {
+  private static final long serialVersionUID = 1L;
+
   private String nombre;
 }

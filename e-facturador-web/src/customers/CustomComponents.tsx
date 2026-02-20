@@ -186,6 +186,7 @@ export function TextInputPk({ name, disabled, readOnly, label, control, error, r
                         label={label}
                         variant="outlined"
                         {...field}
+                        value={field.value ?? ""}
                         {...rest}
                         size="small"
                     />

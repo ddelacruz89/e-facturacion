@@ -40,7 +40,6 @@ public class FacturaController {
 
   @PostMapping
   public ResponseEntity<MfFactura> create(@RequestBody MfFactura factura) {
-    MfFactura f = new MfFactura(1);
     MfFactura saved = facturacionServices.create(factura);
     return ResponseEntity.ok(saved);
   }

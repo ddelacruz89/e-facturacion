@@ -16,6 +16,9 @@ import {
     Snackbar,
     Alert,
     Switch,
+    Chip,
+    Autocomplete,
+    TextField,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -89,6 +92,16 @@ const ProductoViewExample = () => {
 
     // State for selected product (to display in search input)
     const [selectedProduct, setSelectedProduct] = useState<MgProducto | null>(null);
+
+    // State for tags functionality
+    const [availableTags, setAvailableTags] = useState<Array<{ id: number; nombre: string }>>([
+        { id: 1, nombre: "Electrónicos" },
+        { id: 2, nombre: "Hogar" },
+        { id: 3, nombre: "Deportes" },
+        { id: 4, nombre: "Ropa" },
+        { id: 5, nombre: "Libros" },
+    ]);
+    const [selectedTags, setSelectedTags] = useState<Array<{ id: number; nombre: string }>>([]);
 
     // Snackbar state
     const [snackbar, setSnackbar] = useState<{
@@ -369,10 +382,29 @@ const ProductoViewExample = () => {
         <main>
             <Box component="form" onSubmit={handleSubmit(onSubmit, onError)}>
                 <ActionBar title="Producto">
-                    <Button size="small" color="primary" type="submit">
+                    <Button
+                        size="small"
+                        sx={{
+                            color: "white", // White text
+                            backgroundColor: "#1976d2", // Example background
+                            "&:hover": {
+                                backgroundColor: "#1565c0",
+                            },
+                        }}
+                        type="submit">
                         Guardar
                     </Button>
-                    <Button size="small" type="button" onClick={clearForm}>
+                    <Button
+                        size="small"
+                        sx={{
+                            color: "white", // White text
+                            backgroundColor: "#1976d2", // Example background
+                            "&:hover": {
+                                backgroundColor: "#1565c0",
+                            },
+                        }}
+                        type="button"
+                        onClick={clearForm}>
                         Nuevo
                     </Button>
                 </ActionBar>
@@ -534,7 +566,7 @@ const ProductoViewExample = () => {
                                                         setTimeout(() => {
                                                             const cantidad = watch(`unidadProductorSuplidor.${index}.cantidad`);
                                                             const unidadFraccionId = watch(
-                                                                `unidadProductorSuplidor.${index}.unidadFraccionId`
+                                                                `unidadProductorSuplidor.${index}.unidadFraccionId`,
                                                             );
                                                             validateUnidadCombination(index, value, cantidad, unidadFraccionId);
                                                         }, 50);
@@ -550,7 +582,7 @@ const ProductoViewExample = () => {
                                                         onBlur={(value: any) => {
                                                             const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
                                                             const unidadFraccionId = watch(
-                                                                `unidadProductorSuplidor.${index}.unidadFraccionId`
+                                                                `unidadProductorSuplidor.${index}.unidadFraccionId`,
                                                             );
                                                             validateUnidadCombination(index, unidadId, value, unidadFraccionId);
                                                         }}
@@ -581,7 +613,7 @@ const ProductoViewExample = () => {
                                                                 onChange={(e) =>
                                                                     setValue(
                                                                         `unidadProductorSuplidor.${index}.activo`,
-                                                                        e.target.checked
+                                                                        e.target.checked,
                                                                     )
                                                                 }
                                                                 size="small"
@@ -672,13 +704,13 @@ const ProductoViewExample = () => {
                                                             control={
                                                                 <Checkbox
                                                                     checked={watch(
-                                                                        `unidadProductorSuplidor.${index}.disponibleEnCompra`
+                                                                        `unidadProductorSuplidor.${index}.disponibleEnCompra`,
                                                                     )}
                                                                     disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
                                                                     onChange={(e) =>
                                                                         setValue(
                                                                             `unidadProductorSuplidor.${index}.disponibleEnCompra`,
-                                                                            e.target.checked
+                                                                            e.target.checked,
                                                                         )
                                                                     }
                                                                 />
@@ -689,13 +721,13 @@ const ProductoViewExample = () => {
                                                             control={
                                                                 <Checkbox
                                                                     checked={watch(
-                                                                        `unidadProductorSuplidor.${index}.disponibleEnVenta`
+                                                                        `unidadProductorSuplidor.${index}.disponibleEnVenta`,
                                                                     )}
                                                                     disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
                                                                     onChange={(e) =>
                                                                         setValue(
                                                                             `unidadProductorSuplidor.${index}.disponibleEnVenta`,
-                                                                            e.target.checked
+                                                                            e.target.checked,
                                                                         )
                                                                     }
                                                                 />
@@ -720,7 +752,7 @@ const ProductoViewExample = () => {
                                                                 onClick={() => {
                                                                     const currentLimits =
                                                                         watch(
-                                                                            `unidadProductorSuplidor.${index}.productosAlmacenesLimites`
+                                                                            `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
                                                                         ) || [];
                                                                     setValue(
                                                                         `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
@@ -735,7 +767,7 @@ const ProductoViewExample = () => {
                                                                                 limite: 0,
                                                                                 almacenId: 0,
                                                                             },
-                                                                        ]
+                                                                        ],
                                                                     );
                                                                 }}>
                                                                 Agregar Límite de Almacén
@@ -767,14 +799,14 @@ const ProductoViewExample = () => {
                                                                             onClick={() => {
                                                                                 const currentLimits =
                                                                                     watch(
-                                                                                        `unidadProductorSuplidor.${index}.productosAlmacenesLimites`
+                                                                                        `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
                                                                                     ) || [];
                                                                                 const newLimits = currentLimits.filter(
-                                                                                    (_: any, i: number) => i !== limiteIndex
+                                                                                    (_: any, i: number) => i !== limiteIndex,
                                                                                 );
                                                                                 setValue(
                                                                                     `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
-                                                                                    newLimits
+                                                                                    newLimits,
                                                                                 );
                                                                             }}>
                                                                             Eliminar
@@ -821,7 +853,7 @@ const ProductoViewExample = () => {
                                                             onClick={() => {
                                                                 const currentSuplidores =
                                                                     watch(
-                                                                        `unidadProductorSuplidor.${index}.productosSuplidores`
+                                                                        `unidadProductorSuplidor.${index}.productosSuplidores`,
                                                                     ) || [];
                                                                 setValue(`unidadProductorSuplidor.${index}.productosSuplidores`, [
                                                                     ...currentSuplidores,
@@ -863,13 +895,13 @@ const ProductoViewExample = () => {
                                                                             onClick={() => {
                                                                                 const currentSuplidores =
                                                                                     watch(
-                                                                                        `unidadProductorSuplidor.${index}.productosSuplidores`
+                                                                                        `unidadProductorSuplidor.${index}.productosSuplidores`,
                                                                                     ) || [];
                                                                                 setValue(
                                                                                     `unidadProductorSuplidor.${index}.productosSuplidores`,
                                                                                     currentSuplidores.filter(
-                                                                                        (_, i) => i !== suplidorIndex
-                                                                                    )
+                                                                                        (_, i) => i !== suplidorIndex,
+                                                                                    ),
                                                                                 );
                                                                             }}>
                                                                             Eliminar
@@ -944,44 +976,96 @@ const ProductoViewExample = () => {
                     {/* Product Tags */}
                     <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="h6">Etiquetas del Producto ({productTags.length})</Typography>
+                            <Typography variant="h6">Etiquetas del Producto ({selectedTags.length})</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Las etiquetas ayudan a categorizar y organizar los productos para facilitar su búsqueda.
+                                    Agrega etiquetas para categorizar tu producto. Puedes buscar etiquetas existentes o crear
+                                    nuevas.
                                 </Typography>
-                                <Button variant="outlined" size="small" onClick={addProductoTag}>
-                                    Agregar Etiqueta
-                                </Button>
+
+                                <Autocomplete
+                                    multiple
+                                    options={availableTags}
+                                    getOptionLabel={(option) => (typeof option === "string" ? option : option.nombre)}
+                                    value={selectedTags}
+                                    onChange={(event, newValue, reason, details) => {
+                                        if (reason === "createOption" && typeof details?.option === "string") {
+                                            // Crear nueva etiqueta
+                                            const newTag = {
+                                                id: Date.now(), // ID temporal
+                                                nombre: details.option,
+                                            };
+                                            setAvailableTags((prev) => [...prev, newTag]);
+                                            setSelectedTags((prev) => [...prev, newTag]);
+                                        } else {
+                                            setSelectedTags(newValue as Array<{ id: number; nombre: string }>);
+                                        }
+                                    }}
+                                    freeSolo
+                                    selectOnFocus
+                                    clearOnBlur
+                                    handleHomeEndKeys
+                                    renderTags={(value, getTagProps) =>
+                                        value.map((option, index) => {
+                                            const { key, ...tagProps } = getTagProps({ index });
+                                            return (
+                                                <Chip
+                                                    key={`tag-${option.id}-${index}`}
+                                                    label={option.nombre}
+                                                    {...tagProps}
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    size="small"
+                                                />
+                                            );
+                                        })
+                                    }
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Buscar o crear etiquetas"
+                                            placeholder="Escribe para buscar o crear una nueva etiqueta..."
+                                            variant="outlined"
+                                            size="small"
+                                            helperText="Presiona Enter para crear una etiqueta nueva"
+                                        />
+                                    )}
+                                    renderOption={(props, option) => {
+                                        const optionLabel = typeof option === "string" ? option : option.nombre;
+                                        return (
+                                            <li {...props}>
+                                                <Chip label={optionLabel} size="small" variant="outlined" sx={{ mr: 1 }} />
+                                                {optionLabel}
+                                            </li>
+                                        );
+                                    }}
+                                />
                             </Box>
 
-                            {productTags.map((field, index) => (
-                                <Card key={field.id} variant="outlined" sx={{ mb: 2 }}>
-                                    <CardContent>
-                                        <Box
-                                            sx={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                mb: 2,
-                                            }}>
-                                            <Typography variant="subtitle1">Etiqueta #{index + 1}</Typography>
-                                            <Button color="error" size="small" onClick={() => removeProductoTag(index)}>
-                                                Eliminar
-                                            </Button>
-                                        </Box>
-                                        <Grid container spacing={2}>
-                                            <TagComboBox
-                                                name={`tags.${index}.tagId`}
-                                                label="Etiqueta"
-                                                control={control}
-                                                size={12}
+                            {/* Display selected tags */}
+                            {selectedTags.length > 0 && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="subtitle2" gutterBottom>
+                                        Etiquetas Seleccionadas:
+                                    </Typography>
+                                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                        {selectedTags.map((tag) => (
+                                            <Chip
+                                                key={tag.id}
+                                                label={tag.nombre}
+                                                variant="filled"
+                                                color="primary"
+                                                size="medium"
+                                                onDelete={() => {
+                                                    setSelectedTags((prev) => prev.filter((t) => t.id !== tag.id));
+                                                }}
                                             />
-                                        </Grid>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
                         </AccordionDetails>
                     </Accordion>
                 </section>

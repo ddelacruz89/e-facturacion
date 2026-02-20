@@ -12,6 +12,8 @@ import lombok.Setter;
 @Setter
 @MappedSuperclass
 public class BaseEntitySucursal extends BaseEntityPk implements Serializable {
+  private static final long serialVersionUID = 1L;
+
   @Column(name = "usuario_reg", nullable = false)
   private String usuarioReg;
 

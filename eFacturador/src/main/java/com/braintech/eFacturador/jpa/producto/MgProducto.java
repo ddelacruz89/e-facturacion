@@ -96,4 +96,8 @@ public class MgProducto extends BaseEntity implements Serializable {
   @JsonManagedReference(value = "producto-tags")
   @Comment("Lista de etiquetas/tags asociadas al producto")
   private List<MgProductoTag> tags;
+
+  @OneToMany(cascade = CascadeType.ALL)
+  @JoinColumn(name = "producto_unidad_suplidor_id", referencedColumnName = "id")
+  private List<MgProductoUnidadSuplidorLimiteAlmacen> productosAlmacenesLimites;
 }

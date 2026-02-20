@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import java.math.BigDecimal;
 import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,15 +21,6 @@ public class MgProductoUnidadSuplidor extends BaseEntity {
 
   private static final long serialVersionUID = 1L;
 
-  @Column(name = "existencia")
-  private Integer existencia;
-
-  @Column(name = "precio_venta")
-  private BigDecimal precioVenta;
-
-  @Column(name = "precio_minimo")
-  private BigDecimal precioMinimo;
-
   @Column(name = "disponible_compra")
   @Comment("Indica si el producto  está disponible para compras ")
   private Boolean disponibleEnCompra;
@@ -38,12 +28,6 @@ public class MgProductoUnidadSuplidor extends BaseEntity {
   @Column(name = "disponible_venta")
   @Comment("Indica si el producto está disponible para  ventas")
   private Boolean disponibleEnVenta;
-
-  @Column(name = "precio_costo_avg")
-  private BigDecimal precioCostoAvg;
-
-  @NotNull(message = "Preico no puede ser nulo")
-  private BigDecimal precio;
 
   @JoinColumn(name = "unidad_fraccion_id")
   @ManyToOne(optional = false)
@@ -66,8 +50,4 @@ public class MgProductoUnidadSuplidor extends BaseEntity {
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "producto_suplidor_id", referencedColumnName = "id")
   private List<MgProductoSuplidor> productosSuplidores;
-
-  @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name = "producto_unidad_suplidor_id", referencedColumnName = "id")
-  private List<MgProductoUnidadSuplidorLimiteAlmacen> productosAlmacenesLimites;
 }

@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.dao.producto;
 
+import com.braintech.eFacturador.dto.TagResumeDto;
 import com.braintech.eFacturador.jpa.producto.MgTag;
 import java.util.List;
 import java.util.Optional;
@@ -24,4 +25,7 @@ public interface MgTagRepository extends JpaRepository<MgTag, Integer> {
       "SELECT t FROM MgTag t WHERE t.nombre = :nombre AND t.empresaId = :empresaId AND t.activo = true")
   Optional<MgTag> findByNombreAndEmpresaId(
       @Param("nombre") String nombre, @Param("empresaId") Integer empresaId);
+
+  @Query("SELECT t.id AS id, t.nombre AS nombre FROM MgTag t WHERE t.empresaId = :empresaId")
+  List<TagResumeDto> findResumeByEmpresaId(Integer empresaId);
 }

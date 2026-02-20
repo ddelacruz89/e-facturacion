@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.jpa.inventario;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
+import com.braintech.eFacturador.jpa.facturacion.MgTipoComprobante;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import java.io.Serializable;
@@ -48,4 +49,8 @@ public class InSuplidor extends BaseEntity implements Serializable {
 
   @Column(name = "estado_id")
   private String estadoId;
+
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "tipo_comprobante_id", referencedColumnName = "id")
+  private MgTipoComprobante tipoComprobante;
 }

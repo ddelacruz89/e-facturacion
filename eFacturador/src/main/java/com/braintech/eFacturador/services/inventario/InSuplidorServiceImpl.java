@@ -65,6 +65,7 @@ public class InSuplidorServiceImpl implements InSuplidorService {
     existing.setCorreo2(suplidor.getCorreo2());
     existing.setServicio(suplidor.getServicio());
     existing.setProducto(suplidor.getProducto());
+    existing.setTipoComprobante(suplidor.getTipoComprobante());
 
     InSuplidor saved = inSuplidorRepository.save(existing);
     return Response.builder().status(HttpStatus.OK).content(saved).build();

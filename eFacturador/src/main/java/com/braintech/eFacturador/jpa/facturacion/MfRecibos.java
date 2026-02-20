@@ -14,16 +14,17 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MfRecibos extends BaseEntityPk {
+  private static final long serialVersionUID = 1L;
 
-  private Integer FacturaId;
-  private BigDecimal Efectivo;
-  private BigDecimal Transferencia;
-  private BigDecimal Cheque;
-  private BigDecimal Tarjeta;
-  private BigDecimal NotaCredito;
-  private BigDecimal Otros;
-  private BigDecimal Total;
-  private String Comentario;
+  private Integer facturaId;
+  private BigDecimal efectivo;
+  private BigDecimal transferencia;
+  private BigDecimal cheque;
+  private BigDecimal tarjeta;
+  private BigDecimal notaCredito;
+  private BigDecimal otros;
+  private BigDecimal total;
+  private String comentario;
   private String usuarioReg;
   private LocalDate fechaReg;
   private Boolean activo;

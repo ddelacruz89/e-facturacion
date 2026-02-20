@@ -19,7 +19,11 @@ public class MgTipoComprobante implements Serializable {
   private static final long serialVersionUID = 1L;
 
   @Id private String id;
+
+  private String serie;
+
   private String tipoComprobante;
+
   private Boolean electronico;
 
   @Column(name = "usuario_reg", nullable = false)

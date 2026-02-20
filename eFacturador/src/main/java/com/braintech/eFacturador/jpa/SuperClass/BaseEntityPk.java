@@ -13,19 +13,21 @@ import lombok.Setter;
 @AllArgsConstructor
 @MappedSuperclass
 public class BaseEntityPk implements Serializable {
+  private static final long serialVersionUID = 1L;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
-  public Integer id;
+  protected Integer id;
 
   @NotNull(message = "La empresa no puede ser nulo")
   @FieldDescription("Empresa")
   @Column(name = "empresa_id", updatable = false)
-  public Integer empresaId;
+  protected Integer empresaId;
 
   @FieldDescription("Secuencia")
   @Column(name = "secuencia")
-  public Integer secuencia;
+  protected Integer secuencia;
 
   protected BaseEntityPk(Integer id) {
     this.id = id;

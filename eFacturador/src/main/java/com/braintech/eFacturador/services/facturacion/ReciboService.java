@@ -13,29 +13,40 @@ public class ReciboService implements IRecibo {
 
   @Override
   public List<MfRecibos> getAllActive() {
-    return List.of();
+    return reciboDao.findAll().stream()
+        .filter(r -> r.getActivo() != null && r.getActivo())
+        .toList();
   }
 
   @Override
   public List<MfRecibos> getAll() {
-    return null;
+    return reciboDao.findAll();
   }
 
   @Override
   public MfRecibos getById(Integer id) {
-    return null;
+    return reciboDao.findById(id).orElse(null);
   }
 
   @Override
   public MfRecibos create(MfRecibos entity) {
-    return null;
+    return reciboDao.save(entity);
   }
 
   @Override
   public MfRecibos update(Integer id, MfRecibos entity) {
-    return null;
+    entity.setId(id);
+    return reciboDao.save(entity);
   }
 
   @Override
-  public void disable(Integer id) {}
+  public void disable(Integer id) {
+    reciboDao
+        .findById(id)
+        .ifPresent(
+            recibo -> {
+              recibo.setActivo(false);
+              reciboDao.save(recibo);
+            });
+  }
 }
