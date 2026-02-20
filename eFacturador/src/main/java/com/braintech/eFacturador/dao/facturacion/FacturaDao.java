@@ -43,7 +43,7 @@ public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
 
   @Query(
       """
-            select p from MgProducto p
+            select p from MgProducto p where p.activo=true
             """)
   List<IProductoVenta> findProductoVenta();
 }

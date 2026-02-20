@@ -186,9 +186,21 @@ export const SuplidorView: React.FC = () => {
             <Grid container spacing={2} style={{ padding: 20 }}>
                 {selectedTipoComprobante?.id !== "43" && (
                     <>
-                        <TextInput control={control} name="contacto1" label="Contacto Principal" error={errors.contacto1} size={4} />
+                        <TextInput
+                            control={control}
+                            name="contacto1"
+                            label="Contacto Principal"
+                            error={errors.contacto1}
+                            size={4}
+                        />
                         <EmailInput control={control} name="correo1" label="Correo Principal" error={errors.correo1} size={4} />
-                        <TextInput control={control} name="telefono1" label="Teléfono Principal" error={errors.telefono1} size={4} />
+                        <TextInput
+                            control={control}
+                            name="telefono1"
+                            label="Teléfono Principal"
+                            error={errors.telefono1}
+                            size={4}
+                        />
                     </>
                 )}
             </Grid>

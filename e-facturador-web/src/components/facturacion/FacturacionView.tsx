@@ -13,13 +13,19 @@ import { detalleItbis, formatCurrency } from "../../utils/FacturaUtils";
 import { toast } from "react-toastify";
 import { getValue } from "@testing-library/user-event/dist/utils";
 // import { saveFactura, getFacturas } from "../../apis/FacturaController";
-import SaveIcon from '@mui/icons-material/Save';
-import ArticleIcon from '@mui/icons-material/Article';
+import SaveIcon from "@mui/icons-material/Save";
+import ArticleIcon from "@mui/icons-material/Article";
 import ModalSearchClientes from "../../customers/search/ModalSearchClientes";
 import { Cliente } from "../../models/cliente/Cliente";
 
 export default function FacturacionView() {
-    const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<Factura>({
+    const {
+        control,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors },
+    } = useForm<Factura>({
         defaultValues: {
             usuarioReg: "",
             fechaReg: undefined,
@@ -40,7 +46,7 @@ export default function FacturacionView() {
             retencionIsr: 0,
             total: 0,
             detalles: [],
-        }
+        },
     });
 
     // const [factura, setFactura] = useState<Factura>({
@@ -66,30 +72,28 @@ export default function FacturacionView() {
     //     detalles: [],
     // });
 
-    useEffect(() => {
-
-    }, []);
+    useEffect(() => {}, []);
 
     const onSubmit: SubmitHandler<Factura> = (data) => {
-        debugger
-        saveFactura(data).then((response) => {
+        debugger;
+        saveFactura(data)
+            .then((response) => {
+                setValue("id", response.id);
+                setValue("secuencia", response.secuencia);
+                setValue("ncf", response.ncf);
 
-            setValue('id', response.id);
-            setValue('secuencia', response.secuencia);
-            setValue('ncf', response.ncf);
-
-            if (Number(response.id) > 0) {
-                toast.success("Factura guardada correctamente");
-            } else {
+                if (Number(response.id) > 0) {
+                    toast.success("Factura guardada correctamente");
+                } else {
+                    toast.error("Error al guardar la factura");
+                }
+                setValue("id", response.id);
+                setValue("secuencia", response.secuencia);
+            })
+            .catch((error) => {
+                console.error("Error al guardar la factura:", error);
                 toast.error("Error al guardar la factura");
-            }
-            setValue('id', response.id);
-            setValue('secuencia', response.secuencia);
-
-        }).catch((error) => {
-            console.error("Error al guardar la factura:", error);
-            toast.error("Error al guardar la factura");
-        });
+            });
         if (data.id) {
             console.log("Factura actualizada", data);
         } else {
@@ -104,31 +108,29 @@ export default function FacturacionView() {
     };
 
     const handleClean = () => {
-        setValue('id', undefined);
-        setValue('secuencia', undefined);
-        setValue('numeroFactura', 0);
-        setValue('clienteId', 0);
-        setValue('tipoFacturaId', 0);
-        setValue('razonSocial', '');
-        setValue('rnc', '');
-        setValue('monto', 0);
-        setValue('descuento', 0);
-        setValue('itbis', 0);
-        setValue('retencionItbis', 0);
-        setValue('retencionIsr', 0);
-        setValue('total', 0);
-        setValue('ncf', '');
-        setValue('tipoComprobanteId', '');
-        setValue('empresaId', 0);
-        setValue('aprobada', false);
-        setValue('qrUrl', '');
-        setValue('trackId', '');
-        setValue('usuarioReg', '');
-        setValue('fechaReg', undefined);
-        setValue('activo', true);
-        setValue('detalles', []);
-
-
+        setValue("id", undefined);
+        setValue("secuencia", undefined);
+        setValue("numeroFactura", 0);
+        setValue("clienteId", 0);
+        setValue("tipoFacturaId", 0);
+        setValue("razonSocial", "");
+        setValue("rnc", "");
+        setValue("monto", 0);
+        setValue("descuento", 0);
+        setValue("itbis", 0);
+        setValue("retencionItbis", 0);
+        setValue("retencionIsr", 0);
+        setValue("total", 0);
+        setValue("ncf", "");
+        setValue("tipoComprobanteId", "");
+        setValue("empresaId", 0);
+        setValue("aprobada", false);
+        setValue("qrUrl", "");
+        setValue("trackId", "");
+        setValue("usuarioReg", "");
+        setValue("fechaReg", undefined);
+        setValue("activo", true);
+        setValue("detalles", []);
     };
 
     const handleOnSelect = (row: Factura) => {
@@ -136,17 +138,16 @@ export default function FacturacionView() {
     };
 
     const handleOnDelete = (row: FacturaDetalle) => {
-        let detalles = watch('detalles');
+        let detalles = watch("detalles");
         detalles = detalles.filter((detalle) => detalle.linea !== row.linea);
-        setValue('detalles', detalles);
+        setValue("detalles", detalles);
     };
 
     const handleSelectTipoFactura = (item: TipoFactura) => {
-        console.log("TipoFactura", item)
-    }
+        console.log("TipoFactura", item);
+    };
 
     const handleSelectProducto = (producto: ProductoVenta) => {
-
         // if (watch('detalles').find((detalle) => detalle.productoId === producto.id)) {
         //     toast.error("Producto ya agregado a la factura");
         //     return;
@@ -169,42 +170,49 @@ export default function FacturacionView() {
             retencionIsr: 0,
             almacenId: 0,
         };
-        let detalles = watch('detalles');
+        let detalles = watch("detalles");
         detalles.push(detalleFactura);
 
         detalleFactura = detalleItbis(producto, detalleFactura);
         detalleFactura.linea = detalles.length;
         toast.success("Producto agregado a la factura");
 
-        setValue('detalles', detalles);
-
-    }
+        setValue("detalles", detalles);
+    };
     function handleOnChangeCantidad(value: string, row: any, column: string) {
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
-        let detalles = watch('detalles');
+        let detalles = watch("detalles");
         let detalle = detalles[row.linea - 1];
         detalle.cantidad = Number(value);
         detalle = detalleItbis(detalle.producto!, detalle);
         detalles[row.linea - 1] = detalle;
-        setValue('detalles', detalles);
-
+        setValue("detalles", detalles);
     }
 
     function handleSelectCliente(cliente: Cliente): void {
-        setValue('clienteId', cliente.id);
-        setValue('razonSocial', cliente.razonSocial);
-        setValue('rnc', cliente.numeroIdentificacion);
+        setValue("clienteId", cliente.id);
+        setValue("razonSocial", cliente.razonSocial);
+        setValue("rnc", cliente.numeroIdentificacion);
     }
 
     return (
-        <main style={{ display: 'flex', flexDirection: 'row', gap: 20, padding: 10 }}>
+        <main style={{ display: "flex", flexDirection: "row", gap: 20, padding: 10 }}>
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
             <form style={{ flexGrow: 1 }} onSubmit={handleSubmit(onSubmit, onError)}>
-                <ActionBar title='Factura'>
-                    <Button variant="contained" color="success" type="submit" disabled={Number(watch('id')) !== 0 || watch('detalles').length === 0}> <SaveIcon /> Guardar</Button>
-                    <Button variant="contained" color="primary" onClick={handleClean}><ArticleIcon /> Nuevo</Button>
+                <ActionBar title="Factura">
+                    <Button
+                        variant="contained"
+                        color="success"
+                        type="submit"
+                        disabled={Number(watch("id")) !== 0 || watch("detalles").length === 0}>
+                        {" "}
+                        <SaveIcon /> Guardar
+                    </Button>
+                    <Button variant="contained" color="primary" onClick={handleClean}>
+                        <ArticleIcon /> Nuevo
+                    </Button>
                 </ActionBar>
 
                 <Grid container spacing={2} style={{ padding: 20 }}>
@@ -224,7 +232,7 @@ export default function FacturacionView() {
                             error={errors.tipoFacturaId}
                             rules={{
                                 required: "Debe seleccionar un tipo de factura",
-                                validate: (value: any) => (value !== 0 && value !== "0") || "Debe seleccionar un tipo de factura"
+                                validate: (value: any) => (value !== 0 && value !== "0") || "Debe seleccionar un tipo de factura",
                             }}
                             size={2}
                             handleGetItem={handleSelectTipoFactura}
@@ -235,23 +243,24 @@ export default function FacturacionView() {
                             label="Tipo Comprobante ID"
                             rules={{
                                 required: "Debe seleccionar un tipo de comprobante",
-                                validate: (value: any) => (value !== 0 && value !== "0") || "Debe seleccionar un tipo de comprobante"
+                                validate: (value: any) =>
+                                    (value !== 0 && value !== "0") || "Debe seleccionar un tipo de comprobante",
                             }}
                             error={errors.tipoComprobanteId}
                             size={5}
                             handleGetItem={handleSelectTipoFactura}
                         />
-                        <TextInput
-                            readOnly
-                            control={control}
-                            name="ncf"
-                            label="NCF"
-                            error={errors.ncf}
-                            size={3}
-                        />
+                        <TextInput readOnly control={control} name="ncf" label="NCF" error={errors.ncf} size={3} />
                     </GridRow>
                     <GridRow>
-                        <ModalSearchClientes control={control} name="clienteId" label="Cliente ID" size={2} onSelect={handleSelectCliente} pk={false} />
+                        <ModalSearchClientes
+                            control={control}
+                            name="clienteId"
+                            label="Cliente ID"
+                            size={2}
+                            onSelect={handleSelectCliente}
+                            pk={false}
+                        />
                         {/* <TextInput
                             control={control}
                             name="clienteId"
@@ -272,12 +281,12 @@ export default function FacturacionView() {
                                 required: "Debe seleccionar un cliente",
                                 minLength: {
                                     value: 3,
-                                    message: "Debe tener al menos 3 caracteres"
+                                    message: "Debe tener al menos 3 caracteres",
                                 },
                                 maxLength: {
                                     value: 100,
-                                    message: "Debe tener menos de 100 caracteres"
-                                }
+                                    message: "Debe tener menos de 100 caracteres",
+                                },
                             }}
                             size={6}
                         />
@@ -290,16 +299,16 @@ export default function FacturacionView() {
                                 required: "Debe seleccionar un cliente",
                                 minLength: {
                                     value: 7,
-                                    message: "Debe tener al menos 7 caracteres"
+                                    message: "Debe tener al menos 7 caracteres",
                                 },
                                 maxLength: {
                                     value: 11,
-                                    message: "Debe tener menos de 11 caracteres"
+                                    message: "Debe tener menos de 11 caracteres",
                                 },
                                 pattern: {
                                     value: /^[0-9]+$/,
-                                    message: "Debe tener solo numeros"
-                                }
+                                    message: "Debe tener solo numeros",
+                                },
                             }}
                             size={2}
                         />
@@ -308,19 +317,23 @@ export default function FacturacionView() {
                 <Divider>Listado</Divider>
                 <TableComponentFacturacion
                     selected={handleOnSelect}
-                    rows={watch('detalles')}
+                    rows={watch("detalles")}
                     handleDelete={handleOnDelete}
                     columns={[
                         { id: "linea", label: "Linea" },
                         { id: "productoId", label: "Producto ID" },
                         { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
-                        { id: "cantidad", label: "Cantidad", onChange: (value: string, row: any, column: string) => handleOnChangeCantidad(value, row, column) },
+                        {
+                            id: "cantidad",
+                            label: "Cantidad",
+                            onChange: (value: string, row: any, column: string) => handleOnChangeCantidad(value, row, column),
+                        },
                         { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
                         { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },
-                        { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) }
+                        { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) },
                     ]}
                 />
             </form>
         </main>
-    )
-};
+    );
+}

@@ -18,14 +18,11 @@ public interface IProductoVenta {
 
   MgItbis getItbisId();
 
-  List<IPreciosProductos> getUnidadProductorSuplidor();
-
   List<IInventario> getInventarios();
 
   BigDecimal getPrecioVenta();
 
   BigDecimal getPrecioCostoAvg();
-  ;
 
   default BigDecimal getItbis() {
     if (getItbisId() != null) {

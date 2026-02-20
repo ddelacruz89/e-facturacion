@@ -29,6 +29,7 @@ import searchService from "../../services/searchService";
 import { MgProducto, MgUnidad } from "../../models/producto";
 import { InAlmacen } from "../../models/inventario";
 import { SgMenu } from "../../models/seguridad";
+import { validateProducto } from "../../validations/productoValidation";
 
 // Import the new modal search components
 import ModalSearch from "../search/ModalSearch";
@@ -65,13 +66,20 @@ const ProductoViewExample = () => {
             nombreProducto: "",
             descripcion: "",
             codigoBarra: "",
+            existencia: 0,
+            precioVenta: 0,
+            precioMinimo: 0,
+            precioCostoAvg: 0,
+            precio: 0,
             trabajador: false,
             comision: 0,
             itbisId: 0,
             categoriaId: 0,
             unidadProductorSuplidor: [],
             productosModulos: [],
+            inventarios: [],
             tags: [],
+            productosAlmacenesLimites: [],
         },
     });
 
@@ -106,7 +114,7 @@ const ProductoViewExample = () => {
     // Snackbar state
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
-        message: string;
+        message: React.ReactNode;
         severity: "success" | "error" | "warning" | "info";
     }>({
         open: false,
@@ -121,7 +129,7 @@ const ProductoViewExample = () => {
         setSnackbar({ ...snackbar, open: false });
     };
 
-    const showSnackbar = (message: string, severity: "success" | "error" | "warning" | "info") => {
+    const showSnackbar = (message: React.ReactNode, severity: "success" | "error" | "warning" | "info") => {
         setSnackbar({ open: true, message, severity });
     };
 
@@ -214,31 +222,53 @@ const ProductoViewExample = () => {
             nombreProducto: "",
             descripcion: "",
             codigoBarra: "",
+            existencia: 0,
+            precioVenta: 0,
+            precioMinimo: 0,
+            precioCostoAvg: 0,
+            precio: 0,
             trabajador: false,
             comision: 0,
             itbisId: 0,
             categoriaId: 0,
             unidadProductorSuplidor: [],
             productosModulos: [],
+            inventarios: [],
             tags: [],
+            productosAlmacenesLimites: [],
         });
     };
 
     // Handle product selection from modal search
-    const handleProductSelect = modalSearch.handleSelect((product) => {
-        // Update the selected product state for display (cast to MgProducto)
-        setSelectedProduct(product as MgProducto);
+    const handleProductSelect = modalSearch.handleSelect(async (product) => {
+        try {
+            // Update the selected product state for display with summary data
+            setSelectedProduct(product as MgProducto);
 
-        // Load the selected product into the form
-        reset({
-            ...product,
-            // Ensure arrays exist
-            unidadProductorSuplidor: product.unidadProductorSuplidor || [],
-            productosModulos: product.productosModulos || [],
-            tags: product.tags || [],
-        });
+            // Fetch the complete product data with all relationships
+            const productoCompleto = await getProducto(product.id);
 
-        console.log("Producto seleccionado desde modal:", product);
+            console.log("Producto completo obtenido:", productoCompleto);
+
+            // Load the complete product into the form
+            reset({
+                ...productoCompleto,
+                // Ensure arrays exist
+                unidadProductorSuplidor: productoCompleto.unidadProductorSuplidor || [],
+                productosModulos: productoCompleto.productosModulos || [],
+                inventarios: productoCompleto.inventarios || [],
+                tags: productoCompleto.tags || [],
+                productosAlmacenesLimites: productoCompleto.productosAlmacenesLimites || [],
+            });
+
+            // Update selected product with complete data
+            setSelectedProduct(productoCompleto);
+
+            showSnackbar("Producto cargado correctamente", "success");
+        } catch (error) {
+            console.error("Error al cargar el producto completo:", error);
+            showSnackbar("Error al cargar el producto completo", "error");
+        }
     });
 
     const {
@@ -259,8 +289,37 @@ const ProductoViewExample = () => {
         name: "tags",
     });
 
-    const onSubmit: SubmitHandler<MgProducto> = (data) => {
+    const onSubmit: SubmitHandler<MgProducto> = async (data) => {
         console.log("Raw form data:", data);
+
+        // Validar con Yup
+        const validation = await validateProducto(data);
+
+        if (!validation.isValid) {
+            console.log("❌ Errores de validación:", validation.errors);
+
+            // Mostrar todos los errores en snackbar
+            const errorMessages = Object.values(validation.errors);
+            const errorCount = errorMessages.length;
+
+            const errorContent = (
+                <Box>
+                    <Typography variant="body2" fontWeight="bold" sx={{ mb: 1 }}>
+                        Se encontrar{errorCount > 1 ? "on" : "ó"} {errorCount} error{errorCount > 1 ? "es" : ""}:
+                    </Typography>
+                    {errorMessages.map((error, index) => (
+                        <Typography key={index} variant="body2" sx={{ pl: 1 }}>
+                            • {error}
+                        </Typography>
+                    ))}
+                </Box>
+            );
+
+            showSnackbar(errorContent, "error");
+            return;
+        }
+
+        console.log("✅ Validación exitosa");
 
         // Transform ComboBox objects - keep categoria and itbis objects
         const transformedData: MgProducto = {
@@ -333,18 +392,12 @@ const ProductoViewExample = () => {
             fechaReg: new Date(),
             activo: true,
             cantidad: 1,
-            precioVenta: 0,
-            precioMinimo: 0,
             disponibleEnCompra: true,
             disponibleEnVenta: true,
-            existencia: 0,
-            precioCostoAvg: 0,
-            precio: 0,
             unidadId: 0,
             unidadFraccionId: 0,
             productoId: 0,
             productosSuplidores: [],
-            productosAlmacenesLimites: [],
         });
 
         // Auto-expand the newly added card
@@ -484,6 +537,48 @@ const ProductoViewExample = () => {
                                 />
                             </Grid>
 
+                            {/* Precios e Inventario del Producto */}
+                            <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, mb: 1 }}>
+                                Precios e Inventario
+                            </Typography>
+                            <Grid container spacing={2}>
+                                <MoneyInput
+                                    label="Precio de Venta"
+                                    name="precioVenta"
+                                    control={control}
+                                    error={errors.precioVenta}
+                                    size={2}
+                                />
+                                <MoneyInput
+                                    label="Precio Mínimo"
+                                    name="precioMinimo"
+                                    control={control}
+                                    error={errors.precioMinimo}
+                                    size={2}
+                                />
+                                <MoneyInput
+                                    label="Precio de Costo"
+                                    name="precio"
+                                    control={control}
+                                    error={errors.precio}
+                                    size={2}
+                                />
+                                <MoneyInput
+                                    label="Precio Costo Promedio"
+                                    name="precioCostoAvg"
+                                    control={control}
+                                    error={errors.precioCostoAvg}
+                                    size={2}
+                                />
+                                <NumericInput
+                                    label="Existencia"
+                                    name="existencia"
+                                    control={control}
+                                    error={errors.existencia}
+                                    size={2}
+                                />
+                            </Grid>
+
                             {/* Configuración General del Producto */}
                             <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, mb: 1 }}>
                                 Configuración General
@@ -522,17 +617,101 @@ const ProductoViewExample = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Unit Fractions with Pricing and Inventory */}
-                    <Accordion defaultExpanded>
+                    {/* Warehouse Limits - Now at Product Level */}
+                    <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                             <Typography variant="h6">
-                                Unidades, Precios e Inventario ({unidadProductorSuplidor.length})
+                                Límites por Almacén ({(watch("productosAlmacenesLimites") || []).length})
                             </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Cada unidad puede tener diferentes precios de venta e inventario independiente.
+                                    Configure límites de inventario específicos por almacén para este producto.
+                                </Typography>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => {
+                                        const currentLimits = watch("productosAlmacenesLimites") || [];
+                                        setValue("productosAlmacenesLimites", [
+                                            ...currentLimits,
+                                            {
+                                                empresaId: 0,
+                                                secuencia: 0,
+                                                usuarioReg: "",
+                                                fechaReg: new Date(),
+                                                activo: true,
+                                                limite: 0,
+                                                almacenId: 0,
+                                            },
+                                        ]);
+                                    }}>
+                                    Agregar Límite de Almacén
+                                </Button>
+                            </Box>
+
+                            {(watch("productosAlmacenesLimites") || []).map((limite: any, limiteIndex: number) => (
+                                <Card key={`limite-${limiteIndex}`} variant="outlined" sx={{ mb: 2, backgroundColor: "#f9f9f9" }}>
+                                    <CardContent>
+                                        <Box
+                                            sx={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                mb: 2,
+                                            }}>
+                                            <Typography variant="body2" fontWeight="medium">
+                                                Límite #{limiteIndex + 1}
+                                            </Typography>
+                                            <Button
+                                                color="error"
+                                                size="small"
+                                                onClick={() => {
+                                                    const currentLimits = watch("productosAlmacenesLimites") || [];
+                                                    const newLimits = currentLimits.filter(
+                                                        (_: any, i: number) => i !== limiteIndex,
+                                                    );
+                                                    setValue("productosAlmacenesLimites", newLimits);
+                                                }}>
+                                                Eliminar
+                                            </Button>
+                                        </Box>
+                                        <Grid container spacing={2}>
+                                            <AlmacenComboBox
+                                                name={`productosAlmacenesLimites.${limiteIndex}.almacenId`}
+                                                label="Almacén"
+                                                control={control}
+                                                size={8}
+                                            />
+                                            <NumericInput
+                                                label="Límite"
+                                                name={`productosAlmacenesLimites.${limiteIndex}.limite`}
+                                                control={control}
+                                                size={4}
+                                            />
+                                        </Grid>
+                                    </CardContent>
+                                </Card>
+                            ))}
+
+                            {(!watch("productosAlmacenesLimites") || watch("productosAlmacenesLimites")?.length === 0) && (
+                                <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 2 }}>
+                                    No hay límites de almacén configurados
+                                </Typography>
+                            )}
+                        </AccordionDetails>
+                    </Accordion>
+
+                    {/* Unit Fractions */}
+                    <Accordion defaultExpanded>
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                            <Typography variant="h6">Unidades y Proveedores ({unidadProductorSuplidor.length})</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Defina las diferentes unidades de medida y sus proveedores.
                                 </Typography>
                                 <Button variant="outlined" size="small" onClick={addUnidadFraccion}>
                                     Agregar Unidad/Fracción
@@ -653,48 +832,6 @@ const ProductoViewExample = () => {
                                             {/* Expandable sections */}
                                             {expandedCards[index] && (
                                                 <>
-                                                    {/* Precios e Inventario */}
-                                                    <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
-                                                        Precios e Inventario
-                                                    </Typography>
-                                                    <Grid container spacing={2}>
-                                                        <MoneyInput
-                                                            label="Precio de Venta"
-                                                            name={`unidadProductorSuplidor.${index}.precioVenta`}
-                                                            control={control}
-                                                            size={2}
-                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
-                                                        />
-                                                        <MoneyInput
-                                                            label="Precio Mínimo"
-                                                            name={`unidadProductorSuplidor.${index}.precioMinimo`}
-                                                            control={control}
-                                                            size={2}
-                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
-                                                        />
-                                                        <MoneyInput
-                                                            label="Precio de Costo"
-                                                            name={`unidadProductorSuplidor.${index}.precio`}
-                                                            control={control}
-                                                            size={2}
-                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
-                                                        />
-                                                        <MoneyInput
-                                                            label="Precio Costo Promedio"
-                                                            name={`unidadProductorSuplidor.${index}.precioCostoAvg`}
-                                                            control={control}
-                                                            size={2}
-                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
-                                                        />
-                                                        <NumericInput
-                                                            label="Existencia"
-                                                            name={`unidadProductorSuplidor.${index}.existencia`}
-                                                            control={control}
-                                                            size={2}
-                                                            disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
-                                                        />
-                                                    </Grid>
-
                                                     {/* Opciones de Disponibilidad */}
                                                     <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
                                                         Disponibilidad
@@ -734,112 +871,6 @@ const ProductoViewExample = () => {
                                                             }
                                                             label="Disponible en venta"
                                                         />
-                                                    </Box>
-
-                                                    {/* Warehouse Limits for this Unit/Supplier */}
-                                                    <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 1 }}>
-                                                        Límites por Almacén
-                                                    </Typography>
-                                                    <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 1, p: 2, mt: 1 }}>
-                                                        <Box sx={{ mb: 2 }}>
-                                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                                                Configure límites de inventario específicos por almacén para esta
-                                                                unidad/proveedor.
-                                                            </Typography>
-                                                            <Button
-                                                                variant="outlined"
-                                                                size="small"
-                                                                onClick={() => {
-                                                                    const currentLimits =
-                                                                        watch(
-                                                                            `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
-                                                                        ) || [];
-                                                                    setValue(
-                                                                        `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
-                                                                        [
-                                                                            ...currentLimits,
-                                                                            {
-                                                                                empresaId: 0,
-                                                                                secuencia: 0,
-                                                                                usuarioReg: "",
-                                                                                fechaReg: new Date(),
-                                                                                activo: true,
-                                                                                limite: 0,
-                                                                                almacenId: 0,
-                                                                            },
-                                                                        ],
-                                                                    );
-                                                                }}>
-                                                                Agregar Límite de Almacén
-                                                            </Button>
-                                                        </Box>
-
-                                                        {(
-                                                            watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`) ||
-                                                            []
-                                                        ).map((limite: any, limiteIndex: number) => (
-                                                            <Card
-                                                                key={`limite-${index}-${limiteIndex}`}
-                                                                variant="outlined"
-                                                                sx={{ mb: 1, backgroundColor: "#f9f9f9" }}>
-                                                                <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-                                                                    <Box
-                                                                        sx={{
-                                                                            display: "flex",
-                                                                            justifyContent: "space-between",
-                                                                            alignItems: "center",
-                                                                            mb: 1,
-                                                                        }}>
-                                                                        <Typography variant="body2" fontWeight="medium">
-                                                                            Límite #{limiteIndex + 1}
-                                                                        </Typography>
-                                                                        <Button
-                                                                            color="error"
-                                                                            size="small"
-                                                                            onClick={() => {
-                                                                                const currentLimits =
-                                                                                    watch(
-                                                                                        `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
-                                                                                    ) || [];
-                                                                                const newLimits = currentLimits.filter(
-                                                                                    (_: any, i: number) => i !== limiteIndex,
-                                                                                );
-                                                                                setValue(
-                                                                                    `unidadProductorSuplidor.${index}.productosAlmacenesLimites`,
-                                                                                    newLimits,
-                                                                                );
-                                                                            }}>
-                                                                            Eliminar
-                                                                        </Button>
-                                                                    </Box>
-                                                                    <Grid container spacing={2}>
-                                                                        <AlmacenComboBox
-                                                                            name={`unidadProductorSuplidor.${index}.productosAlmacenesLimites.${limiteIndex}.almacenId`}
-                                                                            label="Almacén"
-                                                                            control={control}
-                                                                            size={8}
-                                                                        />
-                                                                        <NumericInput
-                                                                            label="Límite"
-                                                                            name={`unidadProductorSuplidor.${index}.productosAlmacenesLimites.${limiteIndex}.limite`}
-                                                                            control={control}
-                                                                            size={4}
-                                                                        />
-                                                                    </Grid>
-                                                                </CardContent>
-                                                            </Card>
-                                                        ))}
-
-                                                        {(!watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`) ||
-                                                            watch(`unidadProductorSuplidor.${index}.productosAlmacenesLimites`)
-                                                                ?.length === 0) && (
-                                                            <Typography
-                                                                variant="body2"
-                                                                color="text.secondary"
-                                                                sx={{ textAlign: "center", py: 2 }}>
-                                                                No hay límites de almacén configurados
-                                                            </Typography>
-                                                        )}
                                                     </Box>
 
                                                     {/* Suppliers Section */}

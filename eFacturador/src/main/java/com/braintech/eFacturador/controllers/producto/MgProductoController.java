@@ -66,12 +66,12 @@ public class MgProductoController {
     return ResponseEntity.noContent().build();
   }
 
-  @GetMapping("/search/advanced")
+  @GetMapping("/search/advanced/full")
   public List<MgProducto> searchAdvancedResumen(MgProductoSearchCriteria criteria) {
     return productoService.searchAdvancedResumen(criteria);
   }
 
-  @GetMapping("/search/advanced/full")
+  @GetMapping("/search/advanced")
   public List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria) {
     return productoService.searchAdvanced(criteria);
   }
