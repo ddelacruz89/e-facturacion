@@ -84,6 +84,24 @@ export class SearchService {
   }
 
   /**
+   * Performs a POST request with the provided body
+   * 
+   * @param url API endpoint URL
+   * @param body Request body
+   * @param headers Optional headers
+   * @returns Promise with the response data
+   */
+  async searchPost<T>(url: string, body: any, headers?: { [key: string]: string }): Promise<T> {
+    try {
+      const response = await apiClient.post(url, body, { headers });
+      return response.data;
+    } catch (error) {
+      console.error('[SearchService] POST Error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Performs a GET request and returns the full response including status
    * 
    * @param options Search options including URL and parameters

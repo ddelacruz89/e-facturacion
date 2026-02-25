@@ -2,8 +2,11 @@ package com.braintech.eFacturador.services.producto.impl;
 
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
+import com.braintech.eFacturador.dto.producto.MgProductoCompraDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
+import com.braintech.eFacturador.dto.producto.MgProductoSuplidorCompraDTO;
+import com.braintech.eFacturador.dto.producto.MgProductoUnidadSuplidorCompraDTO;
 import com.braintech.eFacturador.exceptions.ApplicationException;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
@@ -16,6 +19,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -248,9 +252,7 @@ public class MgProductoServiceImpl implements MgProductoService {
               "%" + criteria.getDescripcion().toLowerCase(Locale.ROOT) + "%"));
     }
 
-    if (!predicates.isEmpty()) {
-      query.where(cb.and(predicates.toArray(new Predicate[0])));
-    }
+    query.where(cb.and(predicates.toArray(new Predicate[0])));
     query.orderBy(cb.asc(product.get("nombreProducto")));
     return entityManager.createQuery(query).getResultList();
   }
@@ -283,12 +285,72 @@ public class MgProductoServiceImpl implements MgProductoService {
               "%" + criteria.getDescripcion().toLowerCase(Locale.ROOT) + "%"));
     }
 
-    if (!predicates.isEmpty()) {
-      query.where(cb.and(predicates.toArray(new Predicate[0])));
-    }
+    query.where(cb.and(predicates.toArray(new Predicate[0])));
     query.select(
         cb.construct(MgProductoResumenDTO.class, product.get("id"), product.get("nombreProducto")));
     query.orderBy(cb.asc(product.get("nombreProducto")));
     return entityManager.createQuery(query).getResultList();
+  }
+
+  @Override
+  public List<MgProductoResumenDTO> getProductosDisponiblesCompraResumen(Integer suplidorId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return productoRepository.findResumenDisponiblesCompraBySuplidorAndEmpresa(
+        suplidorId, empresaId);
+  }
+
+  @Override
+  public MgProductoCompraDTO getProductoCompraDetalle(Integer productoId, Integer suplidorId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+
+    MgProducto p =
+        productoRepository
+            .findProductoCompraById(productoId, empresaId)
+            .orElseThrow(() -> new RecordNotFoundException("Producto no encontrado"));
+
+    MgProductoUnidadSuplidorCompraDTO unidadSuplidor =
+        p.getUnidadProductorSuplidor() == null
+            ? null
+            : p.getUnidadProductorSuplidor().stream()
+                .filter(
+                    u ->
+                        Boolean.TRUE.equals(u.getDisponibleEnCompra())
+                            && u.getProductosSuplidores() != null)
+                .flatMap(
+                    u ->
+                        u.getProductosSuplidores().stream()
+                            .filter(
+                                s ->
+                                    s.getSuplidorId() != null
+                                        && suplidorId.equals(s.getSuplidorId().getId())
+                                        && !"INA".equals(s.getEstadoId()))
+                            .map(
+                                s ->
+                                    new MgProductoUnidadSuplidorCompraDTO(
+                                        u.getId(),
+                                        u.getUnidadId() != null
+                                            ? u.getUnidadId().getNombre()
+                                            : null,
+                                        u.getUnidadId() != null ? u.getUnidadId().getSigla() : null,
+                                        u.getUnidadFraccionId() != null
+                                            ? u.getUnidadFraccionId().getNombre()
+                                            : null,
+                                        u.getUnidadFraccionId() != null
+                                            ? u.getUnidadFraccionId().getSigla()
+                                            : null,
+                                        u.getCantidad(),
+                                        new MgProductoSuplidorCompraDTO(
+                                            s.getId(),
+                                            s.getPrecio(),
+                                            s.getItbisDefault(),
+                                            s.getEstadoId()))))
+                .findFirst()
+                .orElseThrow(
+                    () -> new RecordNotFoundException("Suplidor no asociado a este producto"));
+
+    BigDecimal itbis = p.getItbisId() != null ? p.getItbisId().getItbis() : BigDecimal.ZERO;
+
+    return new MgProductoCompraDTO(
+        p.getId(), p.getNombreProducto(), p.getPrecio(), itbis, unidadSuplidor);
   }
 }

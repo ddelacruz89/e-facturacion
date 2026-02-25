@@ -8,7 +8,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 // Import debug utility
 import "./utils/debugAuth";
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer } from "react-toastify";
 
 // Lazy imports
 const HomeView = lazy(() => import("./HomeView"));
@@ -22,6 +22,8 @@ const ProductoView = lazy(() => import("./components/producto/ProductoView"));
 const CategoriaView = lazy(() => import("./components/producto/CategoriaView"));
 const UnidadView = lazy(() => import("./components/producto/UnidadView"));
 const SuplidorView = lazy(() => import("./components/inventario/SuplidorView"));
+const CotizacionView = lazy(() => import("./components/inventario/CotizacionView"));
+const OrdenCompraView = lazy(() => import("./components/inventario/OrdenCompraView"));
 const ClientesView = lazy(() => import("./components/Cliente/ClientesView"));
 
 // Routes component that uses authentication context
@@ -53,6 +55,8 @@ const AppRoutes = () => {
                     <Route path="categoria" element={<CategoriaView />} />
                     <Route path="unidad" element={<UnidadView />} />
                     <Route path="suplidores" element={<SuplidorView />} />
+                    <Route path="cotizacion" element={<CotizacionView />} />
+                    <Route path="orden-compra" element={<OrdenCompraView />} />
                     <Route path="clientes" element={<ClientesView />} />
                 </Route>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -36,26 +36,49 @@ import { ModalSearchProps, SearchField, SearchResultItem, SearchParams } from ".
 export const ModalSearch: React.FC<ModalSearchProps> = ({ open, onClose, onSelect, config, initialValues = {} }) => {
     const [results, setResults] = useState<SearchResultItem[]>([]);
     const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedItem, setSelectedItem] = useState<SearchResultItem | null>(null);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [hasMore, setHasMore] = useState(true);
+    const [lastSearchParams, setLastSearchParams] = useState<SearchParams>({});
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // Combine defaultParams from config with initialValues
+    const formDefaultValues = {
+        ...config.defaultParams,
+        ...initialValues,
+    };
 
     const { control, handleSubmit, reset, watch, setValue } = useForm<SearchParams>({
-        defaultValues: initialValues,
+        defaultValues: formDefaultValues,
     });
+
+    // Reset form with default values when modal opens
+    useEffect(() => {
+        if (open) {
+            reset(formDefaultValues);
+        }
+    }, [open]);
 
     // Auto-search on load if configured
     useEffect(() => {
         if (open && config.searchOnLoad) {
-            performSearch(initialValues);
+            performSearch(formDefaultValues, 0);
         }
     }, [open, config.searchOnLoad]);
 
     // Perform search with given parameters
-    const performSearch = async (searchParams: SearchParams = {}) => {
+    const performSearch = async (searchParams: SearchParams = {}, page: number = 0, append: boolean = false) => {
         try {
-            setLoading(true);
+            if (append) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+                setSelectedItem(null);
+            }
             setError(null);
-            setSelectedItem(null);
 
             // Clean empty parameters
             const cleanParams = Object.entries(searchParams).reduce((acc, [key, value]) => {
@@ -71,30 +94,90 @@ export const ModalSearch: React.FC<ModalSearchProps> = ({ open, onClose, onSelec
                 ...cleanParams,
             };
 
+            // Add pagination if enabled
+            if (config.pagination?.enabled) {
+                finalParams.page = page;
+                finalParams.size = config.pagination.pageSize || 10;
+            }
+
             // If no parameters, don't search unless it's configured to search on load
             if (Object.keys(finalParams).length === 0 && !config.searchOnLoad) {
                 setResults([]);
                 return;
             }
 
-            const searchResults = await searchService.search<SearchResultItem[]>({
-                url: config.endpoint,
-                params: finalParams,
-            });
+            let searchResults: any;
 
-            setResults(Array.isArray(searchResults) ? searchResults : []);
+            // Use POST or GET based on config
+            if (config.method === "POST") {
+                searchResults = await searchService.searchPost<any>(config.endpoint, finalParams);
+            } else {
+                searchResults = await searchService.search<SearchResultItem[]>({
+                    url: config.endpoint,
+                    params: finalParams,
+                });
+            }
+
+            // Handle nested content structure (e.g., {status: "OK", content: {content: [...], ...}})
+            let actualContent = searchResults;
+            if (searchResults?.content?.content) {
+                // Nested structure
+                actualContent = searchResults.content;
+            }
+
+            // Handle paginated response
+            if (config.pagination?.enabled) {
+                const content = actualContent?.content || actualContent;
+                const newResults = Array.isArray(content) ? content : [];
+
+                if (append) {
+                    setResults((prev) => [...prev, ...newResults]);
+                } else {
+                    setResults(newResults);
+                }
+
+                setCurrentPage(actualContent.number || 0);
+                setTotalPages(actualContent.totalPages || 0);
+                setHasMore(!actualContent.last);
+            } else {
+                setResults(Array.isArray(actualContent) ? actualContent : []);
+            }
+
+            setLastSearchParams(searchParams);
         } catch (err) {
             console.error("Modal search error:", err);
             setError("Error al realizar la búsqueda. Verifique los criterios e intente nuevamente.");
-            setResults([]);
+            if (!append) {
+                setResults([]);
+            }
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
     // Handle form submission
     const onSubmit = (data: SearchParams) => {
-        performSearch(data);
+        setCurrentPage(0);
+        setHasMore(true);
+        performSearch(data, 0, false);
+    };
+
+    // Handle scroll for infinite scroll
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const target = e.currentTarget;
+        const scrollTop = target.scrollTop;
+        const scrollHeight = target.scrollHeight;
+        const clientHeight = target.clientHeight;
+
+        // Load more when scrolled to bottom (with 50px threshold)
+        if (scrollHeight - scrollTop <= clientHeight + 50) {
+            if (config.pagination?.enabled && hasMore && !loading && !loadingMore) {
+                const nextPage = currentPage + 1;
+                setCurrentPage(nextPage);
+                performSearch(lastSearchParams, nextPage, true);
+            }
+        }
     };
 
     // Handle item selection
@@ -144,8 +227,30 @@ export const ModalSearch: React.FC<ModalSearchProps> = ({ open, onClose, onSelec
                         <Controller
                             name={field.key}
                             control={control}
+                            defaultValue=""
                             render={({ field: formField }) => (
                                 <Select {...formField} label={field.label} size="small">
+                                    {field.options?.map((option) => (
+                                        <MenuItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            )}
+                        />
+                    </FormControl>
+                );
+
+            case "multiselect":
+                return (
+                    <FormControl {...commonProps}>
+                        <InputLabel>{field.label}</InputLabel>
+                        <Controller
+                            name={field.key}
+                            control={control}
+                            defaultValue={[]}
+                            render={({ field: formField }) => (
+                                <Select {...formField} multiple label={field.label} size="small" value={formField.value || []}>
                                     {field.options?.map((option) => (
                                         <MenuItem key={option.value} value={option.value}>
                                             {option.label}
@@ -304,42 +409,71 @@ export const ModalSearch: React.FC<ModalSearchProps> = ({ open, onClose, onSelec
 
                 {/* Results Table */}
                 {!loading && results.length > 0 && (
-                    <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
-                        <Table stickyHeader size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell padding="checkbox">Seleccionar</TableCell>
-                                    {config.displayColumns.map((column) => (
-                                        <TableCell key={column.key} style={{ width: column.width }}>
-                                            {column.label}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {results.map((item, index) => {
-                                    const isSelected: boolean = !!(
-                                        selectedItem && selectedItem[config.keyField] === item[config.keyField]
-                                    );
-                                    return (
-                                        <TableRow
-                                            key={item[config.keyField] || index}
-                                            hover
-                                            selected={isSelected}
-                                            onClick={() => handleItemSelect(item)}
-                                            style={{ cursor: "pointer" }}>
-                                            <TableCell padding="checkbox">
-                                                <Checkbox checked={isSelected} />
+                    <>
+                        <TableContainer
+                            component={Paper}
+                            sx={{ maxHeight: 400 }}
+                            ref={scrollContainerRef}
+                            onScroll={handleScroll}>
+                            <Table stickyHeader size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell padding="checkbox">Seleccionar</TableCell>
+                                        {config.displayColumns.map((column) => (
+                                            <TableCell key={column.key} style={{ width: column.width }}>
+                                                {column.label}
                                             </TableCell>
-                                            {config.displayColumns.map((column) => (
-                                                <TableCell key={column.key}>{renderCellValue(column, item)}</TableCell>
-                                            ))}
-                                        </TableRow>
-                                    );
-                                })}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {results.map((item, index) => {
+                                        const isSelected: boolean = !!(
+                                            selectedItem && selectedItem[config.keyField] === item[config.keyField]
+                                        );
+                                        return (
+                                            <TableRow
+                                                key={item[config.keyField] || index}
+                                                hover
+                                                selected={isSelected}
+                                                onClick={() => handleItemSelect(item)}
+                                                onDoubleClick={() => {
+                                                    handleItemSelect(item);
+                                                    handleConfirmSelection();
+                                                }}
+                                                style={{ cursor: "pointer" }}>
+                                                <TableCell padding="checkbox">
+                                                    <Checkbox checked={isSelected} />
+                                                </TableCell>
+                                                {config.displayColumns.map((column) => (
+                                                    <TableCell key={column.key}>{renderCellValue(column, item)}</TableCell>
+                                                ))}
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+
+                        {/* Loading More Indicator */}
+                        {loadingMore && (
+                            <Box display="flex" justifyContent="center" py={2}>
+                                <CircularProgress size={24} />
+                                <Typography variant="body2" sx={{ ml: 2 }}>
+                                    Cargando más resultados...
+                                </Typography>
+                            </Box>
+                        )}
+
+                        {/* End of results message */}
+                        {!hasMore && !loadingMore && results.length > 0 && (
+                            <Box display="flex" justifyContent="center" py={2}>
+                                <Typography variant="body2" color="textSecondary">
+                                    No hay más resultados
+                                </Typography>
+                            </Box>
+                        )}
+                    </>
                 )}
 
                 {/* No Results */}

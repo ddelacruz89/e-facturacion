@@ -53,21 +53,15 @@ export interface MgProductoUnidadSuplidor {
     fechaReg: Date;
     activo: boolean;
     // Own properties
-    existencia?: number; // Integer -> number
-    precioVenta?: number; // BigDecimal -> number
-    precioMinimo?: number; // BigDecimal -> number
-    disponibleEnCompra?: boolean;
-    disponibleEnVenta?: boolean;
-    precioCostoAvg?: number; // BigDecimal -> number
-    precio: number; // BigDecimal -> number, Required
+    disponibleEnCompra?: boolean; // Indicates if product is available for purchases
+    disponibleEnVenta?: boolean; // Indicates if product is available for sales
     cantidad?: number; // Integer -> number
     // Foreign keys
     unidadFraccionId: number; // Foreign key to MgUnidad (ManyToOne, required)
     unidadId: number; // Foreign key to MgUnidad (ManyToOne, required)
-    productoId: number; // Foreign key to MgProducto (ManyToOne, required)
+    productoId: number; // Foreign key to MgProducto (ManyToOne, required, JsonBackReference)
     // Relationships
     productosSuplidores?: MgProductoSuplidor[]; // OneToMany
-    productosAlmacenesLimites?: MgProductoUnidadSuplidorLimiteAlmacen[]; // OneToMany
 }
 
 export interface MgProductoSuplidor {
@@ -132,15 +126,22 @@ export interface MgProducto {
     codigoBarra?: string;
     nombreProducto: string; // Required
     descripcion?: string;
+    existencia?: number; // Integer -> number
+    precioVenta?: number; // BigDecimal -> number
+    precioMinimo?: number; // BigDecimal -> number
+    precioCostoAvg?: number; // BigDecimal -> number
+    precio?: number; // BigDecimal -> number
     trabajador?: boolean;
     comision?: number; // BigDecimal -> number
     // Foreign keys
     itbisId: number; // Foreign key to MgItbis (ManyToOne, required)
     categoriaId: number; // Foreign key to MgCategoria (ManyToOne, required)
     // Relationships
-    unidadProductorSuplidor: MgProductoUnidadSuplidor[]; // OneToMany (name changed from unidadFraccions)
+    unidadProductorSuplidor: MgProductoUnidadSuplidor[]; // OneToMany (mapped by "productoId", eager fetch)
     productosModulos?: MgProductoModulo[]; // OneToMany
-    tags?: MgProductoTag[]; // OneToMany
+    inventarios?: any[]; // OneToMany to InInventario
+    tags?: MgProductoTag[]; // OneToMany (lazy fetch)
+    productosAlmacenesLimites?: MgProductoUnidadSuplidorLimiteAlmacen[]; // OneToMany
 }
 
 // Form-specific interfaces with ComboBox references
@@ -150,8 +151,10 @@ export interface MgProductoFormData extends Omit<MgProducto, "categoriaId" | "it
     unidadProductorSuplidor?: MgProductoUnidadSuplidorFormData[];
 }
 
-export interface MgProductoUnidadSuplidorFormData
-    extends Omit<MgProductoUnidadSuplidor, "unidadId" | "unidadFraccionId" | "productosSuplidores"> {
+export interface MgProductoUnidadSuplidorFormData extends Omit<
+    MgProductoUnidadSuplidor,
+    "unidadId" | "unidadFraccionId" | "productosSuplidores"
+> {
     unidadId: ComboBoxReference | number;
     unidadFraccionId: ComboBoxReference | number;
     productosSuplidores?: MgProductoSuplidorFormData[];

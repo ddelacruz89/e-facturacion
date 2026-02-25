@@ -20,3 +20,17 @@ export interface InSuplidorSimpleDTO {
 
 // Re-export from individual files
 export type { InSuplidor } from "./InSuplidor";
+export type {
+    InCotizacion,
+    InCotizacionDetalle,
+    InCotizacionFormDTO,
+    InCotizacionDetalleFormDTO,
+    InCotizacionSimpleDTO,
+} from "./cotizacion";
+export type {
+    InOrdenCompra,
+    InOrdenCompraDetalle,
+    InOrdenCompraFormDTO,
+    InOrdenCompraDetalleFormDTO,
+    InOrdenCompraSimpleDTO,
+} from "./ordenCompra";

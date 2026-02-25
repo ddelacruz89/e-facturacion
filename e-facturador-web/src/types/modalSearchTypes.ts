@@ -6,7 +6,7 @@
 export interface SearchField {
     key: string;
     label: string;
-    type: 'text' | 'number' | 'select' | 'date' | 'boolean';
+    type: 'text' | 'number' | 'select' | 'date' | 'boolean' | 'multiselect';
     placeholder?: string;
     required?: boolean;
     options?: { value: any; label: string }[]; // For select type
@@ -22,11 +22,16 @@ export interface SearchField {
 export interface SearchConfig {
     title: string;
     endpoint: string;
+    method?: 'GET' | 'POST'; // HTTP method, default GET
     fields: SearchField[];
     displayColumns: SearchDisplayColumn[];
     keyField: string; // Field to use as unique identifier
     searchOnLoad?: boolean; // Whether to search immediately when modal opens
     defaultParams?: { [key: string]: any }; // Default parameters to include in searches
+    pagination?: {
+        enabled: boolean;
+        pageSize?: number;
+    };
 }
 
 // Column configuration for results display
@@ -192,6 +197,73 @@ export const SEARCH_CONFIGS = {
             { key: "email", label: "Email", width: "30%" },
             { key: "role", label: "Rol", width: "20%" },
             { key: "activo", label: "Estado", width: "15%" }
+        ]
+    } as SearchConfig,
+
+    ORDEN_COMPRA: {
+        title: "Buscar Orden de Compra",
+        endpoint: "/api/v1/inventario/ordenes-compras/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10
+        },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace7Dias = new Date();
+            hace7Dias.setDate(hoy.getDate() - 7);
+            return {
+                fechaInicio: hace7Dias.toISOString().split('T')[0],
+                fechaFin: hoy.toISOString().split('T')[0]
+            };
+        })(),
+        fields: [
+            {
+                key: "fechaInicio",
+                label: "Fecha Inicio",
+                type: "date" as const,
+                placeholder: "Seleccione fecha inicio",
+                required: true
+            },
+            {
+                key: "fechaFin",
+                label: "Fecha Fin",
+                type: "date" as const,
+                placeholder: "Seleccione fecha fin",
+                required: true
+            },
+            {
+                key: "id",
+                label: "ID",
+                type: "number" as const,
+                placeholder: "Ingrese ID de la orden"
+            },
+            {
+                key: "suplidorId",
+                label: "Suplidor",
+                type: "number" as const,
+                placeholder: "ID del suplidor"
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "P", label: "Pendiente" },
+                    { value: "A", label: "Aprobado" },
+                    { value: "C", label: "Cancelado" }
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "10%" },
+            { key: "fechaReg", label: "Fecha", width: "20%" },
+            { key: "suplidorNombre", label: "Suplidor", width: "30%" },
+            { key: "total", label: "Total", width: "20%" },
+            { key: "estadoId", label: "Estado", width: "20%" }
         ]
     } as SearchConfig
 };

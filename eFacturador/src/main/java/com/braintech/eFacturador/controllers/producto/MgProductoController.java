@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.controllers.producto;
 
+import com.braintech.eFacturador.dto.producto.MgProductoCompraDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
@@ -74,5 +75,19 @@ public class MgProductoController {
   @GetMapping("/search/advanced")
   public List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria) {
     return productoService.searchAdvanced(criteria);
+  }
+
+  // ORDEN DE COMPRA
+
+  @GetMapping("/disponibles-compra/suplidor/{suplidorId}")
+  public ResponseEntity<List<MgProductoResumenDTO>> getProductosDisponiblesCompraResumen(
+      @PathVariable Integer suplidorId) {
+    return ResponseEntity.ok(productoService.getProductosDisponiblesCompraResumen(suplidorId));
+  }
+
+  @GetMapping("/disponibles-compra/{productoId}/suplidorId/{suplidorId}")
+  public ResponseEntity<MgProductoCompraDTO> getProductoCompraDetalle(
+      @PathVariable Integer productoId, @PathVariable Integer suplidorId) {
+    return ResponseEntity.ok(productoService.getProductoCompraDetalle(productoId, suplidorId));
   }
 }

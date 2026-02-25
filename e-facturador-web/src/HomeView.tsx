@@ -31,6 +31,18 @@ const HomeView = () => {
                                 urlSql: "/suplidores",
                                 url: "/suplidores",
                             },
+                            {
+                                id: 12,
+                                menu: "Cotizaciones",
+                                urlSql: "/cotizacion",
+                                url: "/cotizacion",
+                            },
+                            {
+                                id: 13,
+                                menu: "Órdenes de Compra",
+                                urlSql: "/orden-compra",
+                                url: "/orden-compra",
+                            },
                         ],
                     };
                 }
@@ -49,6 +61,18 @@ const HomeView = () => {
                             menu: "Suplidores",
                             urlSql: "/suplidores",
                             url: "/suplidores",
+                        },
+                        {
+                            id: 12,
+                            menu: "Cotizaciones",
+                            urlSql: "/cotizacion",
+                            url: "/cotizacion",
+                        },
+                        {
+                            id: 13,
+                            menu: "Órdenes de Compra",
+                            urlSql: "/orden-compra",
+                            url: "/orden-compra",
                         },
                     ],
                 });

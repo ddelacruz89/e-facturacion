@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.services.producto;
 
+import com.braintech.eFacturador.dto.producto.MgProductoCompraDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
@@ -28,4 +29,8 @@ public interface MgProductoService {
   List<MgProducto> searchAdvancedResumen(MgProductoSearchCriteria criteria);
 
   List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria);
+
+  List<MgProductoResumenDTO> getProductosDisponiblesCompraResumen(Integer suplidorId);
+
+  MgProductoCompraDTO getProductoCompraDetalle(Integer productoId, Integer suplidorId);
 }
