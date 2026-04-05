@@ -3,7 +3,6 @@ package com.braintech.eFacturador.jpa.producto;
 import com.braintech.eFacturador.annotations.FieldDescription;
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import com.braintech.eFacturador.jpa.general.MgItbis;
-import com.braintech.eFacturador.jpa.inventario.InInventario;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -88,9 +87,9 @@ public class MgProducto extends BaseEntity implements Serializable {
   @JoinColumn(name = "producto_id", referencedColumnName = "id")
   private List<MgProductoModulo> productosModulos;
 
-  @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name = "producto_id", referencedColumnName = "id")
-  private List<InInventario> inventarios;
+  //  @OneToMany(cascade = CascadeType.ALL)
+  //  @JoinColumn(name = "producto_id", referencedColumnName = "id")
+  //  private List<InInventario> inventarios;
 
   @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   @JsonManagedReference(value = "producto-tags")

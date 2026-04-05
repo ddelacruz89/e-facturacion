@@ -57,12 +57,13 @@ export interface InOrdenCompraDetalleFormDTO {
     subTotal: number;
     itbis?: number;
     total?: number;
-    productoId?: number;
+    productoId?: number | MgProducto;
     unidadNombre?: string;
     unidadCantidad?: number;
     cantidadTablar?: number;
     descuentoPorciento?: number;
     descuentoCantidad?: number;
+    estadoId?: string;
 }
 
 // Simple DTO for orden compra resumen endpoint

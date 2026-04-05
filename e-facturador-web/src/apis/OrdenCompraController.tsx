@@ -55,16 +55,29 @@ export function getOrdenesCompraResumen(): Promise<InOrdenCompraSimpleDTO[]> {
     return apiClient.get(`${api}/resumen`).then((x: { data: InOrdenCompraSimpleDTO[] }) => x.data);
 }
 
+const normalizeOrdenCompraPayload = (ordenCompra: InOrdenCompraFormDTO): InOrdenCompraFormDTO => ({
+    ...ordenCompra,
+    suplidorId:
+        typeof (ordenCompra as any)?.suplidorId === "object" && (ordenCompra as any)?.suplidorId !== null
+            ? (ordenCompra as any).suplidorId.id
+            : ordenCompra.suplidorId,
+    detalles: ordenCompra.detalles?.map((detalle) => ({
+        ...detalle,
+        productoId:
+            typeof detalle?.productoId === "object" && detalle?.productoId !== null ? detalle.productoId.id : detalle?.productoId,
+    })),
+});
+
 // Save (create or update) orden de compra
 export function saveOrdenCompra(ordenCompra: InOrdenCompraFormDTO): Promise<InOrdenCompra> {
     console.log("saveOrdenCompra", ordenCompra);
     // Always use POST, backend determines create/update based on ID
-    return apiClient.post(api, ordenCompra).then((x: { data: InOrdenCompra }) => x.data);
+    return apiClient.post(api, normalizeOrdenCompraPayload(ordenCompra)).then((x: { data: InOrdenCompra }) => x.data);
 }
 
 // Update orden de compra
 export function updateOrdenCompra(id: number, ordenCompra: InOrdenCompraFormDTO): Promise<InOrdenCompra> {
-    return apiClient.put(`${api}/${id}`, ordenCompra).then((x: { data: InOrdenCompra }) => x.data);
+    return apiClient.put(`${api}/${id}`, normalizeOrdenCompraPayload(ordenCompra)).then((x: { data: InOrdenCompra }) => x.data);
 }
 
 // Delete orden de compra

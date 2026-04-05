@@ -18,6 +18,7 @@ import {
     AccordionSummary,
     AccordionDetails,
     Typography,
+    Switch,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -29,6 +30,7 @@ import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
 import { TextInputPk, ConfirmationModal } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
 import { InOrdenCompraFormDTO, InOrdenCompraDetalleFormDTO } from "../../models/inventario";
+import { MgProducto } from "../../models/producto";
 import { saveOrdenCompra } from "../../apis/OrdenCompraController";
 import { validateOrdenCompra, validateOrdenCompraBusinessRules } from "../../validations/ordenCompraValidation";
 import { formatCurrency } from "../../utils/FacturaUtils";
@@ -51,8 +53,7 @@ const initialOrdenCompra: InOrdenCompraFormDTO = {
 };
 
 interface DetalleFormState {
-    productoId?: number;
-    productoNombre?: string;
+    productoId?: number | MgProducto;
     unidadId?: number;
     unidadNombre?: string;
     cantidad: number;
@@ -107,6 +108,23 @@ export const OrdenCompraView: React.FC = () => {
     const { fields, append, remove, update } = useFieldArray({ control, name: "detalles" });
     const detalles = watch("detalles");
     const suplidorId = watch("suplidorId");
+    const estadoId = watch("estadoId");
+
+    const getDetalleProductoId = (detalle: { productoId?: number | MgProducto }): number | undefined =>
+        typeof detalle?.productoId === "object" && detalle?.productoId !== null ? detalle.productoId.id : detalle?.productoId;
+
+    const getDetalleProductoNombre = (detalle: { productoId?: number | MgProducto }): string => {
+        if (typeof detalle?.productoId === "object" && detalle?.productoId !== null) {
+            return detalle.productoId.nombreProducto || (detalle.productoId as any).nombre || "";
+        }
+
+        return detalle?.productoId ? String(detalle.productoId) : "";
+    };
+
+    const normalizeDetalle = (detalle: any): InOrdenCompraDetalleFormDTO => ({
+        ...detalle,
+        productoId: detalle?.productoId,
+    });
 
     const handleCantidadChange = (idx: number, nuevaCantidad: number) => {
         if (!detalles) return;
@@ -127,6 +145,14 @@ export const OrdenCompraView: React.FC = () => {
     };
 
     const handleStartEdit = (idx: number, currentCantidad: number) => {
+        const detalle = detalles?.[idx] as any;
+        if (detalle?.estadoId && detalle.estadoId !== "ACT") {
+            setSnackbarMessage("No puede editar una fila deshabilitada");
+            setSnackbarSeverity("error");
+            setSnackbarOpen(true);
+            return;
+        }
+
         setEditingRowIndex(idx);
         setTempCantidad(currentCantidad);
     };
@@ -136,10 +162,16 @@ export const OrdenCompraView: React.FC = () => {
         setEditingRowIndex(null);
     };
 
+    const handleToggleEnviarEntrada = () => {
+        const nextEstado = estadoId === "PEN" ? "ACT" : "PEN";
+        setValue("estadoId", nextEstado);
+    };
+
     const onSubmit: SubmitHandler<InOrdenCompraFormDTO> = async (data) => {
         // Calculate and update totals before validation
         const totales = { subTotal: 0, itbis: 0, total: 0 };
         data.detalles?.forEach((d) => {
+            if ((d as any)?.estadoId && (d as any).estadoId !== "ACT") return;
             totales.subTotal += d.subTotal || 0;
             totales.itbis += d.itbis || 0;
             totales.total += d.total || 0;
@@ -198,7 +230,7 @@ export const OrdenCompraView: React.FC = () => {
             descuento: orden.descuento,
             suplidorId: orden.suplidorId,
             estadoId: orden.estadoId,
-            detalles: orden.detalles || [],
+            detalles: (orden.detalles || []).map(normalizeDetalle),
         });
     });
 
@@ -208,21 +240,23 @@ export const OrdenCompraView: React.FC = () => {
 
             // Fetch complete orden de compra with details
             const ordenCompleta = await apiClient.get(`/api/v1/inventario/ordenes-compras/${orden.id}`);
-            const ordenData = ordenCompleta.data;
+            const responseData = ordenCompleta.data;
+            const ordenData = responseData?.content ?? responseData;
+            const detallesOrden = (ordenData?.detalles ?? ordenData?.inOrdenesComprasDetallesList ?? []).map(normalizeDetalle);
 
             console.log("📦 Datos de orden completa recibidos:", ordenData);
-            console.log("📋 Detalles de la orden:", ordenData.detalles);
+            console.log("📋 Detalles de la orden:", detallesOrden);
 
             // Load selected orden into form
             reset({
-                id: ordenData.id,
+                id: ordenData?.id,
                 subTotal: ordenData.subTotal || 0,
                 itbis: ordenData.itbis || 0,
                 total: ordenData.total || 0,
                 descuento: ordenData.descuento || 0,
                 suplidorId: ordenData.suplidorId,
-                estadoId: ordenData.estadoId || "P",
-                detalles: ordenData.detalles || [],
+                estadoId: ordenData.estadoId || "ACT",
+                detalles: detallesOrden,
             });
 
             console.log("✅ Formulario actualizado con la orden de compra");
@@ -264,8 +298,7 @@ export const OrdenCompraView: React.FC = () => {
 
             setDetalleForm((prev) => ({
                 ...prev,
-                productoId: productoCompleto.id,
-                productoNombre: productoCompleto.nombreProducto,
+                productoId: productoCompleto,
                 unidadId: unidadSuplidor?.id,
                 unidadNombre: unidadSuplidor?.unidadNombre || "",
                 cantidad: cantidad,
@@ -349,9 +382,49 @@ export const OrdenCompraView: React.FC = () => {
         });
     };
 
+    const isDetalleGuardado = (detalle: any) => Boolean(detalle?.id);
+
+    const isDetalleActivo = (detalle: any) => (detalle?.estadoId || "ACT") === "ACT";
+
+    const handleToggleDetalleEstado = (idx: number) => {
+        const detalle = detalles?.[idx] as any;
+        if (!detalle || !isDetalleGuardado(detalle)) return;
+
+        const nextEstado = isDetalleActivo(detalle) ? "CAN" : "ACT";
+        update(idx, {
+            ...detalle,
+            estadoId: nextEstado,
+        });
+
+        if (editingRowIndex === idx) {
+            setEditingRowIndex(null);
+        }
+    };
+
+    const handleRemoveDetalle = (idx: number) => {
+        const detalle = detalles?.[idx] as any;
+        if (!detalle) return;
+
+        if (isDetalleGuardado(detalle)) {
+            setSnackbarMessage("Las filas guardadas no se pueden eliminar; solo habilitar o deshabilitar");
+            setSnackbarSeverity("error");
+            setSnackbarOpen(true);
+            return;
+        }
+
+        remove(idx);
+    };
+
     const handleAddDetalle = () => {
         if (!detalleForm.productoId) {
             setSnackbarMessage("Debe seleccionar un producto");
+            setSnackbarSeverity("error");
+            setSnackbarOpen(true);
+            return;
+        }
+
+        if (!getDetalleProductoId(detalleForm)) {
+            setSnackbarMessage("Debe seleccionar un producto válido");
             setSnackbarSeverity("error");
             setSnackbarOpen(true);
             return;
@@ -367,6 +440,7 @@ export const OrdenCompraView: React.FC = () => {
             subTotal: detalleForm.subTotal,
             itbis: detalleForm.itbis,
             total: detalleForm.total,
+            estadoId: "ACT",
         } as InOrdenCompraDetalleFormDTO);
 
         // Reset form
@@ -378,6 +452,7 @@ export const OrdenCompraView: React.FC = () => {
     const calculateTotals = () => {
         const totales = { subTotal: 0, itbis: 0, total: 0 };
         detalles?.forEach((d) => {
+            if ((d as any)?.estadoId && (d as any).estadoId !== "ACT") return;
             totales.subTotal += d.subTotal || 0;
             totales.itbis += d.itbis || 0;
             totales.total += d.total || 0;
@@ -413,7 +488,18 @@ export const OrdenCompraView: React.FC = () => {
                             </Box>
                         </Box>
                     </Grid>
-                    <SuplidorComboBox control={control} name="suplidorId" label="Suplidor" error={errors.suplidorId} size={10} />
+                    <SuplidorComboBox control={control} name="suplidorId" label="Suplidor" error={errors.suplidorId} size={8} />
+                    <Grid size={{ xs: 12, md: 2 }}>
+                        <Button
+                            type="button"
+                            fullWidth
+                            variant={estadoId === "PEN" ? "contained" : "outlined"}
+                            color={estadoId === "PEN" ? "warning" : "primary"}
+                            onClick={handleToggleEnviarEntrada}
+                            sx={{ height: "40px", textTransform: "none", fontWeight: 700 }}>
+                            {estadoId === "PEN" ? "Enviado a entrada" : "Enviar a entrada"}
+                        </Button>
+                    </Grid>
                 </Grid>
 
                 <Divider style={{ margin: "20px 0" }} />
@@ -437,7 +523,7 @@ export const OrdenCompraView: React.FC = () => {
                                         onOpenSearch={handleOpenProductoSearch}
                                         variant="input"
                                         label="Producto"
-                                        displayValue={detalleForm.productoNombre || ""}
+                                        displayValue={getDetalleProductoNombre(detalleForm)}
                                         placeholder={suplidorId ? "Seleccione un producto..." : "Seleccione un suplidor primero"}
                                         size="small"
                                         disabled={!suplidorId}
@@ -557,7 +643,16 @@ export const OrdenCompraView: React.FC = () => {
                                         variant="contained"
                                         startIcon={<AddIcon />}
                                         onClick={handleAddDetalle}
-                                        style={{ height: "40px" }}>
+                                        sx={{
+                                            height: "40px",
+                                            backgroundColor: "#00897b",
+                                            color: "#ffffff",
+                                            fontWeight: 700,
+                                            textTransform: "none",
+                                            "&:hover": {
+                                                backgroundColor: "#00695c",
+                                            },
+                                        }}>
                                         Agregar
                                     </Button>
                                 </Grid>
@@ -568,31 +663,42 @@ export const OrdenCompraView: React.FC = () => {
 
                 {/* Tabla de productos agregados */}
                 <Box style={{ padding: 20 }}>
-                    <h5>Productos Agregados</h5>
-                    <TableContainer component={Paper}>
+                    <Box
+                        sx={{
+                            background: "linear-gradient(90deg, #00897b 0%, #00695c 100%)",
+                            color: "#ffffff",
+                            px: 2,
+                            py: 1.25,
+                            fontWeight: 700,
+                            letterSpacing: 0.2,
+                        }}>
+                        Productos Agregados
+                    </Box>
+                    <TableContainer
+                        component={Paper}
+                        sx={{
+                            borderRadius: 0,
+                            boxShadow: "none",
+                        }}>
                         <Table size="small">
-                            <TableHead sx={{ backgroundColor: "rgb(38, 50, 56)" }}>
+                            <TableHead
+                                sx={{
+                                    backgroundColor: "#00695c",
+                                    "& .MuiTableCell-root": {
+                                        color: "#ffffff",
+                                        fontWeight: 700,
+                                        borderBottomColor: "rgba(255, 255, 255, 0.12)",
+                                    },
+                                }}>
                                 <TableRow>
-                                    <TableCell sx={{ color: "white" }}>#</TableCell>
-                                    <TableCell sx={{ color: "white" }}>ID Producto</TableCell>
-                                    <TableCell align="right" sx={{ color: "white" }}>
-                                        Cantidad
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ color: "white" }}>
-                                        Precio
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ color: "white" }}>
-                                        Subtotal
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ color: "white" }}>
-                                        ITBIS
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ color: "white" }}>
-                                        Total
-                                    </TableCell>
-                                    <TableCell align="center" sx={{ color: "white" }}>
-                                        Acciones
-                                    </TableCell>
+                                    <TableCell>#</TableCell>
+                                    <TableCell>Producto</TableCell>
+                                    <TableCell align="right">Cantidad</TableCell>
+                                    <TableCell align="right">Precio</TableCell>
+                                    <TableCell align="right">Subtotal</TableCell>
+                                    <TableCell align="right">ITBIS</TableCell>
+                                    <TableCell align="right">Total</TableCell>
+                                    <TableCell align="center">Acciones</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -604,9 +710,13 @@ export const OrdenCompraView: React.FC = () => {
                                     </TableRow>
                                 ) : (
                                     (detalles || []).map((detalle: any, idx: number) => (
-                                        <TableRow key={idx}>
+                                        <TableRow
+                                            key={idx}
+                                            sx={{
+                                                opacity: isDetalleActivo(detalle) ? 1 : 0.55,
+                                            }}>
                                             <TableCell>{idx + 1}</TableCell>
-                                            <TableCell>{detalle.productoId}</TableCell>
+                                            <TableCell>{getDetalleProductoNombre(detalle)}</TableCell>
                                             <TableCell align="right">
                                                 {editingRowIndex === idx ? (
                                                     <Box
@@ -647,6 +757,7 @@ export const OrdenCompraView: React.FC = () => {
                                                         <span>{detalle.cantidad}</span>
                                                         <IconButton
                                                             size="small"
+                                                            disabled={!isDetalleActivo(detalle)}
                                                             onClick={() => handleStartEdit(idx, detalle.cantidad)}>
                                                             <EditIcon fontSize="small" />
                                                         </IconButton>
@@ -658,9 +769,22 @@ export const OrdenCompraView: React.FC = () => {
                                             <TableCell align="right">{formatCurrency(detalle.itbis)}</TableCell>
                                             <TableCell align="right">{formatCurrency(detalle.total)}</TableCell>
                                             <TableCell align="center">
-                                                <IconButton color="error" onClick={() => remove(idx)} size="small">
-                                                    <DeleteIcon />
-                                                </IconButton>
+                                                {isDetalleGuardado(detalle) ? (
+                                                    <Box display="flex" alignItems="center" justifyContent="center">
+                                                        <Switch
+                                                            size="small"
+                                                            checked={isDetalleActivo(detalle)}
+                                                            onChange={() => handleToggleDetalleEstado(idx)}
+                                                        />
+                                                    </Box>
+                                                ) : (
+                                                    <IconButton
+                                                        color="error"
+                                                        onClick={() => handleRemoveDetalle(idx)}
+                                                        size="small">
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))

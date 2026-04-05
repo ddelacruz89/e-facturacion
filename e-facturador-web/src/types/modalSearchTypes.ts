@@ -61,6 +61,70 @@ export interface ModalSearchProps {
     initialValues?: SearchParams;
 }
 
+const pad2 = (value: number): string => String(value).padStart(2, "0");
+
+const to12Hour = (hour24: number): { hour12: number; meridian: "AM" | "PM" } => {
+    const meridian: "AM" | "PM" = hour24 >= 12 ? "PM" : "AM";
+    const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+    return { hour12, meridian };
+};
+
+const formatDateTimeForUi = (value: any): string => {
+    if (value === null || value === undefined || value === "") return "-";
+
+    if (typeof value === "string") {
+        const amPmMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i);
+        if (amPmMatch) {
+            const day = Number(amPmMatch[1]);
+            const month = Number(amPmMatch[2]);
+            const year = Number(amPmMatch[3]);
+            const hour = Number(amPmMatch[4]);
+            const minute = Number(amPmMatch[5]);
+            const second = Number(amPmMatch[6] || 0);
+            const amPm = amPmMatch[7].toUpperCase();
+
+            return `${year}-${pad2(month)}-${pad2(day)} ${pad2(hour)}:${pad2(minute)}:${pad2(second)} ${amPm}`;
+        }
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    const { hour12, meridian } = to12Hour(date.getHours());
+
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(hour12)}:${pad2(
+        date.getMinutes(),
+    )}:${pad2(date.getSeconds())} ${meridian}`;
+};
+
+const formatTotal16_2 = (value: any): string => {
+    if (value === null || value === undefined || value === "") return "0.00";
+
+    const numeric = Number(value);
+    if (Number.isNaN(numeric)) return String(value);
+
+    const absoluteIntegerLength = Math.trunc(Math.abs(numeric)).toString().length;
+    if (absoluteIntegerLength > 16) {
+        return numeric.toFixed(2);
+    }
+
+    return numeric.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+};
+
+const formatEstadoOrdenCompra = (value: any): string => {
+    const estadoMap: Record<string, string> = {
+        PEN: "Pendiente",
+        ACT: "Activo",
+        COM: "Completado",
+        CAN: "Cancelado",
+    };
+
+    return estadoMap[String(value)] || String(value || "-");
+};
+
 // Pre-defined search configurations for common entities
 export const SEARCH_CONFIGS = {
     PRODUCTO: {
@@ -216,7 +280,8 @@ export const SEARCH_CONFIGS = {
             hace7Dias.setDate(hoy.getDate() - 7);
             return {
                 fechaInicio: hace7Dias.toISOString().split('T')[0],
-                fechaFin: hoy.toISOString().split('T')[0]
+                fechaFin: hoy.toISOString().split('T')[0],
+                estadoId: "ACT"
             };
         })(),
         fields: [
@@ -252,18 +317,34 @@ export const SEARCH_CONFIGS = {
                 type: "select" as const,
                 options: [
                     { value: "", label: "Todos" },
-                    { value: "P", label: "Pendiente" },
-                    { value: "A", label: "Aprobado" },
-                    { value: "C", label: "Cancelado" }
+                    { value: "ACT", label: "Activo" },
+                    { value: "PEN", label: "Pendiente" },
+                    { value: "COM", label: "Completado" },
+                    { value: "CAN", label: "Cancelado" }
                 ]
             }
         ],
         displayColumns: [
             { key: "id", label: "ID", width: "10%" },
-            { key: "fechaReg", label: "Fecha", width: "20%" },
+            {
+                key: "fechaReg",
+                label: "Fecha",
+                width: "20%",
+                render: (value: any) => formatDateTimeForUi(value),
+            },
             { key: "suplidorNombre", label: "Suplidor", width: "30%" },
-            { key: "total", label: "Total", width: "20%" },
-            { key: "estadoId", label: "Estado", width: "20%" }
+            {
+                key: "total",
+                label: "Total",
+                width: "20%",
+                render: (value: any) => formatTotal16_2(value),
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                width: "20%",
+                render: (value: any) => formatEstadoOrdenCompra(value),
+            }
         ]
     } as SearchConfig
 };

@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.services.inventario;
 
+import com.braintech.eFacturador.dao.inventario.InOrdenEntradaDao;
 import com.braintech.eFacturador.dao.inventario.InOrdenesComprasDao;
 import com.braintech.eFacturador.dao.inventario.InOrdenesComprasRepository;
 import com.braintech.eFacturador.dao.inventario.InSuplidorRepository;
@@ -12,6 +13,8 @@ import com.braintech.eFacturador.dto.inventario.InOrdenesComprasSimpleDTO;
 import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.inventario.InOrdenesComprasService;
+import com.braintech.eFacturador.jpa.inventario.InOrdenEntrada;
+import com.braintech.eFacturador.jpa.inventario.InOrdenEntradaDetalle;
 import com.braintech.eFacturador.jpa.inventario.InOrdenesCompras;
 import com.braintech.eFacturador.jpa.inventario.InOrdenesComprasDetalles;
 import com.braintech.eFacturador.jpa.inventario.InSuplidor;
@@ -36,6 +39,7 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
   private final InSuplidorRepository inSuplidorRepository;
   private final MgProductoRepository mgProductoRepository;
   private final TenantContext tenantContext;
+  private final InOrdenEntradaDao inOrdenEntradaDao;
 
   @Override
   @Transactional
@@ -43,15 +47,10 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
     String username = tenantContext.getCurrentUsername();
     Integer empresaId = tenantContext.getCurrentEmpresaId();
 
-    // Fetch suplidor usando el helper method
-    Integer suplidorId = requestDTO.getSuplidorIdValue();
-    if (suplidorId == null) {
-      throw new RecordNotFoundException("Suplidor ID es requerido");
-    }
-
+    // Fetch suplidor
     InSuplidor suplidor =
         inSuplidorRepository
-            .findByIdAndEmpresaId(suplidorId, empresaId)
+            .findByIdAndEmpresaId(requestDTO.getSuplidorId(), empresaId)
             .orElseThrow(() -> new RecordNotFoundException("Suplidor no encontrado"));
 
     // Create orden compra entity
@@ -64,7 +63,7 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
     ordenCompra.setEstadoId(requestDTO.getEstadoId() != null ? requestDTO.getEstadoId() : "ACT");
     ordenCompra.setCotizacionId(requestDTO.getCotizacionId());
     ordenCompra.setUsuarioReg(username);
-    ordenCompra.setFechaReg(LocalDateTime.now()); // Se establece solo al crear (updatable=false)
+    ordenCompra.setFechaReg(LocalDateTime.now());
 
     // Map detalles
     List<InOrdenesComprasDetalles> detalles = new ArrayList<>();
@@ -244,5 +243,67 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
 
     // Retornar el resumen directamente (ya viene optimizado desde el DAO con projection)
     return Response.builder().status(HttpStatus.OK).content(page).build();
+  }
+
+  @Override
+  @Transactional
+  public Response<?> convertirAOrdenEntrada(Integer ordenCompraId, Integer almacenId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    String username = tenantContext.getCurrentUsername();
+
+    // Buscar orden de compra
+    InOrdenesCompras ordenCompra =
+        inOrdenesComprasRepository
+            .findByIdAndEmpresaId(ordenCompraId, empresaId)
+            .orElseThrow(() -> new RecordNotFoundException("Orden de compra no encontrada"));
+
+    // Validar que esté en estado PEN
+    if (!"PEN".equals(ordenCompra.getEstadoId())) {
+      return Response.builder()
+          .status(HttpStatus.BAD_REQUEST)
+          .error(
+              new DataNotFoundDTO(
+                  "Solo se pueden convertir órdenes de compra en estado Pendiente (PEN)"))
+          .build();
+    }
+
+    // Crear orden de entrada
+    InOrdenEntrada ordenEntrada = new InOrdenEntrada();
+    ordenEntrada.setMonto(ordenCompra.getSubTotal());
+    ordenEntrada.setItbis(ordenCompra.getItbis());
+    ordenEntrada.setTotal(ordenCompra.getTotal());
+    ordenEntrada.setDescuento(ordenCompra.getDescuento());
+    ordenEntrada.setAlmacenId(almacenId);
+    ordenEntrada.setEmpresaId(empresaId);
+    ordenEntrada.setUsuarioReg(username);
+
+    // Convertir detalles
+    List<InOrdenEntradaDetalle> detallesEntrada = new ArrayList<>();
+    for (InOrdenesComprasDetalles detalleCompra : ordenCompra.getDetalles()) {
+      InOrdenEntradaDetalle detalleEntrada = new InOrdenEntradaDetalle();
+      detalleEntrada.setCantidad(detalleCompra.getCantidad());
+      detalleEntrada.setPrecioUnitario(detalleCompra.getPrecioUnitario());
+      detalleEntrada.setSubTotal(detalleCompra.getSubTotal());
+      detalleEntrada.setItbis(detalleCompra.getItbis());
+      detalleEntrada.setTotal(detalleCompra.getTotal());
+      detalleEntrada.setDescuentoPorciento(detalleCompra.getDescuentoPorciento());
+      detalleEntrada.setProductoId(detalleCompra.getProductoId());
+      detalleEntrada.setUnidadNombre(detalleCompra.getUnidadNombre());
+      detalleEntrada.setUnidadCantidad(detalleCompra.getUnidadCantidad());
+      detalleEntrada.setSuplidorId(ordenCompra.getSuplidorId());
+      detalleEntrada.setOrdenEntradaId(ordenEntrada);
+
+      detallesEntrada.add(detalleEntrada);
+    }
+    ordenEntrada.setInOrdenDetalleList(detallesEntrada);
+
+    // Guardar orden de entrada
+    InOrdenEntrada saved = inOrdenEntradaDao.save(ordenEntrada);
+
+    // Actualizar estado de orden de compra a ACT
+    ordenCompra.setEstadoId("ACT");
+    inOrdenesComprasRepository.save(ordenCompra);
+
+    return Response.builder().status(HttpStatus.OK).content(saved).build();
   }
 }

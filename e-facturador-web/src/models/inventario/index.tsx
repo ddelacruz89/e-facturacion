@@ -34,3 +34,4 @@ export type {
     InOrdenCompraDetalleFormDTO,
     InOrdenCompraSimpleDTO,
 } from "./ordenCompra";
+export type { InOrdenEntrada, InOrdenEntradaDetalle, InOrdenEntradaDetalleLote } from "./ordenEntrada";

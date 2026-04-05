@@ -43,6 +43,12 @@ const HomeView = () => {
                                 urlSql: "/orden-compra",
                                 url: "/orden-compra",
                             },
+                            {
+                                id: 14,
+                                menu: "Órdenes de Entrada",
+                                urlSql: "/orden-entrada",
+                                url: "/orden-entrada",
+                            },
                         ],
                     };
                 }
@@ -73,6 +79,12 @@ const HomeView = () => {
                             menu: "Órdenes de Compra",
                             urlSql: "/orden-compra",
                             url: "/orden-compra",
+                        },
+                        {
+                            id: 14,
+                            menu: "Órdenes de Entrada",
+                            urlSql: "/orden-entrada",
+                            url: "/orden-entrada",
                         },
                     ],
                 });

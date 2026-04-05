@@ -127,16 +127,26 @@ export const validateOrdenCompraBusinessRules = (
     ordenCompra: InOrdenCompraFormDTO
 ): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
+    const detallesActivos =
+        ordenCompra.detalles?.filter((detalle: any) => !detalle?.estadoId || detalle.estadoId === "ACT") || [];
+
+    const getProductoId = (productoId: any): number | undefined => {
+        if (typeof productoId === "object" && productoId !== null) {
+            return productoId.id;
+        }
+
+        return productoId;
+    };
 
     // Validate that all detalles have different products
-    const productIds = ordenCompra.detalles?.map((d) => d.productoId) || [];
+    const productIds = detallesActivos.map((d) => getProductoId(d.productoId)).filter((id) => id !== undefined);
     const uniqueProductIds = new Set(productIds);
     if (productIds.length !== uniqueProductIds.size) {
         errors.push("No puede agregar el mismo producto más de una vez");
     }
 
     // Validate calculations
-    ordenCompra.detalles?.forEach((detalle, index) => {
+    detallesActivos.forEach((detalle, index) => {
         if (detalle.cantidad && detalle.precioUnitario) {
             const expectedSubtotal = detalle.cantidad * detalle.precioUnitario;
             
@@ -162,8 +172,8 @@ export const validateOrdenCompraBusinessRules = (
     });
 
     // Validate total amounts
-    const calculatedSubtotal = ordenCompra.detalles?.reduce((sum, d) => sum + (d.subTotal || 0), 0) || 0;
-    const calculatedItbis = ordenCompra.detalles?.reduce((sum, d) => sum + (d.itbis || 0), 0) || 0;
+    const calculatedSubtotal = detallesActivos.reduce((sum, d) => sum + (d.subTotal || 0), 0);
+    const calculatedItbis = detallesActivos.reduce((sum, d) => sum + (d.itbis || 0), 0);
     const calculatedTotal = calculatedSubtotal + calculatedItbis - (ordenCompra.descuento || 0);
 
     if (ordenCompra.subTotal && Math.abs(ordenCompra.subTotal - calculatedSubtotal) > 0.01) {

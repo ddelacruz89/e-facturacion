@@ -33,7 +33,20 @@ const productoSchema = Yup.object().shape({
         then: (schema) => schema
             .required("El precio de venta es requerido para productos activos")
             .positive("El precio de venta debe ser mayor a cero")
-            .min(0.01, "El precio de venta debe ser mayor a cero"),
+            .min(0.01, "El precio de venta debe ser mayor a cero")
+            .test(
+                "precio-venta-mayor-o-igual-minimo",
+                "El precio de venta no puede ser menor que el precio minimo",
+                function (value) {
+                    const precioMinimo = this.parent.precioMinimo;
+
+                    if (value === undefined || value === null || precioMinimo === undefined || precioMinimo === null) {
+                        return true;
+                    }
+
+                    return Number(value) >= Number(precioMinimo);
+                },
+            ),
         otherwise: (schema) => schema.nullable(),
     }),
 
@@ -42,7 +55,20 @@ const productoSchema = Yup.object().shape({
         then: (schema) => schema
             .required("El precio mínimo es requerido para productos activos")
             .positive("El precio mínimo debe ser mayor a cero")
-            .min(0.01, "El precio mínimo debe ser mayor a cero"),
+            .min(0.01, "El precio mínimo debe ser mayor a cero")
+            .test(
+                "precio-minimo-menor-o-igual-venta",
+                "El precio minimo no puede ser mayor que el precio de venta",
+                function (value) {
+                    const precioVenta = this.parent.precioVenta;
+
+                    if (value === undefined || value === null || precioVenta === undefined || precioVenta === null) {
+                        return true;
+                    }
+
+                    return Number(value) <= Number(precioVenta);
+                },
+            ),
         otherwise: (schema) => schema.nullable(),
     }),
 
