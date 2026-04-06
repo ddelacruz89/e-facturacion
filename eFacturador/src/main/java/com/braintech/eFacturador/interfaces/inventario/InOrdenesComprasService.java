@@ -24,4 +24,6 @@ public interface InOrdenesComprasService {
   Response<?> getAllActiveSimple();
 
   Response<?> searchByCriteria(InOrdenesComprasSearchCriteria criteria);
+
+  Response<?> convertirAOrdenEntrada(Integer ordenCompraId, Integer almacenId);
 }

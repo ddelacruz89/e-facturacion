@@ -62,4 +62,10 @@ public class InOrdenesComprasController {
       @RequestBody InOrdenesComprasSearchCriteria criteria) {
     return ResponseEntity.ok(inOrdenesComprasService.searchByCriteria(criteria));
   }
+
+  @PostMapping("/{id}/convertir-orden-entrada")
+  public ResponseEntity<Response<?>> convertirAOrdenEntrada(
+      @PathVariable Integer id, @RequestParam Integer almacenId) {
+    return ResponseEntity.ok(inOrdenesComprasService.convertirAOrdenEntrada(id, almacenId));
+  }
 }
