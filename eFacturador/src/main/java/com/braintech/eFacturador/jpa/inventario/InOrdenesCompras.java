@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.inventario;
 
+import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
@@ -19,7 +20,7 @@ import lombok.Setter;
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 @Getter
 @Setter
-public class InOrdenesCompras implements Serializable {
+public class InOrdenesCompras extends BaseSucursal implements Serializable {
 
   private static final long serialVersionUID = 1L;
 

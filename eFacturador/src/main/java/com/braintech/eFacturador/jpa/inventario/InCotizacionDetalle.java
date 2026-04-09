@@ -24,9 +24,6 @@ public class InCotizacionDetalle implements Serializable {
   @Column(name = "cantidad")
   private Integer cantidad;
 
-  @Column(name = "cantidad_tablar")
-  private Double cantidadTablar;
-
   @Column(name = "cantidad_pedida")
   private Integer cantidadPedida;
 

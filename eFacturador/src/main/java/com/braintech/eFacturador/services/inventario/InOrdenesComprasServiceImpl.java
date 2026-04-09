@@ -1,6 +1,5 @@
 package com.braintech.eFacturador.services.inventario;
 
-import com.braintech.eFacturador.dao.inventario.InOrdenEntradaDao;
 import com.braintech.eFacturador.dao.inventario.InOrdenesComprasDao;
 import com.braintech.eFacturador.dao.inventario.InOrdenesComprasRepository;
 import com.braintech.eFacturador.dao.inventario.InSuplidorRepository;
@@ -24,6 +23,8 @@ import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,6 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
   private final InSuplidorRepository inSuplidorRepository;
   private final MgProductoRepository mgProductoRepository;
   private final TenantContext tenantContext;
-  private final InOrdenEntradaDao inOrdenEntradaDao;
 
   @Override
   @Transactional
@@ -267,43 +267,44 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
           .build();
     }
 
-    // Crear orden de entrada
+    // Crear orden de entrada (sin guardar)
     InOrdenEntrada ordenEntrada = new InOrdenEntrada();
     ordenEntrada.setMonto(ordenCompra.getSubTotal());
     ordenEntrada.setItbis(ordenCompra.getItbis());
     ordenEntrada.setTotal(ordenCompra.getTotal());
     ordenEntrada.setDescuento(ordenCompra.getDescuento());
     ordenEntrada.setAlmacenId(almacenId);
-    ordenEntrada.setEmpresaId(empresaId);
+    ordenEntrada.setEmpresaId(ordenCompra.getEmpresaId());
+    ordenEntrada.setSucursalId(ordenCompra.getSucursalId());
     ordenEntrada.setUsuarioReg(username);
 
     // Convertir detalles
     List<InOrdenEntradaDetalle> detallesEntrada = new ArrayList<>();
     for (InOrdenesComprasDetalles detalleCompra : ordenCompra.getDetalles()) {
-      InOrdenEntradaDetalle detalleEntrada = new InOrdenEntradaDetalle();
-      detalleEntrada.setCantidad(detalleCompra.getCantidad());
-      detalleEntrada.setPrecioUnitario(detalleCompra.getPrecioUnitario());
-      detalleEntrada.setSubTotal(detalleCompra.getSubTotal());
-      detalleEntrada.setItbis(detalleCompra.getItbis());
-      detalleEntrada.setTotal(detalleCompra.getTotal());
-      detalleEntrada.setDescuentoPorciento(detalleCompra.getDescuentoPorciento());
-      detalleEntrada.setProductoId(detalleCompra.getProductoId());
-      detalleEntrada.setUnidadNombre(detalleCompra.getUnidadNombre());
-      detalleEntrada.setUnidadCantidad(detalleCompra.getUnidadCantidad());
-      detalleEntrada.setSuplidorId(ordenCompra.getSuplidorId());
-      detalleEntrada.setOrdenEntradaId(ordenEntrada);
+      InOrdenEntradaDetalle detalleEntrada = getInOrdenEntradaDetalle(detalleCompra, ordenCompra, ordenEntrada);
 
       detallesEntrada.add(detalleEntrada);
     }
     ordenEntrada.setInOrdenDetalleList(detallesEntrada);
 
-    // Guardar orden de entrada
-    InOrdenEntrada saved = inOrdenEntradaDao.save(ordenEntrada);
+    // Retornar la orden de entrada convertida (sin guardar)
+    return Response.builder().status(HttpStatus.OK).content(ordenEntrada).build();
+  }
 
-    // Actualizar estado de orden de compra a ACT
-    ordenCompra.setEstadoId("ACT");
-    inOrdenesComprasRepository.save(ordenCompra);
-
-    return Response.builder().status(HttpStatus.OK).content(saved).build();
+  @Nonnull
+  private static InOrdenEntradaDetalle getInOrdenEntradaDetalle(InOrdenesComprasDetalles detalleCompra, InOrdenesCompras ordenCompra, InOrdenEntrada ordenEntrada) {
+    InOrdenEntradaDetalle detalleEntrada = new InOrdenEntradaDetalle();
+    detalleEntrada.setCantidad(detalleCompra.getCantidad());
+    detalleEntrada.setPrecioUnitario(detalleCompra.getPrecioUnitario());
+    detalleEntrada.setSubTotal(detalleCompra.getSubTotal());
+    detalleEntrada.setItbis(detalleCompra.getItbis());
+    detalleEntrada.setTotal(detalleCompra.getTotal());
+    detalleEntrada.setDescuentoPorciento(detalleCompra.getDescuentoPorciento());
+    detalleEntrada.setProductoId(detalleCompra.getProductoId());
+    detalleEntrada.setUnidadNombre(detalleCompra.getUnidadNombre());
+    detalleEntrada.setUnidadCantidad(detalleCompra.getUnidadCantidad());
+    detalleEntrada.setSuplidorId(ordenCompra.getSuplidorId());
+    detalleEntrada.setOrdenEntradaId(ordenEntrada);
+    return detalleEntrada;
   }
 }

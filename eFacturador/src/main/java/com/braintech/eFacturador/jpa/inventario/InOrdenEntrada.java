@@ -1,6 +1,8 @@
 package com.braintech.eFacturador.jpa.inventario;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -14,6 +16,7 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "in_orden_entrada", schema = "inventario")
 @EqualsAndHashCode(callSuper = false)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class InOrdenEntrada extends BaseSucursal implements Serializable {
 
   private static final long serialVersionUID = 1L;

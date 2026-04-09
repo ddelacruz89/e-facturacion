@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.jpa.inventario;
 
 import com.braintech.eFacturador.jpa.producto.MgProducto;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -22,9 +23,6 @@ public class InOrdenEntradaDetalle implements Serializable {
 
   @NotNull(message = "Cantidad no debe estar vacio")
   private Integer cantidad;
-
-  @Column(name = "cantidad_tablar")
-  private Double cantidadTablar;
 
   private String lote;
 
@@ -50,6 +48,7 @@ public class InOrdenEntradaDetalle implements Serializable {
 
   @JoinColumn(name = "orden_entrada_id", referencedColumnName = "id")
   @ManyToOne(optional = false)
+  @JsonIgnoreProperties({"inOrdenDetalleList"})
   private InOrdenEntrada ordenEntradaId;
 
   @JoinColumn(name = "producto_id")
