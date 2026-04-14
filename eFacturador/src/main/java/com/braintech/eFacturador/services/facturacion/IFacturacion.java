@@ -1,13 +1,15 @@
 package com.braintech.eFacturador.services.facturacion;
 
+import com.braintech.eFacturador.dto.facturacion.IFacturaResumen;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
 import com.braintech.eFacturador.models.IProductoVenta;
+import com.braintech.eFacturador.models.PagesResult;
 import java.util.List;
 
 public interface IFacturacion {
   List<MfFactura> getAllActive();
 
-  List<MfFactura> getAll();
+  PagesResult<List<IFacturaResumen>> getAll(int page, int size);
 
   MfFactura getById(Integer id);
 

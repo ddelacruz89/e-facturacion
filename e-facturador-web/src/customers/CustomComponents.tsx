@@ -370,6 +370,7 @@ export interface Column {
     onChange?: (value: string, row: any, column: string) => void;
 }
 export interface PropsTable {
+    disabled?: boolean
     columns: Column[];
     rows: any[];
     selected?: (selected: any) => void;
@@ -459,7 +460,7 @@ export function TableComponent({ columns, rows, selected }: PropsTable) {
     );
 }
 
-export function TableComponentFacturacion({ columns, rows, selected, handleDelete }: PropsTable) {
+export function TableComponentFacturacion({ columns, rows, selected, handleDelete, disabled }: PropsTable) {
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(10);
 
@@ -529,7 +530,7 @@ export function TableComponentFacturacion({ columns, rows, selected, handleDelet
                                         );
                                     })}
                                     <TableCell align="center">
-                                        <IconButton color="error" aria-label="delete" onClick={() => handleDelete && handleDelete(row)}>
+                                        <IconButton disabled={disabled} color="error" aria-label="delete" onClick={() => handleDelete && handleDelete(row)}>
                                             <DeleteOutlinedIcon />
                                         </IconButton>
                                     </TableCell>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
-import { Factura, FacturaDetalle, TipoFactura } from "../../models/facturacion";
+import { Factura, FacturaDetalle, IFacturaResumen, TipoFactura } from "../../models/facturacion";
 import { Button, Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { TextInput, TextInputPk, TableComponent, GridRow, TableComponentFacturacion } from "../../customers/CustomComponents";
@@ -17,8 +17,11 @@ import SaveIcon from "@mui/icons-material/Save";
 import ArticleIcon from "@mui/icons-material/Article";
 import ModalSearchClientes from "../../customers/search/ModalSearchClientes";
 import { Cliente } from "../../models/cliente/Cliente";
+import ModalSearchFacturas from "../../customers/search/ModalSearchFacturas";
 
 export default function FacturacionView() {
+
+    const [save, setSave] = useState<boolean>(false)
     const {
         control,
         handleSubmit,
@@ -33,11 +36,11 @@ export default function FacturacionView() {
             aprobada: false,
             razonSocial: "",
             rnc: "",
-            tipoComprobanteId: "",
+            tipoComprobanteId: "32",
             ncf: "",
             id: 0,
             numeroFactura: 0,
-            tipoFacturaId: 0,
+            tipoFacturaId: 2,
             clienteId: 0,
             monto: 0,
             descuento: 0,
@@ -72,7 +75,7 @@ export default function FacturacionView() {
     //     detalles: [],
     // });
 
-    useEffect(() => {}, []);
+    useEffect(() => { }, []);
 
     const onSubmit: SubmitHandler<Factura> = (data) => {
         debugger;
@@ -89,6 +92,7 @@ export default function FacturacionView() {
                 }
                 setValue("id", response.id);
                 setValue("secuencia", response.secuencia);
+                setSave(true)
             })
             .catch((error) => {
                 console.error("Error al guardar la factura:", error);
@@ -112,7 +116,7 @@ export default function FacturacionView() {
         setValue("secuencia", undefined);
         setValue("numeroFactura", 0);
         setValue("clienteId", 0);
-        setValue("tipoFacturaId", 0);
+        setValue("tipoFacturaId", 2);
         setValue("razonSocial", "");
         setValue("rnc", "");
         setValue("monto", 0);
@@ -122,7 +126,7 @@ export default function FacturacionView() {
         setValue("retencionIsr", 0);
         setValue("total", 0);
         setValue("ncf", "");
-        setValue("tipoComprobanteId", "");
+        setValue("tipoComprobanteId", "32");
         setValue("empresaId", 0);
         setValue("aprobada", false);
         setValue("qrUrl", "");
@@ -131,6 +135,7 @@ export default function FacturacionView() {
         setValue("fechaReg", undefined);
         setValue("activo", true);
         setValue("detalles", []);
+        setSave(false)
     };
 
     const handleOnSelect = (row: Factura) => {
@@ -192,9 +197,13 @@ export default function FacturacionView() {
     }
 
     function handleSelectCliente(cliente: Cliente): void {
-        setValue("clienteId", cliente.id);
+        setValue("clienteId", cliente.secuencia);
         setValue("razonSocial", cliente.razonSocial);
         setValue("rnc", cliente.numeroIdentificacion);
+        setValue("tipoComprobanteId", cliente.tipoComprobanteId.toString())
+    }
+    function handleSelectFactura(factura: IFacturaResumen): void {
+
     }
 
     return (
@@ -206,7 +215,7 @@ export default function FacturacionView() {
                         variant="contained"
                         color="success"
                         type="submit"
-                        disabled={Number(watch("id")) !== 0 || watch("detalles").length === 0}>
+                        disabled={save}>
                         {" "}
                         <SaveIcon /> Guardar
                     </Button>
@@ -214,54 +223,51 @@ export default function FacturacionView() {
                         <ArticleIcon /> Nuevo
                     </Button>
                 </ActionBar>
+                <fieldset disabled={save}>
 
-                <Grid container spacing={2} style={{ padding: 20 }}>
-                    <GridRow>
-                        <TextInputPk
-                            readOnly
-                            control={control}
-                            name="secuencia"
-                            label="No. Factura"
-                            error={errors.secuencia}
-                            size={2}
-                        />
-                        <TipoFacturaSelect
-                            control={control}
-                            name="tipoFacturaId"
-                            label="Tipo Factura ID"
-                            error={errors.tipoFacturaId}
-                            rules={{
-                                required: "Debe seleccionar un tipo de factura",
-                                validate: (value: any) => (value !== 0 && value !== "0") || "Debe seleccionar un tipo de factura",
-                            }}
-                            size={2}
-                            handleGetItem={handleSelectTipoFactura}
-                        />
-                        <TipoComprobanteSelect
-                            control={control}
-                            name="tipoComprobanteId"
-                            label="Tipo Comprobante ID"
-                            rules={{
-                                required: "Debe seleccionar un tipo de comprobante",
-                                validate: (value: any) =>
-                                    (value !== 0 && value !== "0") || "Debe seleccionar un tipo de comprobante",
-                            }}
-                            error={errors.tipoComprobanteId}
-                            size={5}
-                            handleGetItem={handleSelectTipoFactura}
-                        />
-                        <TextInput readOnly control={control} name="ncf" label="NCF" error={errors.ncf} size={3} />
-                    </GridRow>
-                    <GridRow>
-                        <ModalSearchClientes
-                            control={control}
-                            name="clienteId"
-                            label="Cliente ID"
-                            size={2}
-                            onSelect={handleSelectCliente}
-                            pk={false}
-                        />
-                        {/* <TextInput
+                    <Grid container spacing={2} style={{ padding: 20 }}>
+                        <GridRow>
+                            <ModalSearchFacturas control={control} name="secuencia" label="No. Factura" size={2} onSelect={handleSelectFactura} />
+                            <TipoFacturaSelect
+                                disabled={save}
+                                control={control}
+                                name="tipoFacturaId"
+                                label="Tipo Factura ID"
+                                error={errors.tipoFacturaId}
+                                rules={{
+                                    required: "Debe seleccionar un tipo de factura",
+                                    validate: (value: any) => (value !== 0 && value !== "0") || "Debe seleccionar un tipo de factura",
+                                }}
+                                size={2}
+                                handleGetItem={handleSelectTipoFactura}
+                            />
+                            <TipoComprobanteSelect
+                                disabled={save}
+                                control={control}
+                                name="tipoComprobanteId"
+                                label="Tipo Comprobante ID"
+                                rules={{
+                                    required: "Debe seleccionar un tipo de comprobante",
+                                    validate: (value: any) =>
+                                        (value !== 0 && value !== "0") || "Debe seleccionar un tipo de comprobante",
+                                }}
+                                error={errors.tipoComprobanteId}
+                                size={5}
+                                handleGetItem={handleSelectTipoFactura}
+                            />
+                            <TextInput readOnly control={control} name="ncf" label="NCF" error={errors.ncf} size={3} />
+                        </GridRow>
+                        <GridRow>
+                            <ModalSearchClientes
+
+                                control={control}
+                                name="clienteId"
+                                label="Cliente ID"
+                                size={2}
+                                onSelect={handleSelectCliente}
+                                pk={false}
+                            />
+                            {/* <TextInput
                             control={control}
                             name="clienteId"
                             label="Cliente ID"
@@ -272,67 +278,71 @@ export default function FacturacionView() {
                             }}
                             size={2}
                         /> */}
-                        <TextInput
-                            control={control}
-                            name="razonSocial"
-                            label="Razón Social"
-                            error={errors.razonSocial}
-                            rules={{
-                                required: "Debe seleccionar un cliente",
-                                minLength: {
-                                    value: 3,
-                                    message: "Debe tener al menos 3 caracteres",
-                                },
-                                maxLength: {
-                                    value: 100,
-                                    message: "Debe tener menos de 100 caracteres",
-                                },
-                            }}
-                            size={6}
-                        />
-                        <TextInput
-                            control={control}
-                            name="rnc"
-                            label="RNC"
-                            error={errors.rnc}
-                            rules={{
-                                required: "Debe seleccionar un cliente",
-                                minLength: {
-                                    value: 7,
-                                    message: "Debe tener al menos 7 caracteres",
-                                },
-                                maxLength: {
-                                    value: 11,
-                                    message: "Debe tener menos de 11 caracteres",
-                                },
-                                pattern: {
-                                    value: /^[0-9]+$/,
-                                    message: "Debe tener solo numeros",
-                                },
-                            }}
-                            size={2}
-                        />
-                    </GridRow>
-                </Grid>
-                <Divider>Listado</Divider>
-                <TableComponentFacturacion
-                    selected={handleOnSelect}
-                    rows={watch("detalles")}
-                    handleDelete={handleOnDelete}
-                    columns={[
-                        { id: "linea", label: "Linea" },
-                        { id: "productoId", label: "Producto ID" },
-                        { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
-                        {
-                            id: "cantidad",
-                            label: "Cantidad",
-                            onChange: (value: string, row: any, column: string) => handleOnChangeCantidad(value, row, column),
-                        },
-                        { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
-                        { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },
-                        { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) },
-                    ]}
-                />
+                            <TextInput
+                                disabled={save}
+                                control={control}
+                                name="razonSocial"
+                                label="Razón Social"
+                                error={errors.razonSocial}
+                                rules={{
+                                    required: "Debe seleccionar un cliente",
+                                    minLength: {
+                                        value: 3,
+                                        message: "Debe tener al menos 3 caracteres",
+                                    },
+                                    maxLength: {
+                                        value: 100,
+                                        message: "Debe tener menos de 100 caracteres",
+                                    },
+                                }}
+                                size={6}
+                            />
+                            <TextInput
+                                disabled={save}
+                                control={control}
+                                name="rnc"
+                                label="RNC"
+                                error={errors.rnc}
+                                rules={{
+                                    required: "Debe seleccionar un cliente",
+                                    minLength: {
+                                        value: 7,
+                                        message: "Debe tener al menos 7 caracteres",
+                                    },
+                                    maxLength: {
+                                        value: 11,
+                                        message: "Debe tener menos de 11 caracteres",
+                                    },
+                                    pattern: {
+                                        value: /^[0-9]+$/,
+                                        message: "Debe tener solo numeros",
+                                    },
+                                }}
+                                size={2}
+                            />
+                        </GridRow>
+                    </Grid>
+                    <Divider>Listado</Divider>
+                    <TableComponentFacturacion
+                        disabled={save}
+                        selected={handleOnSelect}
+                        rows={watch("detalles")}
+                        handleDelete={handleOnDelete}
+                        columns={[
+                            { id: "linea", label: "Linea" },
+                            { id: "productoId", label: "Producto ID" },
+                            { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
+                            {
+                                id: "cantidad",
+                                label: "Cantidad",
+                                onChange: (value: string, row: any, column: string) => handleOnChangeCantidad(value, row, column),
+                            },
+                            { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
+                            { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },
+                            { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) },
+                        ]}
+                    />
+                </fieldset>
             </form>
         </main>
     );

@@ -107,3 +107,14 @@ export interface Recibo {
     usuarioReg: string | null;
 }
 
+export interface IFacturaResumen {
+    id: string;
+    secuencia: string;
+    razonSocial: string;
+    ncf: string;
+    fechaReg: string;
+    rnc: string;
+    estadoId: string;
+    total: number;
+}
+

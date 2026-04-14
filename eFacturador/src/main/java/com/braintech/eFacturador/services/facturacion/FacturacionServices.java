@@ -2,17 +2,23 @@ package com.braintech.eFacturador.services.facturacion;
 
 import com.braintech.eFacturador.dao.facturacion.FacturaDao;
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
+import com.braintech.eFacturador.dto.facturacion.IFacturaResumen;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
 import com.braintech.eFacturador.models.IProductoVenta;
+import com.braintech.eFacturador.models.PagesResult;
+import com.braintech.eFacturador.util.LocalDateZone;
+import com.braintech.eFacturador.util.PageableUtils;
 import com.braintech.eFacturador.util.TenantContext;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,10 +37,11 @@ public class FacturacionServices implements IFacturacion {
   }
 
   @Override
-  public List<MfFactura> getAll() {
+  public PagesResult<List<IFacturaResumen>> getAll(int page, int size) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
-    Integer sucursalId = tenantContext.getCurrentSucursalId();
-    return facturaDao.findAllByEmpresaIdAndSucursalId(empresaId, sucursalId);
+    Pageable pageable = PageRequest.of(page, size);
+    Page<IFacturaResumen> facturas = facturaDao.findAllByEmpresaPage(pageable, empresaId);
+    return PageableUtils.getPagesResult(facturas);
   }
 
   @Override
@@ -65,7 +72,7 @@ public class FacturacionServices implements IFacturacion {
     entity.setEmpresaId(empresaId);
     entity.setSucursalId(currentSucursalId);
     entity.setUsuarioReg(username);
-    entity.setFechaReg(LocalDateTime.now());
+    entity.setFechaReg(LocalDateZone.toLocalDateTime());
     entity.setEstadoId("ACT");
     int nextSecuencia =
         secuenciasDao.getNextSecuencia(

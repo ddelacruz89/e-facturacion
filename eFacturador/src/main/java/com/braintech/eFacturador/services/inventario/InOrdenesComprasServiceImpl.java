@@ -20,11 +20,10 @@ import com.braintech.eFacturador.jpa.inventario.InSuplidor;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.models.Response;
 import com.braintech.eFacturador.util.TenantContext;
+import jakarta.annotation.Nonnull;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
-import jakarta.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -281,7 +280,8 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
     // Convertir detalles
     List<InOrdenEntradaDetalle> detallesEntrada = new ArrayList<>();
     for (InOrdenesComprasDetalles detalleCompra : ordenCompra.getDetalles()) {
-      InOrdenEntradaDetalle detalleEntrada = getInOrdenEntradaDetalle(detalleCompra, ordenCompra, ordenEntrada);
+      InOrdenEntradaDetalle detalleEntrada =
+          getInOrdenEntradaDetalle(detalleCompra, ordenCompra, ordenEntrada);
 
       detallesEntrada.add(detalleEntrada);
     }
@@ -292,7 +292,10 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
   }
 
   @Nonnull
-  private static InOrdenEntradaDetalle getInOrdenEntradaDetalle(InOrdenesComprasDetalles detalleCompra, InOrdenesCompras ordenCompra, InOrdenEntrada ordenEntrada) {
+  private static InOrdenEntradaDetalle getInOrdenEntradaDetalle(
+      InOrdenesComprasDetalles detalleCompra,
+      InOrdenesCompras ordenCompra,
+      InOrdenEntrada ordenEntrada) {
     InOrdenEntradaDetalle detalleEntrada = new InOrdenEntradaDetalle();
     detalleEntrada.setCantidad(detalleCompra.getCantidad());
     detalleEntrada.setPrecioUnitario(detalleCompra.getPrecioUnitario());

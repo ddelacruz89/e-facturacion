@@ -21,9 +21,10 @@ public class FacturaController {
   }
 
   // Get all records including inactive
-  @GetMapping("/all")
-  public List<MfFactura> getAllIncludingInactive() {
-    return facturacionServices.getAll();
+  @GetMapping("{page}/{size}")
+  public ResponseEntity<?> getAllIncludingInactive(
+      @PathVariable Integer page, @PathVariable Integer size) {
+    return ResponseEntity.ok(facturacionServices.getAll(page, size));
   }
 
   @GetMapping("/{id}")
