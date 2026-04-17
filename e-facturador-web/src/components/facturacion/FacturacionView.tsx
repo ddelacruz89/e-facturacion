@@ -6,7 +6,7 @@ import Grid from "@mui/material/Grid";
 import { TextInput, TextInputPk, TableComponent, GridRow, TableComponentFacturacion } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
 import { TipoComprobanteSelect, TipoFacturaSelect } from "../../customers/ComboBox";
-import { getProductosVentas, saveFactura } from "../../apis/FacturaController";
+import { saveFactura, getFacturaById } from "../../apis/FacturaController";
 import ListaProductoVenta from "./ListaProductoVenta";
 import { ProductoVenta } from "../../models/producto/productoVenta";
 import { detalleItbis, formatCurrency } from "../../utils/FacturaUtils";
@@ -162,6 +162,7 @@ export default function FacturacionView() {
             linea: 0,
             productoId: producto.id,
             producto: producto,
+            productoDesc: producto.nombreProducto,
             precioCosto: producto.precioCostoAvg,
             precioVentaUnd: 0,
             precioVenta: 0,
@@ -203,7 +204,21 @@ export default function FacturacionView() {
         setValue("tipoComprobanteId", cliente.tipoComprobanteId.toString())
     }
     function handleSelectFactura(factura: IFacturaResumen): void {
-
+        getFacturaById(factura.id).then((response) => {
+            setValue("id", response?.id);
+            setValue("secuencia", response?.secuencia);
+            setValue("ncf", response?.ncf);
+            setValue("tipoComprobanteId", response?.tipoComprobanteId || "");
+            setValue("tipoFacturaId", response?.tipoFacturaId || 0);
+            setValue("clienteId", response?.clienteId || 0);
+            setValue("monto", response?.monto || 0);
+            setValue("descuento", response?.descuento || 0);
+            setValue("itbis", response?.itbis || 0);
+            setValue("retencionItbis", response?.retencionItbis || 0);
+            setValue("retencionIsr", response?.retencionIsr || 0);
+            setValue("total", response?.total || 0);
+            setValue("detalles", response?.detalles || []);
+        });
     }
 
     return (
@@ -331,6 +346,7 @@ export default function FacturacionView() {
                         columns={[
                             { id: "linea", label: "Linea" },
                             { id: "productoId", label: "Producto ID" },
+                            { id: "productoDesc", label: "Producto" },
                             { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
                             {
                                 id: "cantidad",

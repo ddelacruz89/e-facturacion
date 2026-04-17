@@ -73,6 +73,7 @@ export interface FacturaDetalle {
     facturaId?: number;
     linea: number;
     productoId: number;
+    productoDesc?: string;
     producto?: ProductoVenta;
     precioCosto: number;
     precioVentaUnd: number;
@@ -108,8 +109,8 @@ export interface Recibo {
 }
 
 export interface IFacturaResumen {
-    id: string;
-    secuencia: string;
+    id: number;
+    secuencia: number;
     razonSocial: string;
     ncf: string;
     fechaReg: string;
