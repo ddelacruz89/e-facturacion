@@ -1,6 +1,5 @@
 package com.braintech.eFacturador.jpa.general;
 
-import com.braintech.eFacturador.enums.ITipoRetencion;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -18,11 +17,11 @@ public class MgRetencion implements Serializable {
   private static final long serialVersionUID = 1L;
 
   @Id
-  @Basic(optional = false)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
   private Integer id;
 
-  private ITipoRetencion tipoRetencion;
+  private int tipoRetencion;
 
   private String nombre;
 

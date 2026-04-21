@@ -20,6 +20,14 @@ export interface MgItbis {
     activo: boolean;
 }
 
+export interface MgRetencion {
+    id?: number;
+    nombre: string;
+    valor: number;
+    tipoRetencion: number;
+    activo: boolean;
+}
+
 // Simple DTO for itbis resumen endpoint
 export interface MgItbisSimpleDTO {
     id: number;
@@ -62,6 +70,7 @@ export interface Factura {
     monto: number;
     descuento: number;
     itbis: number;
+    retencion?: MgRetencion;
     retencionItbis?: number;
     retencionIsr?: number;
     total: number;

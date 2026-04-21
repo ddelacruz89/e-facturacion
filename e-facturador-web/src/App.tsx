@@ -16,6 +16,7 @@ const EmpresaView = lazy(() => import("./components/seguridad/EmpresaView"));
 const UsuarioView = lazy(() => import("./components/seguridad/UsuarioView"));
 const TipoFacturaView = lazy(() => import("./components/facturacion/TipoFacturaView"));
 const TipoItbisView = lazy(() => import("./components/facturacion/TipoItbisView"));
+const RetencionView = lazy(() => import("./components/facturacion/TipoRetencionView"));
 const FacturacionView = lazy(() => import("./components/facturacion/FacturacionView"));
 const TipoComprobanteView = lazy(() => import("./components/facturacion/TipoComprobanteView"));
 const ProductoView = lazy(() => import("./components/producto/ProductoView"));
@@ -50,6 +51,7 @@ const AppRoutes = () => {
                     <Route path="usuario" element={<UsuarioView />} />
                     <Route path="tipo/factura" element={<TipoFacturaView />} />
                     <Route path="tipo/itbis" element={<TipoItbisView />} />
+                    <Route path="tipo/retencion" element={<RetencionView />} />
                     <Route path="tipo/comprobante" element={<TipoComprobanteView />} />
                     <Route path="facturacion" element={<FacturacionView />} />
                     <Route path="producto" element={<ProductoView />} />

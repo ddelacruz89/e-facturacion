@@ -1,18 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
-import { Factura, FacturaDetalle, IFacturaResumen, TipoFactura } from "../../models/facturacion";
+import { Factura, FacturaDetalle, IFacturaResumen, MgRetencion, TipoFactura } from "../../models/facturacion";
 import { Button, Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { TextInput, TextInputPk, TableComponent, GridRow, TableComponentFacturacion } from "../../customers/CustomComponents";
+import { TextInput, GridRow, TableComponentFacturacion } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
-import { TipoComprobanteSelect, TipoFacturaSelect } from "../../customers/ComboBox";
+import { RetencionesSelect, TipoComprobanteSelect, TipoFacturaSelect } from "../../customers/ComboBox";
 import { saveFactura, getFacturaById } from "../../apis/FacturaController";
 import ListaProductoVenta from "./ListaProductoVenta";
 import { ProductoVenta } from "../../models/producto/productoVenta";
 import { detalleItbis, formatCurrency } from "../../utils/FacturaUtils";
 import { toast } from "react-toastify";
-import { getValue } from "@testing-library/user-event/dist/utils";
-// import { saveFactura, getFacturas } from "../../apis/FacturaController";
 import SaveIcon from "@mui/icons-material/Save";
 import ArticleIcon from "@mui/icons-material/Article";
 import ModalSearchClientes from "../../customers/search/ModalSearchClientes";
@@ -45,6 +43,7 @@ export default function FacturacionView() {
             monto: 0,
             descuento: 0,
             itbis: 0,
+            retencion: undefined,
             retencionItbis: 0,
             retencionIsr: 0,
             total: 0,
@@ -221,6 +220,10 @@ export default function FacturacionView() {
         });
     }
 
+    function handleSelectRetenciones(retencion: MgRetencion): void {
+        setValue("retencion", retencion);
+    }
+
     return (
         <main style={{ display: "flex", flexDirection: "row", gap: 20, padding: 10 }}>
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
@@ -269,6 +272,21 @@ export default function FacturacionView() {
                                 error={errors.tipoComprobanteId}
                                 size={5}
                                 handleGetItem={handleSelectTipoFactura}
+                            />
+
+                            <RetencionesSelect
+                                disabled={save}
+                                control={control}
+                                name="retencion"
+                                label="retencion"
+                                rules={{
+                                    required: "Debe seleccionar retenciones",
+                                    validate: (value: any) =>
+                                        (value !== 0 && value !== "0") || "Debe seleccionar retenciones",
+                                }}
+                                // error={errors.retencion}
+                                size={5}
+                                handleGetItem={handleSelectRetenciones}
                             />
                             <TextInput readOnly control={control} name="ncf" label="NCF" error={errors.ncf} size={3} />
                         </GridRow>
