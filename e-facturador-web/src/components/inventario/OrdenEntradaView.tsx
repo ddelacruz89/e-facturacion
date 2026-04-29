@@ -30,7 +30,8 @@ import ModalSearch from "../search/ModalSearch";
 import SearchButton from "../search/SearchButton";
 import useModalSearch from "../../hooks/useModalSearch";
 import { SEARCH_CONFIGS } from "../../types/modalSearchTypes";
-import { convertirOrdenCompraAOrdenEntrada } from "../../apis/OrdenEntradaController";
+import { convertirOrdenCompraAOrdenEntrada, getOrdenEntrada, saveOrdenEntrada, updateOrdenEntrada } from "../../apis/OrdenEntradaController";
+import { getOrdenCompra } from "../../apis/OrdenCompraController";
 
 interface OrdenEntradaForm {
     almacenId?: number | string | { id?: number };
@@ -66,6 +67,7 @@ const OrdenEntradaView: React.FC = () => {
     const [loteItems, setLoteItems] = useState<LoteDraft[]>([]);
 
     const ordenSearch = useModalSearch();
+    const ordenEntradaSearch = useModalSearch();
 
     const {
         control,
@@ -107,22 +109,55 @@ const OrdenEntradaView: React.FC = () => {
         }
     };
 
-    const handleOrdenSelect = ordenSearch.handleSelect(async (orden: any) => {
-        setSelectedOrdenCompra(orden);
+    const handleOrdenSelect = ordenSearch.handleSelect(async (resumen: any) => {
+        try {
+            const ordenCompleta = await getOrdenCompra(resumen.id);
+            setSelectedOrdenCompra(ordenCompleta);
 
-        const almacenId = getNumericId(almacenValue);
-        if (!almacenId) {
-            showSnackbar("Seleccione un almacén para convertir la orden", "info");
-            return;
+            const almacenId = getNumericId(almacenValue);
+            if (!almacenId) {
+                showSnackbar("Seleccione un almacén para convertir la orden", "info");
+                return;
+            }
+
+            await convertirOrdenSeleccionada(resumen.id, almacenId, true);
+        } catch (error: any) {
+            showSnackbar(error?.message || "Error al cargar la orden de compra", "error");
         }
+    });
 
-        await convertirOrdenSeleccionada(getNumericId(orden?.id), almacenId, true);
+    const handleOrdenEntradaSelect = ordenEntradaSearch.handleSelect(async (orden: any) => {
+        try {
+            const oe = await getOrdenEntrada(orden.id);
+            setLastOrdenEntrada(oe);
+            setSelectedOrdenCompra(null);
+            showSnackbar(`Orden de entrada #${oe.id} cargada`, "success");
+        } catch (error: any) {
+            showSnackbar(error?.message || "Error al cargar la orden de entrada", "error");
+        }
     });
 
     const handleNuevo = () => {
         reset(initialValues);
         setSelectedOrdenCompra(null);
         setLastOrdenEntrada(null);
+    };
+
+    const handleGuardar = async () => {
+        if (!lastOrdenEntrada) {
+            showSnackbar("No hay orden de entrada para guardar", "error");
+            return;
+        }
+
+        try {
+            const saved = lastOrdenEntrada.id
+                ? await updateOrdenEntrada(lastOrdenEntrada.id, lastOrdenEntrada)
+                : await saveOrdenEntrada(lastOrdenEntrada);
+            setLastOrdenEntrada(saved);
+            showSnackbar("Orden de entrada guardada correctamente", "success");
+        } catch (error: any) {
+            showSnackbar(error?.message || "Error al guardar la orden de entrada", "error");
+        }
     };
 
     const onConvertir = async () => {
@@ -283,13 +318,30 @@ const OrdenEntradaView: React.FC = () => {
                     <Button type="submit" variant="contained" color="primary">
                         Convertir a entrada
                     </Button>
+                    {lastOrdenEntrada && (
+                        <Button type="button" variant="contained" color="success" onClick={handleGuardar}>
+                            Guardar
+                        </Button>
+                    )}
                     <Button type="button" variant="contained" color="primary" onClick={handleNuevo}>
                         Nuevo
                     </Button>
                 </ActionBar>
 
                 <Grid container spacing={2} sx={{ p: 2.5 }}>
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <SearchButton
+                            config={SEARCH_CONFIGS.ORDEN_ENTRADA}
+                            onOpenSearch={ordenEntradaSearch.openModal}
+                            variant="input"
+                            label="Orden de entrada"
+                            displayValue={lastOrdenEntrada?.id ? `OE #${lastOrdenEntrada.id}` : ""}
+                            placeholder="Buscar orden de entrada existente"
+                            size="small"
+                        />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 4 }}>
                         <SearchButton
                             config={SEARCH_CONFIGS.ORDEN_COMPRA}
                             initialValues={{ estadoId: "PEN" }}
@@ -307,51 +359,10 @@ const OrdenEntradaView: React.FC = () => {
                         name="almacenId"
                         label="Almacén"
                         error={errors.almacenId as any}
-                        size={6}
+                        size={4}
                     />
                 </Grid>
 
-                {selectedOrdenCompra && (
-                    <Box sx={{ px: 2.5, pb: 2.5 }}>
-                        <Paper variant="outlined" sx={{ p: 2 }}>
-                            <Typography variant="h6" sx={{ mb: 1.5 }}>
-                                Resumen orden de compra
-                            </Typography>
-                            <Grid container spacing={2}>
-                                <Grid size={{ xs: 12, md: 3 }}>
-                                    <TextField fullWidth size="small" label="ID" value={selectedOrdenCompra.id || ""} disabled />
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 3 }}>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        label="Estado"
-                                        value={selectedOrdenCompra.estadoId || ""}
-                                        disabled
-                                    />
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 3 }}>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        label="Suplidor"
-                                        value={selectedOrdenCompra.suplidorNombre || selectedOrdenCompra.suplidorId?.nombre || ""}
-                                        disabled
-                                    />
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 3 }}>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        label="Total"
-                                        value={selectedOrdenCompra.total ?? ""}
-                                        disabled
-                                    />
-                                </Grid>
-                            </Grid>
-                        </Paper>
-                    </Box>
-                )}
 
                 {lastOrdenEntrada && (
                     <Box sx={{ px: 2.5, pb: 2.5 }}>
@@ -485,6 +496,16 @@ const OrdenEntradaView: React.FC = () => {
                     onSelect={handleOrdenSelect}
                     config={ordenSearch.config}
                     initialValues={ordenSearch.initialValues}
+                />
+            )}
+
+            {ordenEntradaSearch.config && (
+                <ModalSearch
+                    open={ordenEntradaSearch.isOpen}
+                    onClose={ordenEntradaSearch.closeModal}
+                    onSelect={handleOrdenEntradaSelect}
+                    config={ordenEntradaSearch.config}
+                    initialValues={ordenEntradaSearch.initialValues}
                 />
             )}
 

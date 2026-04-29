@@ -264,6 +264,76 @@ export const SEARCH_CONFIGS = {
         ]
     } as SearchConfig,
 
+    ORDEN_ENTRADA: {
+        title: "Buscar Orden de Entrada",
+        endpoint: "/api/v1/inventario/orden-entrada/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10
+        },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace30Dias = new Date();
+            hace30Dias.setDate(hoy.getDate() - 30);
+            return {
+                fechaInicio: hace30Dias.toISOString().split('T')[0],
+                fechaFin: hoy.toISOString().split('T')[0],
+            };
+        })(),
+        fields: [
+            {
+                key: "fechaInicio",
+                label: "Fecha Inicio",
+                type: "date" as const,
+                placeholder: "Seleccione fecha inicio",
+            },
+            {
+                key: "fechaFin",
+                label: "Fecha Fin",
+                type: "date" as const,
+                placeholder: "Seleccione fecha fin",
+            },
+            {
+                key: "id",
+                label: "ID",
+                type: "number" as const,
+                placeholder: "Ingrese ID de la orden"
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "PEN", label: "Pendiente" },
+                    { value: "COM", label: "Completado" },
+                    { value: "INA", label: "Anulado" }
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "8%" },
+            {
+                key: "fechaReg",
+                label: "Fecha",
+                width: "22%",
+                render: (value: any) => formatDateTimeForUi(value),
+            },
+            { key: "almacenNombre", label: "Almacén", width: "25%" },
+            {
+                key: "total",
+                label: "Total",
+                width: "18%",
+                render: (value: any) => formatTotal16_2(value),
+            },
+            { key: "usuarioReg", label: "Usuario", width: "15%" },
+            { key: "estadoId", label: "Estado", width: "12%" },
+        ]
+    } as SearchConfig,
+
     ORDEN_COMPRA: {
         title: "Buscar Orden de Compra",
         endpoint: "/api/v1/inventario/ordenes-compras/buscar",
@@ -325,24 +395,24 @@ export const SEARCH_CONFIGS = {
             }
         ],
         displayColumns: [
-            { key: "id", label: "ID", width: "10%" },
+            { key: "id", label: "ID", width: "8%" },
             {
                 key: "fechaReg",
                 label: "Fecha",
-                width: "20%",
+                width: "22%",
                 render: (value: any) => formatDateTimeForUi(value),
             },
             { key: "suplidorNombre", label: "Suplidor", width: "30%" },
             {
                 key: "total",
                 label: "Total",
-                width: "20%",
+                width: "18%",
                 render: (value: any) => formatTotal16_2(value),
             },
             {
                 key: "estadoId",
                 label: "Estado",
-                width: "20%",
+                width: "12%",
                 render: (value: any) => formatEstadoOrdenCompra(value),
             }
         ]

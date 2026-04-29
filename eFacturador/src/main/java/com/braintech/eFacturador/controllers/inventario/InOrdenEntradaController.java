@@ -1,9 +1,12 @@
 package com.braintech.eFacturador.controllers.inventario;
 
+import com.braintech.eFacturador.dto.inventario.InOrdenEntradaResumenDTO;
+import com.braintech.eFacturador.dto.inventario.InOrdenEntradaSearchCriteria;
 import com.braintech.eFacturador.interfaces.inventario.InOrdenEntradaService;
 import com.braintech.eFacturador.jpa.inventario.InOrdenEntrada;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,6 +45,12 @@ public class InOrdenEntradaController {
     ordenEntrada.setId(id);
     InOrdenEntrada updated = inOrdenEntradaService.save(ordenEntrada);
     return ResponseEntity.ok(updated);
+  }
+
+  @PostMapping("/buscar")
+  public ResponseEntity<Page<InOrdenEntradaResumenDTO>> buscar(
+      @RequestBody InOrdenEntradaSearchCriteria criteria) {
+    return ResponseEntity.ok(inOrdenEntradaService.searchByCriteria(criteria));
   }
 
   @DeleteMapping("/{id}")

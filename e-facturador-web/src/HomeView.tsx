@@ -3,96 +3,44 @@ import { useAuth } from "./contexts/AuthContext";
 import { Button, Box, Typography } from "@mui/material";
 import { ExitToApp } from "@mui/icons-material";
 import "./menu.css"; // Asegúrate de que la ruta sea correcta
-import { use, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import "./menu.css"; // Asegúrate de que la ruta sea correcta
 import logo from "./assets/logo-braintech.png";
-import { getModulos } from "./apis/ModulosController";
+import { useSharedModulos } from "./hooks/useSharedModulos";
 import { ModuloDto } from "./models/seguridad";
+
+const INV_EXTRA_MENUS = [
+    { id: 11, menu: "Suplidores",           urlSql: "/suplidores",      url: "/suplidores" },
+    { id: 12, menu: "Cotizaciones",         urlSql: "/cotizacion",      url: "/cotizacion" },
+    { id: 13, menu: "Órdenes de Compra",    urlSql: "/orden-compra",    url: "/orden-compra" },
+    { id: 14, menu: "Órdenes de Entrada",   urlSql: "/orden-entrada",   url: "/orden-entrada" },
+    { id: 15, menu: "Transferencias",       urlSql: "/transferencias",  url: "/transferencias" },
+];
 
 const HomeView = () => {
     const [mostrarPanel, setMostrarPanel] = useState(false);
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const [modulos, setModulos] = useState<ModuloDto[]>([]);
     const [moduloActivo, setModuloActivo] = useState<ModuloDto>({ id: "", menus: [], modulo: "" });
 
-    useEffect(() => {
-        getModulos().then((loadedModulos) => {
-            // Add temporary Suplidores menu for testing
-            const updatedModulos = loadedModulos.map((modulo) => {
-                if (modulo.id === "INV") {
-                    return {
-                        ...modulo,
-                        menus: [
-                            ...modulo.menus,
-                            {
-                                id: 11,
-                                menu: "Suplidores",
-                                urlSql: "/suplidores",
-                                url: "/suplidores",
-                            },
-                            {
-                                id: 12,
-                                menu: "Cotizaciones",
-                                urlSql: "/cotizacion",
-                                url: "/cotizacion",
-                            },
-                            {
-                                id: 13,
-                                menu: "Órdenes de Compra",
-                                urlSql: "/orden-compra",
-                                url: "/orden-compra",
-                            },
-                            {
-                                id: 14,
-                                menu: "Órdenes de Entrada",
-                                urlSql: "/orden-entrada",
-                                url: "/orden-entrada",
-                            },
-                        ],
-                    };
-                }
-                return modulo;
-            });
+    const { data: rawModulos } = useSharedModulos();
 
-            // If INV module doesn't exist, create it
-            const invModuleExists = updatedModulos.some((modulo) => modulo.id === "INV");
-            if (!invModuleExists) {
-                updatedModulos.push({
-                    id: "INV",
-                    modulo: "Inventario",
-                    menus: [
-                        {
-                            id: 11,
-                            menu: "Suplidores",
-                            urlSql: "/suplidores",
-                            url: "/suplidores",
-                        },
-                        {
-                            id: 12,
-                            menu: "Cotizaciones",
-                            urlSql: "/cotizacion",
-                            url: "/cotizacion",
-                        },
-                        {
-                            id: 13,
-                            menu: "Órdenes de Compra",
-                            urlSql: "/orden-compra",
-                            url: "/orden-compra",
-                        },
-                        {
-                            id: 14,
-                            menu: "Órdenes de Entrada",
-                            urlSql: "/orden-entrada",
-                            url: "/orden-entrada",
-                        },
-                    ],
-                });
-            }
+    // Agregar menús de INV temporales sin mutar el cache compartido
+    const modulos = useMemo(() => {
+        if (!rawModulos.length) return rawModulos;
 
-            setModulos(updatedModulos);
-        });
-    }, []);
+        const mapped = rawModulos.map((modulo) =>
+            modulo.id === "INV"
+                ? { ...modulo, menus: [...modulo.menus, ...INV_EXTRA_MENUS] }
+                : modulo
+        );
+
+        if (!mapped.some((m) => m.id === "INV")) {
+            mapped.push({ id: "INV", modulo: "Inventario", menus: INV_EXTRA_MENUS });
+        }
+
+        return mapped;
+    }, [rawModulos]);
 
     const handleNavigation = (path: string) => {
         navigate(path);

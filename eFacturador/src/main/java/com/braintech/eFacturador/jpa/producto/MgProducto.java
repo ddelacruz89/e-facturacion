@@ -4,8 +4,10 @@ import com.braintech.eFacturador.annotations.FieldDescription;
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import com.braintech.eFacturador.jpa.general.MgItbis;
 import com.braintech.eFacturador.jpa.inventario.InInventario;
+import com.braintech.eFacturador.views.Views;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.io.Serial;
@@ -90,6 +92,7 @@ public class MgProducto extends BaseEntity implements Serializable {
 
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "producto_id", referencedColumnName = "id")
+  @JsonView(Views.ConInventarios.class)
   private List<InInventario> inventarios;
 
   @OneToMany(mappedBy = "producto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

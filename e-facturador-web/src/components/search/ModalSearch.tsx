@@ -44,6 +44,7 @@ export const ModalSearch: React.FC<ModalSearchProps> = ({ open, onClose, onSelec
     const [hasMore, setHasMore] = useState(true);
     const [lastSearchParams, setLastSearchParams] = useState<SearchParams>({});
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const hasAutoSearchedRef = useRef(false);
 
     // Combine defaultParams from config with initialValues
     const formDefaultValues = {
@@ -55,19 +56,18 @@ export const ModalSearch: React.FC<ModalSearchProps> = ({ open, onClose, onSelec
         defaultValues: formDefaultValues,
     });
 
-    // Reset form with default values when modal opens
+    // Reset form and auto-search (once) when modal opens; clear guard when it closes
     useEffect(() => {
         if (open) {
             reset(formDefaultValues);
+            if (config.searchOnLoad && !hasAutoSearchedRef.current) {
+                hasAutoSearchedRef.current = true;
+                performSearch(formDefaultValues, 0);
+            }
+        } else {
+            hasAutoSearchedRef.current = false;
         }
     }, [open]);
-
-    // Auto-search on load if configured
-    useEffect(() => {
-        if (open && config.searchOnLoad) {
-            performSearch(formDefaultValues, 0);
-        }
-    }, [open, config.searchOnLoad]);
 
     // Perform search with given parameters
     const performSearch = async (searchParams: SearchParams = {}, page: number = 0, append: boolean = false) => {

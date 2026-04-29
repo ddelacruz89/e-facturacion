@@ -1,11 +1,19 @@
 package com.braintech.eFacturador.dao.inventario;
 
+import com.braintech.eFacturador.dto.inventario.InOrdenEntradaResumenDTO;
+import com.braintech.eFacturador.dto.inventario.InOrdenEntradaSearchCriteria;
 import com.braintech.eFacturador.jpa.inventario.InOrdenEntrada;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,6 +86,64 @@ public class InOrdenEntradaDaoImpl implements InOrdenEntradaDao {
       ordenEntrada.setEstadoId("INA");
       entityManager.merge(ordenEntrada);
     }
+  }
+
+  @Override
+  public Page<InOrdenEntradaResumenDTO> searchByCriteria(
+      InOrdenEntradaSearchCriteria criteria, Integer empresaId) {
+
+    List<String> conditions = new ArrayList<>();
+    conditions.add("o.empresaId = :empresaId");
+
+    if (criteria.getId() != null) conditions.add("o.id = :id");
+    if (criteria.getEstadoId() != null && !criteria.getEstadoId().isBlank())
+      conditions.add("o.estadoId = :estadoId");
+    if (criteria.getFechaInicio() != null) conditions.add("o.fechaReg >= :fechaInicio");
+    if (criteria.getFechaFin() != null) conditions.add("o.fechaReg <= :fechaFin");
+
+    String where = "WHERE " + String.join(" AND ", conditions);
+    String select =
+        "SELECT new com.braintech.eFacturador.dto.inventario.InOrdenEntradaResumenDTO("
+            + "o.id, o.fechaReg, "
+            + "(SELECT a.nombre FROM InAlmacen a WHERE a.id = o.almacenId), "
+            + "o.total, o.usuarioReg, o.estadoId) ";
+    String jpql = select + "FROM InOrdenEntrada o " + where + " ORDER BY o.fechaReg DESC";
+    String countJpql = "SELECT COUNT(o) FROM InOrdenEntrada o " + where;
+
+    TypedQuery<InOrdenEntradaResumenDTO> query =
+        entityManager.createQuery(jpql, InOrdenEntradaResumenDTO.class);
+    TypedQuery<Long> countQuery = entityManager.createQuery(countJpql, Long.class);
+
+    query.setParameter("empresaId", empresaId);
+    countQuery.setParameter("empresaId", empresaId);
+    if (criteria.getId() != null) {
+      query.setParameter("id", criteria.getId());
+      countQuery.setParameter("id", criteria.getId());
+    }
+    if (criteria.getEstadoId() != null && !criteria.getEstadoId().isBlank()) {
+      query.setParameter("estadoId", criteria.getEstadoId());
+      countQuery.setParameter("estadoId", criteria.getEstadoId());
+    }
+    if (criteria.getFechaInicio() != null) {
+      LocalDateTime desde = criteria.getFechaInicio().atStartOfDay();
+      query.setParameter("fechaInicio", desde);
+      countQuery.setParameter("fechaInicio", desde);
+    }
+    if (criteria.getFechaFin() != null) {
+      LocalDateTime hasta = criteria.getFechaFin().atTime(LocalTime.MAX);
+      query.setParameter("fechaFin", hasta);
+      countQuery.setParameter("fechaFin", hasta);
+    }
+
+    int page = criteria.getPage() != null ? criteria.getPage() : 0;
+    int size = criteria.getSize() != null ? criteria.getSize() : 10;
+    query.setFirstResult(page * size);
+    query.setMaxResults(size);
+
+    List<InOrdenEntradaResumenDTO> results = query.getResultList();
+    long total = countQuery.getSingleResult();
+
+    return new PageImpl<>(results, PageRequest.of(page, size), total);
   }
 
   @Override
