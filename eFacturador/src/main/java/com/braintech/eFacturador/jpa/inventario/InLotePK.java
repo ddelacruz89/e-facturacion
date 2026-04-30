@@ -13,4 +13,5 @@ public class InLotePK implements Serializable {
 
   private String lote;
   private Integer productoId;
+  private Integer empresaId;
 }

@@ -97,7 +97,7 @@ const CotizacionDetalleForm: React.FC<CotizacionDetalleFormProps> = ({ control, 
                         readOnly
                     />
                     <SearchButton
-                        config={SEARCH_CONFIGS.PRODUCTO}
+                        config={SEARCH_CONFIGS.PRODUCTO_COMPRA}
                         onOpenSearch={productoSearch.openModal}
                         variant="icon"
                         tooltip="Buscar Producto"

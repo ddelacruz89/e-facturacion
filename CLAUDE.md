@@ -7,6 +7,25 @@
 
 ---
 
+## Multi-tenant y multi-sucursal — OBLIGATORIO
+
+Esta aplicación es **multi-tenant** (por `empresaId`) y **multi-sucursal** por tenant (por `sucursalId`). Toda query que toque datos de negocio debe aplicar ambos filtros.
+
+### Reglas de filtrado
+- Entidades que extienden `BaseEntityPk` tienen `empresaId` como campo directo → filtrar con `AND o.empresaId = :empresaId`.
+- Entidades que extienden `BaseSucursal` tienen `empresaId` (Integer) Y `sucursalId` (FK a `SgSucursal`) → filtrar con `AND o.empresaId = :empresaId AND o.sucursalId.id = :sucursalId`.
+- Tablas de catálogo del sistema (`SgEmpresa`, `SgSucursal`, `MgItbis`, `MgTipoComprobante`, etc.) son datos globales y NO se filtran por tenant.
+
+### Quién lee el tenant
+- `empresaId` y `sucursalId` se obtienen **siempre** en el service vía `TenantContext`, nunca en el DAO ni en el controller.
+- El DAO recibe los valores ya extraídos como parámetros primitivos `Integer`.
+
+### Al persistir
+- El service siempre sobreescribe `empresaId` y `sucursalId` desde `TenantContext` antes de guardar, ignorando lo que envíe el cliente.
+- Cuando la entidad usa `BaseSucursal.sucursalId` (tipo `SgSucursal`), se resuelve el objeto `SgSucursal` vía `SgSucursalRepository.findById(sucursalId)` antes de asignarlo.
+
+---
+
 ## Patrón de búsqueda — OBLIGATORIO en todos los módulos
 
 Toda búsqueda de listado debe seguir este patrón de dos pasos:

@@ -30,6 +30,8 @@ public interface MgProductoService {
 
   List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria);
 
+  List<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria);
+
   List<MgProductoResumenDTO> getProductosDisponiblesCompraResumen(Integer suplidorId);
 
   MgProductoCompraDTO getProductoCompraDetalle(Integer productoId, Integer suplidorId);

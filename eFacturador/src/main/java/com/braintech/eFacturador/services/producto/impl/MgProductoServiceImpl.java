@@ -15,10 +15,7 @@ import com.braintech.eFacturador.services.producto.MgProductoService;
 import com.braintech.eFacturador.util.TenantContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -283,6 +280,48 @@ public class MgProductoServiceImpl implements MgProductoService {
           cb.like(
               cb.lower(product.get("descripcion")),
               "%" + criteria.getDescripcion().toLowerCase(Locale.ROOT) + "%"));
+    }
+
+    query.where(cb.and(predicates.toArray(new Predicate[0])));
+    query.select(
+        cb.construct(MgProductoResumenDTO.class, product.get("id"), product.get("nombreProducto")));
+    query.orderBy(cb.asc(product.get("nombreProducto")));
+    return entityManager.createQuery(query).getResultList();
+  }
+
+  @Override
+  public List<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria) {
+    CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+    CriteriaQuery<MgProductoResumenDTO> query = cb.createQuery(MgProductoResumenDTO.class);
+    Root<MgProducto> product = query.from(MgProducto.class);
+    List<Predicate> predicates = new ArrayList<>();
+
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    if (empresaId != null) {
+      predicates.add(cb.equal(product.get("empresaId"), empresaId));
+    } else throw new ApplicationException("Empresa no encontrada");
+
+    // Solo productos con al menos una unidad disponible en compra (EXISTS)
+    Subquery<Integer> subq = query.subquery(Integer.class);
+    Root<MgProductoUnidadSuplidor> uRoot = subq.from(MgProductoUnidadSuplidor.class);
+    subq.select(cb.literal(1));
+    subq.where(
+        cb.and(
+            cb.equal(uRoot.get("productoId"), product),
+            cb.equal(uRoot.get("disponibleEnCompra"), true)));
+    predicates.add(cb.exists(subq));
+
+    if (criteria.getNombreProducto() != null && !criteria.getNombreProducto().trim().isEmpty()) {
+      predicates.add(
+          cb.like(
+              cb.lower(product.get("nombreProducto")),
+              "%" + criteria.getNombreProducto().toLowerCase(Locale.ROOT) + "%"));
+    }
+    if (criteria.getCodigoBarra() != null && !criteria.getCodigoBarra().trim().isEmpty()) {
+      predicates.add(cb.equal(product.get("codigoBarra"), criteria.getCodigoBarra()));
+    }
+    if (criteria.getId() != null) {
+      predicates.add(cb.equal(product.get("id"), criteria.getId()));
     }
 
     query.where(cb.and(predicates.toArray(new Predicate[0])));

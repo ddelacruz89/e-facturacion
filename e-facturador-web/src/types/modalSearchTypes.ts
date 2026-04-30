@@ -153,6 +153,38 @@ export const SEARCH_CONFIGS = {
         ]
     } as SearchConfig,
 
+    /** Búsqueda de productos disponibles en compra — para Orden de Compra y Cotización */
+    PRODUCTO_COMPRA: {
+        title: "Buscar Producto (Compra)",
+        endpoint: "/api/producto/search/advanced/compra",
+        keyField: "id",
+        searchOnLoad: true,
+        fields: [
+            {
+                key: "id",
+                label: "ID",
+                type: "number" as const,
+                placeholder: "Ingrese ID del producto"
+            },
+            {
+                key: "nombreProducto",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Ingrese nombre del producto"
+            },
+            {
+                key: "codigoBarra",
+                label: "Código de Barra",
+                type: "text" as const,
+                placeholder: "Ingrese código de barra"
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "10%" },
+            { key: "nombreProducto", label: "Nombre", width: "90%" }
+        ]
+    } as SearchConfig,
+
     SUPLIDOR: {
         title: "Buscar Suplidor",
         endpoint: "/api/suplidor/search/advanced",
@@ -331,6 +363,55 @@ export const SEARCH_CONFIGS = {
             },
             { key: "usuarioReg", label: "Usuario", width: "15%" },
             { key: "estadoId", label: "Estado", width: "12%" },
+        ]
+    } as SearchConfig,
+
+    LOTE: {
+        title: "Buscar Lote",
+        endpoint: "/api/v1/inventario/lotes/buscar",
+        method: "POST" as const,
+        keyField: "lote",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10
+        },
+        defaultParams: { estadoId: "ACT" },
+        fields: [
+            {
+                key: "lote",
+                label: "Lote",
+                type: "text" as const,
+                placeholder: "Código de lote"
+            },
+            {
+                key: "productoId",
+                label: "ID Producto",
+                type: "number" as const,
+                placeholder: "ID del producto"
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "ACT", label: "Activo" },
+                    { value: "INA", label: "Inactivo" }
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "lote", label: "Lote", width: "20%" },
+            { key: "productoNombre", label: "Producto", width: "35%" },
+            {
+                key: "fechaVencimiento",
+                label: "Vencimiento",
+                width: "20%",
+                render: (v: any) => v ? new Date(v).toLocaleDateString("es-DO") : "-"
+            },
+            { key: "usuarioReg", label: "Usuario", width: "15%" },
+            { key: "estadoId", label: "Estado", width: "10%" }
         ]
     } as SearchConfig,
 

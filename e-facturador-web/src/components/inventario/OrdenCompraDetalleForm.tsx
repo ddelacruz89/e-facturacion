@@ -83,7 +83,7 @@ const OrdenCompraDetalleForm: React.FC<OrdenCompraDetalleFormProps> = ({ control
                         helperText={detalleErrors?.productoId?.message}
                     />
                     <SearchButton
-                        config={SEARCH_CONFIGS.PRODUCTO}
+                        config={SEARCH_CONFIGS.PRODUCTO_COMPRA}
                         onOpenSearch={productoSearch.openModal}
                         variant="icon"
                         tooltip="Buscar Producto"

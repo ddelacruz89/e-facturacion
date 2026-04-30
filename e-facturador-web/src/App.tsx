@@ -26,6 +26,7 @@ const CotizacionView = lazy(() => import("./components/inventario/CotizacionView
 const OrdenCompraView = lazy(() => import("./components/inventario/OrdenCompraView"));
 const OrdenEntradaView = lazy(() => import("./components/inventario/OrdenEntradaView"));
 const TransferenciaView = lazy(() => import("./components/inventario/TransferenciaView"));
+const LoteView = lazy(() => import("./components/inventario/LoteView"));
 const ClientesView = lazy(() => import("./components/Cliente/ClientesView"));
 
 // Routes component that uses authentication context
@@ -61,6 +62,7 @@ const AppRoutes = () => {
                     <Route path="orden-compra" element={<OrdenCompraView />} />
                     <Route path="orden-entrada" element={<OrdenEntradaView />} />
                     <Route path="transferencias" element={<TransferenciaView />} />
+                    <Route path="lotes" element={<LoteView />} />
                     <Route path="clientes" element={<ClientesView />} />
                 </Route>
 

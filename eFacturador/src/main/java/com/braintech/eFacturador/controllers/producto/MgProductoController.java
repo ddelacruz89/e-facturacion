@@ -87,6 +87,15 @@ public class MgProductoController {
     return productoService.searchAdvanced(criteria);
   }
 
+  /**
+   * Búsqueda de productos filtrada a los que tienen al menos una unidad disponible en compra. Usada
+   * por Orden de Compra y Cotización.
+   */
+  @GetMapping("/search/advanced/compra")
+  public List<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria) {
+    return productoService.searchAdvancedCompra(criteria);
+  }
+
   // ORDEN DE COMPRA
 
   @GetMapping("/disponibles-compra/suplidor/{suplidorId}")
