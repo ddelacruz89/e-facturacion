@@ -2,6 +2,7 @@ package com.braintech.eFacturador.dao.producto;
 
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
+import com.braintech.eFacturador.jpa.producto.ProductoResumen;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -67,4 +68,8 @@ public interface MgProductoRepository extends JpaRepository<MgProducto, Integer>
   @Modifying
   @Query("UPDATE MgProducto p SET p.secuencia = :secuencia WHERE p.id = :id")
   void updateSecuencia(@Param("id") Integer id, @Param("secuencia") Integer secuencia);
+
+  @Query("SELECT p FROM MgProducto p WHERE p.empresaId = :empresaId AND p.id = :id")
+  Optional<ProductoResumen> getResumenProducto(
+      @Param("id") Integer id, @Param("empresaId") Integer empresaId);
 }

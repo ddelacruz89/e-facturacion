@@ -70,7 +70,7 @@ export interface Factura {
     monto: number;
     descuento: number;
     itbis: number;
-    retencion?: MgRetencion;
+    retencionId: number;
     retencionItbis?: number;
     retencionIsr?: number;
     total: number;

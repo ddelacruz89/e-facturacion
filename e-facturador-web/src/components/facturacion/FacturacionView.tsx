@@ -38,12 +38,12 @@ export default function FacturacionView() {
             ncf: "",
             id: 0,
             numeroFactura: 0,
-            tipoFacturaId: 2,
+            tipoFacturaId: 1,
             clienteId: 0,
             monto: 0,
             descuento: 0,
             itbis: 0,
-            retencion: undefined,
+            retencionId: 0,
             retencionItbis: 0,
             retencionIsr: 0,
             total: 0,
@@ -76,8 +76,9 @@ export default function FacturacionView() {
 
     useEffect(() => { }, []);
 
+    const [retencionValue, setRetencionValue] = useState<number>(0);
+
     const onSubmit: SubmitHandler<Factura> = (data) => {
-        debugger;
         saveFactura(data)
             .then((response) => {
                 setValue("id", response.id);
@@ -105,7 +106,6 @@ export default function FacturacionView() {
     };
 
     const onError = (errors: FieldErrors<Factura>) => {
-        debugger;
         toast.error("Errores de validación");
         console.log("Errores de validación:", errors);
     };
@@ -115,7 +115,7 @@ export default function FacturacionView() {
         setValue("secuencia", undefined);
         setValue("numeroFactura", 0);
         setValue("clienteId", 0);
-        setValue("tipoFacturaId", 2);
+        setValue("tipoFacturaId", 1);
         setValue("razonSocial", "");
         setValue("rnc", "");
         setValue("monto", 0);
@@ -148,7 +148,7 @@ export default function FacturacionView() {
     };
 
     const handleSelectTipoFactura = (item: TipoFactura) => {
-        console.log("TipoFactura", item);
+        setValue("tipoFacturaId", item?.id || 2);
     };
 
     const handleSelectProducto = (producto: ProductoVenta) => {
@@ -177,8 +177,7 @@ export default function FacturacionView() {
         };
         let detalles = watch("detalles");
         detalles.push(detalleFactura);
-
-        detalleFactura = detalleItbis(producto, detalleFactura);
+        detalleFactura = detalleItbis(producto, detalleFactura, retencionValue);
         detalleFactura.linea = detalles.length;
         toast.success("Producto agregado a la factura");
 
@@ -191,7 +190,7 @@ export default function FacturacionView() {
         let detalles = watch("detalles");
         let detalle = detalles[row.linea - 1];
         detalle.cantidad = Number(value);
-        detalle = detalleItbis(detalle.producto!, detalle);
+        detalle = detalleItbis(detalle.producto!, detalle, retencionValue);
         detalles[row.linea - 1] = detalle;
         setValue("detalles", detalles);
     }
@@ -199,7 +198,7 @@ export default function FacturacionView() {
     function handleSelectCliente(cliente: Cliente): void {
         setValue("clienteId", cliente.secuencia);
         setValue("razonSocial", cliente.razonSocial);
-        setValue("rnc", cliente.numeroIdentificacion);
+        setValue("rnc", cliente.numeroIdentificacion.replaceAll("-", ""));
         setValue("tipoComprobanteId", cliente.tipoComprobanteId.toString())
     }
     function handleSelectFactura(factura: IFacturaResumen): void {
@@ -221,7 +220,15 @@ export default function FacturacionView() {
     }
 
     function handleSelectRetenciones(retencion: MgRetencion): void {
-        setValue("retencion", retencion);
+        let detalles = watch("detalles");
+        setRetencionValue(retencion?.valor || 0);
+        detalles = detalles.map((detalle) => detalleItbis(detalle.producto!, detalle, retencion?.valor || 0));
+        setValue("retencionId", retencion?.id || 0);
+        setValue("detalles", detalles);
+    }
+
+    function handleSelectTipoComprobante(selected: any): void {
+        setValue("tipoComprobanteId", selected.tipoComprobante)
     }
 
     return (
@@ -254,7 +261,7 @@ export default function FacturacionView() {
                                 error={errors.tipoFacturaId}
                                 rules={{
                                     required: "Debe seleccionar un tipo de factura",
-                                    validate: (value: any) => (value !== 0 && value !== "0") || "Debe seleccionar un tipo de factura",
+                                    validate: (value: any) => [1, 2, 3].includes(Number(value)) || "Debe seleccionar un tipo de factura entre 1 y 3",
                                 }}
                                 size={2}
                                 handleGetItem={handleSelectTipoFactura}
@@ -271,7 +278,7 @@ export default function FacturacionView() {
                                 }}
                                 error={errors.tipoComprobanteId}
                                 size={5}
-                                handleGetItem={handleSelectTipoFactura}
+                                handleGetItem={handleSelectTipoComprobante}
                             />
 
                             <RetencionesSelect
@@ -366,6 +373,7 @@ export default function FacturacionView() {
                             { id: "productoId", label: "Producto ID" },
                             { id: "productoDesc", label: "Producto" },
                             { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
+                            { id: "montoDescuento", label: "Monto Descuento", format: (value: number) => formatCurrency(value) },
                             {
                                 id: "cantidad",
                                 label: "Cantidad",
@@ -373,6 +381,8 @@ export default function FacturacionView() {
                             },
                             { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
                             { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },
+                            { id: "retencionIsr", label: "Retencion ISR", format: (value: number) => formatCurrency(value) },
+                            { id: "retencionItbis", label: "Retencion Itbis", format: (value: number) => formatCurrency(value) },
                             { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) },
                         ]}
                     />

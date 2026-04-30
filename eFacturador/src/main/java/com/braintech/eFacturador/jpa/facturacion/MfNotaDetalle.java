@@ -2,20 +2,19 @@ package com.braintech.eFacturador.jpa.facturacion;
 
 import jakarta.persistence.*;
 import java.io.Serial;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Table(name = "mf_factura_detalle", schema = "facturacion")
+@Table(name = "mf_nota_detalle", schema = "facturacion")
 @Getter
 @Setter
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-public class MfFacturaDetalle implements Serializable {
+public class MfNotaDetalle {
 
   @Serial private static final long serialVersionUID = 1L;
 
@@ -25,8 +24,8 @@ public class MfFacturaDetalle implements Serializable {
   private Integer id;
 
   @ManyToOne(optional = false)
-  @JoinColumn(name = "factura_id")
-  private MfFactura facturaId;
+  @JoinColumn(name = "nota_id")
+  private MfNota notaId;
 
   @Column(name = "linea")
   private Integer linea;
@@ -34,8 +33,7 @@ public class MfFacturaDetalle implements Serializable {
   @Column(name = "producto_id")
   private Integer productoId;
 
-  @Column(name = "precio_costo")
-  private BigDecimal precioCosto;
+  private String producto;
 
   @Column(name = "precio_venta_und")
   private BigDecimal precioVentaUnd;
@@ -44,7 +42,7 @@ public class MfFacturaDetalle implements Serializable {
   private BigDecimal precioVenta;
 
   @Column(name = "monto_descuento")
-  private BigDecimal montoDescuento;
+  private BigDecimal montoDescueto;
 
   @Column(name = "cantidad")
   private BigDecimal cantidad;
@@ -66,7 +64,4 @@ public class MfFacturaDetalle implements Serializable {
 
   @Column(name = "monto_total")
   private BigDecimal montoTotal;
-
-  @Column(name = "almacen_id")
-  private Integer almacenId;
 }

@@ -10,7 +10,7 @@ function calcularTotal(factura: Factura): Factura {
     return factura;
 }
 
-function detalleItbis(producto: ProductoVenta, detalleFactura: FacturaDetalle): FacturaDetalle {
+function detalleItbis(producto: ProductoVenta, detalleFactura: FacturaDetalle, retencion: number): FacturaDetalle {
     if (producto.itbis > 0) {
         let montoTotal = (producto.precioItbis + producto.precioVenta) * detalleFactura.cantidad;
         let montoItbis = producto.precioItbis * detalleFactura.cantidad;
@@ -22,6 +22,10 @@ function detalleItbis(producto: ProductoVenta, detalleFactura: FacturaDetalle): 
         detalleFactura.montoItbis = montoItbis;
         detalleFactura.montoVenta = montoVenta;
         detalleFactura.montoTotal = montoTotal;
+        if (retencion > 0) {
+            detalleFactura.retencionIsr = 0;
+            detalleFactura.retencionItbis = (montoItbis * retencion) / 100;
+        }
     }
     return detalleFactura;
 }

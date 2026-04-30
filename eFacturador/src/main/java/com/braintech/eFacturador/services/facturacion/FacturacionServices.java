@@ -4,6 +4,7 @@ import com.braintech.eFacturador.dao.facturacion.FacturaDao;
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.dto.facturacion.IFacturaResumen;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
+import com.braintech.eFacturador.facturacionelectronica.services.ECFServices;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
 import com.braintech.eFacturador.models.IProductoVenta;
 import com.braintech.eFacturador.models.PagesResult;
@@ -11,6 +12,7 @@ import com.braintech.eFacturador.util.LocalDateZone;
 import com.braintech.eFacturador.util.PageableUtils;
 import com.braintech.eFacturador.util.TenantContext;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Locale;
@@ -28,6 +30,8 @@ public class FacturacionServices implements IFacturacion {
   private final FacturaDao facturaDao;
   private final TenantContext tenantContext;
   private final SecuenciasDao secuenciasDao;
+
+  private final ECFServices ecfServices;
 
   @Override
   public List<MfFactura> getAllActive() {
@@ -81,11 +85,12 @@ public class FacturacionServices implements IFacturacion {
         secuenciasDao.getNextSecuenciaEcf(empresaId, entity.getTipoComprobanteId());
     entity.setSecuencia(nextSecuencia);
     entity.setNcf(nextSecuenciaEcf);
+    entity.setFechaVencimiento(LocalDate.of(2026, 12, 31));
 
     entity.getDetalles().forEach(entityDetalle -> entityDetalle.setFacturaId(entity));
     DoubleSummaryStatistics montoDescuento =
         entity.getDetalles().stream()
-            .collect(Collectors.summarizingDouble(value -> this.ifNull(value.getMontoDescueto())));
+            .collect(Collectors.summarizingDouble(value -> this.ifNull(value.getMontoDescuento())));
     DoubleSummaryStatistics montoItbis =
         entity.getDetalles().stream()
             .collect(Collectors.summarizingDouble(value -> this.ifNull(value.getMontoItbis())));
@@ -105,8 +110,9 @@ public class FacturacionServices implements IFacturacion {
     entity.setItbis(BigDecimal.valueOf(montoItbis.getSum()));
     entity.setDescuento(BigDecimal.valueOf(montoDescuento.getSum()));
     entity.sumTotal();
-
-    return facturaDao.save(entity);
+    MfFactura save = facturaDao.save(entity);
+    ecfServices.senderEcfFactura(save);
+    return save;
   }
 
   private Double ifNull(BigDecimal value) {
@@ -152,5 +158,12 @@ public class FacturacionServices implements IFacturacion {
   @Override
   public List<IProductoVenta> getProductoVenta() {
     return facturaDao.findProductoVenta();
+  }
+
+  @Override
+  public void updateEfcSenderId(
+      Integer id, String fechaFirma, String secuityCode, String qrUrl, String trackId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    facturaDao.updateFirmaAndQr(id, empresaId, fechaFirma, secuityCode, qrUrl, trackId);
   }
 }

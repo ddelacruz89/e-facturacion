@@ -4,7 +4,9 @@ import com.braintech.eFacturador.dto.producto.MgProductoCompraDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
+import com.braintech.eFacturador.jpa.producto.ProductoResumen;
 import java.util.List;
+import java.util.Optional;
 
 public interface MgProductoService {
   List<MgProducto> getAll();
@@ -33,4 +35,6 @@ public interface MgProductoService {
   List<MgProductoResumenDTO> getProductosDisponiblesCompraResumen(Integer suplidorId);
 
   MgProductoCompraDTO getProductoCompraDetalle(Integer productoId, Integer suplidorId);
+
+  Optional<ProductoResumen> getProductoResumenById(Integer id);
 }

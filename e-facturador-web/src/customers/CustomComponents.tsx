@@ -541,17 +541,31 @@ export function TableComponentFacturacion({ columns, rows, selected, handleDelet
                 </Table>
             </TableContainer>
             {rows.length > 0 && (
-                <Box sx={{ p: 2, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, borderTop: "1px solid #e0e0e0" }}>
-                    <Typography variant="h6" color="text.secondary">
-                        SubTotal: {formatCurrency(rows.reduce((acc, row) => acc + row.montoVenta, 0))}
-                    </Typography>
-                    <Typography variant="h6" color="text.secondary">
-                        ITBIS: {formatCurrency(rows.reduce((acc, row) => acc + row.montoItbis, 0))}
-                    </Typography>
-                    <Typography variant="h5" color="text.primary" fontWeight="bold">
-                        Total: {formatCurrency(rows.reduce((acc, row) => acc + row.montoTotal, 0))}
-                    </Typography>
-                </Box>
+                <div style={{ display: "flex", flexDirection: "row", justifyContent: "flex-end" }}>
+                    <Box sx={{ p: 2, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, borderTop: "1px solid #e0e0e0" }}>
+                        <Typography variant="h6" color="text.secondary">
+                            Retencion Itbis: {formatCurrency(rows.reduce((acc, row) => acc + row.retencionItbis, 0))}
+                        </Typography>
+                        <Typography variant="h6" color="text.secondary">
+                            Retencion Isr: {formatCurrency(rows.reduce((acc, row) => acc + row.retencionIsr, 0))}
+                        </Typography>
+                        <Typography variant="h5" color="text.primary" fontWeight="bold">
+                            {/* Total: {formatCurrency(rows.reduce((acc, row) => acc + row.montoTotal, 0))} */}
+                        </Typography>
+                    </Box>
+                    <Box sx={{ p: 2, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0.5, borderTop: "1px solid #e0e0e0" }}>
+                        <Typography variant="h6" color="text.secondary">
+                            SubTotal: {formatCurrency(rows.reduce((acc, row) => acc + row.montoVenta, 0))}
+                        </Typography>
+                        <Typography variant="h6" color="text.secondary">
+                            ITBIS: {formatCurrency(rows.reduce((acc, row) => acc + row.montoItbis, 0))}
+                        </Typography>
+                        <Typography variant="h5" color="text.primary" fontWeight="bold">
+                            Total: {formatCurrency(rows.reduce((acc, row) => acc + row.montoTotal, 0))}
+                        </Typography>
+                    </Box>
+
+                </div>
             )}
             <TablePagination
                 rowsPerPageOptions={[10, 25, 100]}

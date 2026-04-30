@@ -4,6 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,6 +18,12 @@ public class BaseDgII extends BaseEntitySucursal implements Serializable {
 
   @Column(name = "secuity_code")
   private String secuityCode;
+
+  @Column(name = "fecha_firma")
+  private String fechaFirma;
+
+  @Column(name = "fecha_vencimiento")
+  private LocalDate fechaVencimiento;
 
   @Column(name = "track_id")
   private String trackId;
@@ -44,5 +52,13 @@ public class BaseDgII extends BaseEntitySucursal implements Serializable {
 
   public BaseDgII() {
     super();
+  }
+
+  public String getFechaVencimiento() {
+    DateTimeFormatter formatDate = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+    if (fechaVencimiento != null) {
+
+      return fechaVencimiento.format(formatDate);
+    } else return null;
   }
 }
