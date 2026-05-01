@@ -98,6 +98,16 @@ public class MgProductoController {
 
   // ORDEN DE COMPRA
 
+  /**
+   * GET /search/almacen?almacenId=X&nombre=Y Productos activos con inventario en el almacén dado.
+   * nombre es opcional.
+   */
+  @GetMapping("/search/almacen")
+  public List<MgProductoResumenDTO> searchByAlmacen(
+      @RequestParam Integer almacenId, @RequestParam(required = false) String nombre) {
+    return productoService.searchByAlmacen(almacenId, nombre);
+  }
+
   @GetMapping("/disponibles-compra/suplidor/{suplidorId}")
   public ResponseEntity<List<MgProductoResumenDTO>> getProductosDisponiblesCompraResumen(
       @PathVariable Integer suplidorId) {

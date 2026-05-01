@@ -35,4 +35,7 @@ public interface MgProductoService {
   List<MgProductoResumenDTO> getProductosDisponiblesCompraResumen(Integer suplidorId);
 
   MgProductoCompraDTO getProductoCompraDetalle(Integer productoId, Integer suplidorId);
+
+  /** Productos activos con inventario en el almacén dado, filtrados opcionalmente por nombre. */
+  List<MgProductoResumenDTO> searchByAlmacen(Integer almacenId, String nombre);
 }

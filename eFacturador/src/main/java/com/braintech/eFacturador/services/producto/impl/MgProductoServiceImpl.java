@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.services.producto.impl;
 
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
+import com.braintech.eFacturador.dao.inventario.InInventarioRepository;
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
 import com.braintech.eFacturador.dto.producto.MgProductoCompraDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
@@ -32,6 +33,7 @@ public class MgProductoServiceImpl implements MgProductoService {
   private final MgProductoRepository productoRepository;
   private final SecuenciasDao secuenciasDao;
   private final TenantContext tenantContext;
+  private final InInventarioRepository inventarioRepository;
   @PersistenceContext private EntityManager entityManager;
 
   @Override
@@ -393,5 +395,14 @@ public class MgProductoServiceImpl implements MgProductoService {
 
     return new MgProductoCompraDTO(
         p.getId(), p.getNombreProducto(), p.getPrecio(), itbis, unidades);
+  }
+
+  @Override
+  public List<MgProductoResumenDTO> searchByAlmacen(Integer almacenId, String nombre) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Integer sucursalId = tenantContext.getCurrentSucursalId();
+    String nombreParam = (nombre != null && !nombre.trim().isEmpty()) ? nombre.trim() : null;
+    return inventarioRepository.findProductosActivosByAlmacen(
+        almacenId, empresaId, sucursalId, nombreParam);
   }
 }

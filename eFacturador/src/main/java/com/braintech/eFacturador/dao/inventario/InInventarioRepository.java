@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.dao.inventario;
 
 import com.braintech.eFacturador.dto.inventario.InLoteStockDTO;
+import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.jpa.inventario.InInventario;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +23,21 @@ public interface InInventarioRepository extends JpaRepository<InInventario, Inte
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId);
 
+  /** Stock de un producto en un almacén filtrado opcionalmente por lote (null = sin lote). */
+  @Query(
+      "SELECT i FROM InInventario i "
+          + "WHERE i.productoId.id = :productoId "
+          + "AND i.almacenId.id = :almacenId "
+          + "AND i.empresaId = :empresaId "
+          + "AND i.sucursalId.id = :sucursalId "
+          + "AND (:lote IS NULL OR i.loteId = :lote)")
+  Optional<InInventario> findByProductoAlmacenLote(
+      @Param("productoId") Integer productoId,
+      @Param("almacenId") Integer almacenId,
+      @Param("empresaId") Integer empresaId,
+      @Param("sucursalId") Integer sucursalId,
+      @Param("lote") String lote);
+
   @Query(
       "SELECT new com.braintech.eFacturador.dto.inventario.InLoteStockDTO("
           + "i.almacenId.id, i.almacenId.nombre, i.cantidad) "
@@ -34,4 +50,41 @@ public interface InInventarioRepository extends JpaRepository<InInventario, Inte
       @Param("lote") String lote,
       @Param("productoId") Integer productoId,
       @Param("empresaId") Integer empresaId);
+
+  /**
+   * Lotes disponibles (cantidad > 0) para un producto en un almacén específico. Incluye null como
+   * lote cuando el producto tiene stock sin lote asignado.
+   */
+  @Query(
+      "SELECT i.loteId FROM InInventario i "
+          + "WHERE i.productoId.id = :productoId "
+          + "AND i.almacenId.id = :almacenId "
+          + "AND i.empresaId = :empresaId "
+          + "AND i.sucursalId.id = :sucursalId "
+          + "AND i.cantidad > 0")
+  List<String> findLotesByProductoAndAlmacen(
+      @Param("productoId") Integer productoId,
+      @Param("almacenId") Integer almacenId,
+      @Param("empresaId") Integer empresaId,
+      @Param("sucursalId") Integer sucursalId);
+
+  /**
+   * Productos activos que tienen al menos un registro de inventario en el almacén dado. Filtra
+   * opcionalmente por nombre (búsqueda parcial, case-insensitive).
+   */
+  @Query(
+      "SELECT DISTINCT new com.braintech.eFacturador.dto.producto.MgProductoResumenDTO("
+          + "  p.id, p.nombreProducto) "
+          + "FROM InInventario i JOIN i.productoId p "
+          + "WHERE i.almacenId.id = :almacenId "
+          + "AND i.empresaId = :empresaId "
+          + "AND i.sucursalId.id = :sucursalId "
+          + "AND p.activo = true "
+          + "AND LOWER(p.nombreProducto) LIKE LOWER(CONCAT('%', COALESCE(:nombre, ''), '%')) "
+          + "ORDER BY p.nombreProducto ASC")
+  List<MgProductoResumenDTO> findProductosActivosByAlmacen(
+      @Param("almacenId") Integer almacenId,
+      @Param("empresaId") Integer empresaId,
+      @Param("sucursalId") Integer sucursalId,
+      @Param("nombre") String nombre);
 }

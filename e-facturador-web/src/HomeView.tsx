@@ -1,22 +1,22 @@
-import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import { Button, Box, Typography } from "@mui/material";
 import { ExitToApp } from "@mui/icons-material";
 import "./menu.css"; // Asegúrate de que la ruta sea correcta
 import { useMemo, useState } from "react";
-import "./menu.css"; // Asegúrate de que la ruta sea correcta
 import logo from "./assets/logo-braintech.png";
 import { useSharedModulos } from "./hooks/useSharedModulos";
 import { ModuloDto } from "./models/seguridad";
 
 const INV_EXTRA_MENUS = [
-    { id: 11, menu: "Suplidores",           urlSql: "/suplidores",      url: "/suplidores" },
-    { id: 12, menu: "Cotizaciones",         urlSql: "/cotizacion",      url: "/cotizacion" },
-    { id: 13, menu: "Órdenes de Compra",    urlSql: "/orden-compra",    url: "/orden-compra" },
-    { id: 14, menu: "Órdenes de Entrada",   urlSql: "/orden-entrada",   url: "/orden-entrada" },
-    { id: 15, menu: "Transferencias",       urlSql: "/transferencias",  url: "/transferencias" },
-    { id: 16, menu: "Lotes",                urlSql: "/lotes",           url: "/lotes" },
-    { id: 17, menu: "Movimientos",          urlSql: "/movimientos",     url: "/movimientos" },
+    { id: 11, menu: "Suplidores",              urlSql: "/suplidores",         url: "/suplidores" },
+    { id: 12, menu: "Cotizaciones",            urlSql: "/cotizacion",         url: "/cotizacion" },
+    { id: 13, menu: "Órdenes de Compra",       urlSql: "/orden-compra",       url: "/orden-compra" },
+    { id: 14, menu: "Órdenes de Entrada",      urlSql: "/orden-entrada",      url: "/orden-entrada" },
+    { id: 15, menu: "Transferencias",          urlSql: "/transferencias",     url: "/transferencias" },
+    { id: 16, menu: "Lotes",                   urlSql: "/lotes",              url: "/lotes" },
+    { id: 17, menu: "Movimientos",             urlSql: "/movimientos",        url: "/movimientos" },
+    { id: 18, menu: "Ajuste de Inventario",    urlSql: "/ajuste-inventario",  url: "/ajuste-inventario" },
 ];
 
 const HomeView = () => {
@@ -44,15 +44,11 @@ const HomeView = () => {
         return mapped;
     }, [rawModulos]);
 
-    const handleNavigation = (path: string) => {
-        navigate(path);
-        setMostrarPanel(false); // Ocultar el panel al navegar}
-    };
-
     const handleLogout = () => {
         logout();
         navigate("/login");
     };
+
     return (
         <div className="container-main">
             <div className="top">
@@ -84,7 +80,6 @@ const HomeView = () => {
             <div className="left">
                 <div
                     style={{ cursor: "pointer", fontWeight: "bold" }}
-                    // onClick={() => setMostrarPanel(!mostrarPanel)}
                 >
                     <div className="short-menu">
                         <ul>
@@ -114,50 +109,23 @@ const HomeView = () => {
                         </div>
                         <ul>
                             {moduloActivo.menus.map((menu) => (
-                                <li
-                                    className="menu-item"
-                                    onClick={() => handleNavigation(menu.url)}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
-                                    {menu.menu}
+                                <li key={menu.id} className="menu-item">
+                                    <NavLink
+                                        to={menu.url}
+                                        onClick={() => setMostrarPanel(false)}
+                                        style={({ isActive }) => ({
+                                            display: "block",
+                                            padding: "inherit",
+                                            color: isActive ? "#1976d2" : "inherit",
+                                            fontWeight: isActive ? 700 : "inherit",
+                                            textDecoration: "none",
+                                            width: "100%",
+                                        })}
+                                    >
+                                        {menu.menu}
+                                    </NavLink>
                                 </li>
                             ))}
-                            {/* <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/empresa")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Empresa</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/usuario")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Usuario</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/tipo/factura")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Tipo Factura</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/tipo/itbis")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Tipo ITBIS</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/tipo/comprobante")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Tipo Comprobante</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/facturacion")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Facturacion</li> */}
                         </ul>
                     </div>
                 )}
