@@ -347,9 +347,9 @@ public class MgProductoServiceImpl implements MgProductoService {
             .findProductoCompraById(productoId, empresaId)
             .orElseThrow(() -> new RecordNotFoundException("Producto no encontrado"));
 
-    MgProductoUnidadSuplidorCompraDTO unidadSuplidor =
+    List<MgProductoUnidadSuplidorCompraDTO> unidades =
         p.getUnidadProductorSuplidor() == null
-            ? null
+            ? List.of()
             : p.getUnidadProductorSuplidor().stream()
                 .filter(
                     u ->
@@ -383,13 +383,15 @@ public class MgProductoServiceImpl implements MgProductoService {
                                             s.getPrecio(),
                                             s.getItbisDefault(),
                                             s.getEstadoId()))))
-                .findFirst()
-                .orElseThrow(
-                    () -> new RecordNotFoundException("Suplidor no asociado a este producto"));
+                .toList();
+
+    if (unidades.isEmpty()) {
+      throw new RecordNotFoundException("Suplidor no asociado a este producto");
+    }
 
     BigDecimal itbis = p.getItbisId() != null ? p.getItbisId().getItbis() : BigDecimal.ZERO;
 
     return new MgProductoCompraDTO(
-        p.getId(), p.getNombreProducto(), p.getPrecio(), itbis, unidadSuplidor);
+        p.getId(), p.getNombreProducto(), p.getPrecio(), itbis, unidades);
   }
 }

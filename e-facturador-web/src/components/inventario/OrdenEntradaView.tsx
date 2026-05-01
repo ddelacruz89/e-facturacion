@@ -149,6 +149,17 @@ const OrdenEntradaView: React.FC = () => {
             return;
         }
 
+        // Verificar que todos los detalles tengan lotes/series asignados
+        const detalles: any[] = lastOrdenEntrada.inOrdenDetalleList || [];
+        const sinLote = detalles.filter((d: any) => !d.inOrdenDetalleLotes || d.inOrdenDetalleLotes.length === 0);
+        if (sinLote.length > 0) {
+            const nombres = sinLote
+                .map((d: any) => d.productoId?.nombreProducto || d.productoId?.nombre || `Línea ${detalles.indexOf(d) + 1}`)
+                .join(", ");
+            showSnackbar(`Faltan lotes/series en: ${nombres}`, "error");
+            return;
+        }
+
         try {
             const saved = lastOrdenEntrada.id
                 ? await updateOrdenEntrada(lastOrdenEntrada.id, lastOrdenEntrada)
@@ -435,8 +446,9 @@ const OrdenEntradaView: React.FC = () => {
                                         <TableRow>
                                             <TableCell>#</TableCell>
                                             <TableCell>Producto</TableCell>
+                                            <TableCell>Unidad</TableCell>
                                             <TableCell align="right">Cantidad</TableCell>
-                                            <TableCell align="right">Precio Unitario</TableCell>
+                                            <TableCell align="right">Precio</TableCell>
                                             <TableCell align="right">Subtotal</TableCell>
                                             <TableCell align="right">ITBIS</TableCell>
                                             <TableCell align="right">Total</TableCell>
@@ -446,19 +458,30 @@ const OrdenEntradaView: React.FC = () => {
                                     <TableBody>
                                         {(lastOrdenEntrada?.inOrdenDetalleList || []).length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={8} align="center">
+                                                <TableCell colSpan={9} align="center">
                                                     Sin detalles
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
                                             (lastOrdenEntrada?.inOrdenDetalleList || []).map((detalle: any, idx: number) => (
-                                                <TableRow key={detalle?.id || idx}>
+                                                <TableRow
+                                                    key={detalle?.id || idx}
+                                                    sx={
+                                                        !detalle?.inOrdenDetalleLotes?.length
+                                                            ? { backgroundColor: "rgba(211, 47, 47, 0.08)" }
+                                                            : {}
+                                                    }>
                                                     <TableCell>{idx + 1}</TableCell>
                                                     <TableCell>
                                                         {detalle?.productoId?.nombreProducto ||
                                                             detalle?.productoId?.nombre ||
                                                             detalle?.productoId?.id ||
                                                             ""}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {detalle?.unidadNombre
+                                                            ? `${detalle.unidadNombre}${detalle.unidadCantidad ? ` / ${detalle.unidadCantidad}` : ""}`
+                                                            : "—"}
                                                     </TableCell>
                                                     <TableCell align="right">{detalle?.cantidad ?? 0}</TableCell>
                                                     <TableCell align="right">{formatCurrency(detalle?.precioUnitario)}</TableCell>

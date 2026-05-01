@@ -16,6 +16,7 @@ const INV_EXTRA_MENUS = [
     { id: 14, menu: "Órdenes de Entrada",   urlSql: "/orden-entrada",   url: "/orden-entrada" },
     { id: 15, menu: "Transferencias",       urlSql: "/transferencias",  url: "/transferencias" },
     { id: 16, menu: "Lotes",                urlSql: "/lotes",           url: "/lotes" },
+    { id: 17, menu: "Movimientos",          urlSql: "/movimientos",     url: "/movimientos" },
 ];
 
 const HomeView = () => {
