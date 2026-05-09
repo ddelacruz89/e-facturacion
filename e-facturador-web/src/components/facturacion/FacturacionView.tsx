@@ -16,17 +16,14 @@ import ArticleIcon from "@mui/icons-material/Article";
 import ModalSearchClientes from "../../customers/search/ModalSearchClientes";
 import { Cliente } from "../../models/cliente/Cliente";
 import ModalSearchFacturas from "../../customers/search/ModalSearchFacturas";
+import ModalReciboPago from "./modals/ModalReciboPago";
+import { AccountBalanceWallet } from "@mui/icons-material";
 
 export default function FacturacionView() {
 
     const [save, setSave] = useState<boolean>(false)
-    const {
-        control,
-        handleSubmit,
-        setValue,
-        watch,
-        formState: { errors },
-    } = useForm<Factura>({
+    const [openModalReciboPago, setOpenModalReciboPago] = useState<boolean>(true)
+    const facturaForm = useForm<Factura>({
         defaultValues: {
             usuarioReg: "",
             fechaReg: undefined,
@@ -50,6 +47,14 @@ export default function FacturacionView() {
             detalles: [],
         },
     });
+
+    const {
+        control,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors },
+    } = facturaForm
 
     // const [factura, setFactura] = useState<Factura>({
     //     activo: true,
@@ -232,7 +237,9 @@ export default function FacturacionView() {
     }
 
     return (
+
         <main style={{ display: "flex", flexDirection: "row", gap: 20, padding: 10 }}>
+            <ModalReciboPago facturaForm={facturaForm} isOpen={openModalReciboPago} onClose={() => { setOpenModalReciboPago(true) }} onConfirm={() => { setOpenModalReciboPago(false) }} />
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
             <form style={{ flexGrow: 1 }} onSubmit={handleSubmit(onSubmit, onError)}>
                 <ActionBar title="Factura">
@@ -246,6 +253,9 @@ export default function FacturacionView() {
                     </Button>
                     <Button variant="contained" color="primary" onClick={handleClean}>
                         <ArticleIcon /> Nuevo
+                    </Button>
+                    <Button variant="contained" color="primary" onClick={() => setOpenModalReciboPago(true)}>
+                        <AccountBalanceWallet /> Recibo de Pago
                     </Button>
                 </ActionBar>
                 <fieldset disabled={save}>

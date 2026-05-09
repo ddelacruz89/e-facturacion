@@ -9,18 +9,20 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
-@Table(name = "mf_factura", schema = "facturacion")
+@Table(name = "mf_cotizacion", schema = "facturacion")
 @Getter
 @Setter
 @JsonIdentityInfo(
-    scope = MfFactura.class,
+    scope = MfCotizacion.class,
     generator = ObjectIdGenerators.PropertyGenerator.class,
     property = "id")
 @EqualsAndHashCode(callSuper = false)
-public class MfFactura extends BaseDgII implements Serializable {
+public class MfCotizacion extends BaseDgII implements Serializable {
   @Serial private static final long serialVersionUID = 1L;
 
   @Column(name = "tipo_factura_id")
@@ -62,17 +64,15 @@ public class MfFactura extends BaseDgII implements Serializable {
   @Column(name = "total")
   private BigDecimal total;
 
-  @OneToMany(cascade = CascadeType.ALL, mappedBy = "facturaId", fetch = FetchType.LAZY)
+  @OneToMany(cascade = CascadeType.ALL, mappedBy = "cotizacionId", fetch = FetchType.LAZY)
   @OrderBy("id asc")
-  private List<MfFacturaDetalle> detalles;
+  private List<MfCotizacionDetalle> detalles;
 
-  @Transient private MfRecibos recibos;
-
-  public MfFactura(int i) {
+  public MfCotizacion(int i) {
     super(i);
   }
 
-  public MfFactura() {
+  public MfCotizacion() {
     super();
   }
 
