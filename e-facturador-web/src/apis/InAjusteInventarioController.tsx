@@ -11,7 +11,8 @@ export interface InAjusteDetalleRequest {
 
 export interface InAjusteInventarioRequest {
     almacenId: number;
-    observacion: string;
+    movimientoTipoId: number;
+    observacion?: string;
     detalles: InAjusteDetalleRequest[];
 }
 
@@ -20,9 +21,28 @@ export interface InAjusteInventarioResumenDTO {
     fechaReg: string;
     almacenId: number;
     estadoId: string;
+    movimientoTipoNombre: string;
     observacion: string;
     usuarioReg: string;
     totalLineas: number;
+}
+
+export interface InAjusteInventarioSearchCriteria {
+    fechaInicio?: string;
+    fechaFin?: string;
+    usuarioReg?: string;
+    estadoId?: string;
+    movimientoTipoId?: number;
+    page?: number;
+    size?: number;
+}
+
+export interface PageResponse<T> {
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
 }
 
 export interface InAjusteInventarioDetalle {
@@ -52,10 +72,13 @@ export interface InStockActualDTO {
     cantidad: number;
 }
 
-export async function aplicarAjuste(
-    request: InAjusteInventarioRequest
-): Promise<InAjusteInventario> {
+export async function aplicarAjuste(request: InAjusteInventarioRequest): Promise<InAjusteInventario> {
     const res = await apiClient.post(`${BASE}/aplicar`, request);
+    return res.data;
+}
+
+export async function buscarAjustes(criteria: InAjusteInventarioSearchCriteria): Promise<PageResponse<InAjusteInventarioResumenDTO>> {
+    const res = await apiClient.post(`${BASE}/buscar`, criteria);
     return res.data;
 }
 
@@ -64,29 +87,19 @@ export async function getAjuste(id: number): Promise<InAjusteInventario> {
     return res.data;
 }
 
-export async function getHistorialAjustes(
-    almacenId: number
-): Promise<InAjusteInventarioResumenDTO[]> {
+export async function getHistorialAjustes(almacenId: number): Promise<InAjusteInventarioResumenDTO[]> {
     const res = await apiClient.get(`${BASE}/historial`, { params: { almacenId } });
     return res.data;
 }
 
-export async function getStockActual(
-    productoId: number,
-    almacenId: number,
-    lote?: string
-): Promise<InStockActualDTO> {
+export async function getStockActual(productoId: number, almacenId: number, lote?: string): Promise<InStockActualDTO> {
     const res = await apiClient.get(`${BASE}/stock`, {
         params: { productoId, almacenId, lote: lote || undefined },
     });
     return res.data;
 }
 
-/** Lotes con stock > 0 para un producto en un almacén. null en la lista = sin lote. */
-export async function getLotesDisponibles(
-    productoId: number,
-    almacenId: number
-): Promise<(string | null)[]> {
+export async function getLotesDisponibles(productoId: number, almacenId: number): Promise<(string | null)[]> {
     const res = await apiClient.get(`${BASE}/lotes`, { params: { productoId, almacenId } });
     return res.data;
 }

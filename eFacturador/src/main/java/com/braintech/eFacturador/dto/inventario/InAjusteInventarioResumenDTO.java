@@ -13,6 +13,7 @@ public class InAjusteInventarioResumenDTO {
   private LocalDateTime fechaReg;
   private Integer almacenId;
   private String estadoId;
+  private String movimientoTipoNombre;
   private String observacion;
   private String usuarioReg;
   private Integer totalLineas;

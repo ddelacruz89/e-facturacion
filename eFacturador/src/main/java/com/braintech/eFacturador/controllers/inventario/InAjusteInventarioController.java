@@ -2,11 +2,13 @@ package com.braintech.eFacturador.controllers.inventario;
 
 import com.braintech.eFacturador.dto.inventario.InAjusteInventarioRequestDTO;
 import com.braintech.eFacturador.dto.inventario.InAjusteInventarioResumenDTO;
+import com.braintech.eFacturador.dto.inventario.InAjusteInventarioSearchCriteria;
 import com.braintech.eFacturador.dto.inventario.InStockActualDTO;
 import com.braintech.eFacturador.interfaces.inventario.InAjusteInventarioService;
 import com.braintech.eFacturador.jpa.inventario.InAjusteInventario;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,6 +27,13 @@ public class InAjusteInventarioController {
   public ResponseEntity<InAjusteInventario> aplicar(
       @RequestBody InAjusteInventarioRequestDTO request) {
     return ResponseEntity.ok(ajusteService.aplicar(request));
+  }
+
+  /** POST /buscar — Búsqueda paginada con filtros: fecha, usuario, estado, motivo. */
+  @PostMapping("/buscar")
+  public ResponseEntity<Page<InAjusteInventarioResumenDTO>> buscar(
+      @RequestBody InAjusteInventarioSearchCriteria criteria) {
+    return ResponseEntity.ok(ajusteService.buscar(criteria));
   }
 
   /** GET /{id} — Obtiene un ajuste completo con sus detalles. */

@@ -28,4 +28,9 @@ public class InMovimientoTipoServiceImpl implements InMovimientoTipoService {
   public List<InMovimientoTipo> findByCr(Boolean cr) {
     return tipoRepository.findByCrOrderByTipoMovimientoAsc(cr);
   }
+
+  @Override
+  public List<InMovimientoTipo> findByModulo(String modulo) {
+    return tipoRepository.findByModulo(modulo);
+  }
 }

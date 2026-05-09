@@ -27,4 +27,13 @@ public class InMovimientoTipoController {
   public ResponseEntity<List<InMovimientoTipo>> getByCr(@RequestParam Boolean cr) {
     return ResponseEntity.ok(tipoService.findByCr(cr));
   }
+
+  /**
+   * GET /por-modulo?modulo=AI — tipos cuyo campo modulo contiene el código dado como segmento.
+   * Soporta valores compuestos como "AI-OE-OC".
+   */
+  @GetMapping("/por-modulo")
+  public ResponseEntity<List<InMovimientoTipo>> getByModulo(@RequestParam String modulo) {
+    return ResponseEntity.ok(tipoService.findByModulo(modulo));
+  }
 }

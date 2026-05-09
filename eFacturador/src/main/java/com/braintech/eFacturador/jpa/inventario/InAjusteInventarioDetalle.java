@@ -32,13 +32,13 @@ public class InAjusteInventarioDetalle implements Serializable {
 
   @Column(name = "cantidad_actual", nullable = false)
   @Comment("Snapshot del stock al momento de crear el ajuste")
-  private Double cantidadActual;
+  private Integer cantidadActual;
 
   @Column(name = "cantidad_nueva", nullable = false)
   @Comment("Stock objetivo tras aplicar el ajuste")
-  private Double cantidadNueva;
+  private Integer cantidadNueva;
 
   @Column(name = "diferencia", nullable = false)
   @Comment("cantidadNueva - cantidadActual; positivo = entrada, negativo = salida")
-  private Double diferencia;
+  private Integer diferencia;
 }

@@ -66,7 +66,7 @@ public class InMovimiento extends BaseSucursal implements Serializable {
 
   @Column(name = "cantidad", nullable = false)
   @Comment("Unidades movidas (positivo = entrada, negativo = salida)")
-  private Double cantidad;
+  private Integer cantidad;
 
   @Column(name = "cantidad_inventario")
   @Comment("Stock del producto en el almacén DESPUÉS de aplicar este movimiento")

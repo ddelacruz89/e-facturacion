@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 public class InLoteStockDTO {
   private Integer almacenId;
   private String almacenNombre;
-  private Double cantidad;
+  private Integer cantidad;
 }

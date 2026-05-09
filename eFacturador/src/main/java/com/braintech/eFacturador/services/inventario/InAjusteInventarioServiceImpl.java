@@ -2,12 +2,15 @@ package com.braintech.eFacturador.services.inventario;
 
 import com.braintech.eFacturador.dao.inventario.InAjusteInventarioDao;
 import com.braintech.eFacturador.dao.inventario.InInventarioRepository;
+import com.braintech.eFacturador.dao.inventario.InMovimientoTipoRepository;
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
 import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.dto.inventario.InAjusteInventarioDetalleRequestDTO;
 import com.braintech.eFacturador.dto.inventario.InAjusteInventarioRequestDTO;
 import com.braintech.eFacturador.dto.inventario.InAjusteInventarioResumenDTO;
+import com.braintech.eFacturador.dto.inventario.InAjusteInventarioSearchCriteria;
 import com.braintech.eFacturador.dto.inventario.InStockActualDTO;
+import com.braintech.eFacturador.exceptions.ApplicationException;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.inventario.InAjusteInventarioService;
 import com.braintech.eFacturador.interfaces.inventario.InMovimientoService;
@@ -15,6 +18,7 @@ import com.braintech.eFacturador.jpa.inventario.InAjusteInventario;
 import com.braintech.eFacturador.jpa.inventario.InAjusteInventarioDetalle;
 import com.braintech.eFacturador.jpa.inventario.InInventario;
 import com.braintech.eFacturador.jpa.inventario.InMovimiento;
+import com.braintech.eFacturador.jpa.inventario.InMovimientoTipo;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.util.TenantContext;
@@ -22,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +34,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class InAjusteInventarioServiceImpl implements InAjusteInventarioService {
 
-  /** ID del tipo de movimiento "Ajuste" en la tabla in_tipos_movimientos. */
-  private static final Integer TIPO_MOV_AJUSTE = 3;
+  /** ID de fallback para el tipo de movimiento cuando el request no lo especifica. */
+  private static final Integer TIPO_MOV_AJUSTE_DEFAULT = 3;
 
   private final InAjusteInventarioDao ajusteDao;
   private final InInventarioRepository inventarioRepository;
+  private final InMovimientoTipoRepository movimientoTipoRepository;
   private final InMovimientoService movimientoService;
   private final MgProductoRepository productoRepository;
   private final SgSucursalRepository sucursalRepository;
@@ -58,8 +64,21 @@ public class InAjusteInventarioServiceImpl implements InAjusteInventarioService 
     ajuste.setUsuarioReg(username);
     ajuste.setFechaReg(LocalDateTime.now());
     ajuste.setAlmacenId(request.getAlmacenId());
+    Integer tipoId =
+        request.getMovimientoTipoId() != null
+            ? request.getMovimientoTipoId()
+            : TIPO_MOV_AJUSTE_DEFAULT;
+    ajuste.setMovimientoTipoId(tipoId);
     ajuste.setObservacion(request.getObservacion());
     ajuste.setEstadoId("APL");
+
+    // ── Validar dirección según cr del tipo de movimiento ────────────────────
+    InMovimientoTipo tipo =
+        movimientoTipoRepository
+            .findById(tipoId)
+            .orElseThrow(
+                () -> new RecordNotFoundException("Tipo de movimiento no encontrado: " + tipoId));
+    boolean cr = Boolean.TRUE.equals(tipo.getCr());
 
     // ── Construir detalles y aplicar cambios de inventario ───────────────────
     List<InAjusteInventarioDetalle> detalles = new ArrayList<>();
@@ -80,12 +99,40 @@ public class InAjusteInventarioServiceImpl implements InAjusteInventarioService 
                               + " lote="
                               + dto.getLote()));
 
-      double cantidadActual = inv.getCantidad() != null ? inv.getCantidad() : 0.0;
-      double diferencia = dto.getCantidadNueva() - cantidadActual;
+      int cantidadActual = inv.getCantidad() != null ? inv.getCantidad() : 0;
+      int diferencia = dto.getCantidadNueva() - cantidadActual;
 
-      // Actualizar stock
-      inv.setCantidad(dto.getCantidadNueva());
-      inventarioRepository.save(inv);
+      // Validar dirección según cr:
+      //   cr=true  (crédito/entrada) → diferencia debe ser >= 0 (solo aumentar)
+      //   cr=false (débito/salida)   → diferencia debe ser <= 0 (solo reducir)
+      if (cr && diferencia < 0) {
+        throw new ApplicationException(
+            "El motivo '"
+                + tipo.getTipoMovimiento()
+                + "' solo permite aumentar el stock. "
+                + "Producto ID "
+                + dto.getProductoId()
+                + ": stock actual="
+                + cantidadActual
+                + ", nuevo="
+                + dto.getCantidadNueva());
+      }
+      if (!cr && diferencia > 0) {
+        throw new ApplicationException(
+            "El motivo '"
+                + tipo.getTipoMovimiento()
+                + "' solo permite reducir el stock. "
+                + "Producto ID "
+                + dto.getProductoId()
+                + ": stock actual="
+                + cantidadActual
+                + ", nuevo="
+                + dto.getCantidadNueva());
+      }
+
+      // in_inventarios NO se actualiza aquí.
+      // El trigger trg_actualiza_inventario (BEFORE INSERT en in_movimientos)
+      // lo hace atómicamente y calcula cantidad_inventario en la fila del movimiento.
 
       // Detalle del ajuste
       InAjusteInventarioDetalle detalle = new InAjusteInventarioDetalle();
@@ -97,14 +144,13 @@ public class InAjusteInventarioServiceImpl implements InAjusteInventarioService 
       detalle.setDiferencia(diferencia);
       detalles.add(detalle);
 
-      // Movimiento de inventario
+      // Movimiento de inventario — el trigger asigna cantidad_inventario
       InMovimiento mov = new InMovimiento();
-      mov.setTipoMovimientoId(TIPO_MOV_AJUSTE);
+      mov.setTipoMovimientoId(ajuste.getMovimientoTipoId());
       mov.setAlmacenId(request.getAlmacenId());
       mov.setProductoId(dto.getProductoId());
       mov.setLote(dto.getLote());
-      mov.setCantidad(diferencia);
-      mov.setCantidadInventario(dto.getCantidadNueva().intValue());
+      mov.setCantidad(diferencia); // delta firmado; trigger normaliza signo con cr
       mov.setObservacion(request.getObservacion());
       movimientos.add(mov);
     }
@@ -118,6 +164,13 @@ public class InAjusteInventarioServiceImpl implements InAjusteInventarioService 
     movimientoService.registrarTodos(movimientos);
 
     return saved;
+  }
+
+  @Override
+  public Page<InAjusteInventarioResumenDTO> buscar(InAjusteInventarioSearchCriteria criteria) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Integer sucursalId = tenantContext.getCurrentSucursalId();
+    return ajusteDao.buscar(criteria, empresaId, sucursalId);
   }
 
   @Override
@@ -152,7 +205,7 @@ public class InAjusteInventarioServiceImpl implements InAjusteInventarioService 
             .orElseThrow(
                 () -> new RecordNotFoundException("Producto no encontrado: " + productoId));
 
-    double cantidad = (inv != null && inv.getCantidad() != null) ? inv.getCantidad() : 0.0;
+    int cantidad = (inv != null && inv.getCantidad() != null) ? inv.getCantidad() : 0;
 
     return new InStockActualDTO(
         productoId, producto.getNombreProducto(), almacenId, lote, cantidad);

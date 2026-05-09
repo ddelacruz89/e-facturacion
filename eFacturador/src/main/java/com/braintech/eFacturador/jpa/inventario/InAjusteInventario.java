@@ -25,8 +25,12 @@ public class InAjusteInventario extends BaseSucursal implements Serializable {
   @Comment("Almacén sobre el que aplica el ajuste")
   private Integer almacenId;
 
+  @Column(name = "movimiento_tipo_id")
+  @Comment("FK a in_movimientos_tipos — tipo de ajuste seleccionado por el usuario")
+  private Integer movimientoTipoId;
+
   @Column(name = "observacion", length = 500)
-  @Comment("Motivo del ajuste (requerido)")
+  @Comment("Motivo libre del ajuste (opcional)")
   private String observacion;
 
   @Column(name = "estado_id", length = 3, nullable = false)

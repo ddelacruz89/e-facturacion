@@ -21,7 +21,7 @@ public class InInventario extends BaseSucursal implements Serializable {
   @Basic(optional = false)
   private Integer id;
 
-  private Double cantidad;
+  private Integer cantidad;
 
   @JoinColumn(name = "almacen_id")
   @ManyToOne(optional = false)

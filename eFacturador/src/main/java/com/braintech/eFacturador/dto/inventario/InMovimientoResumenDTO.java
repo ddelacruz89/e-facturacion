@@ -22,7 +22,7 @@ public class InMovimientoResumenDTO {
   private Integer productoId;
   private String productoNombre;
   private String lote;
-  private Double cantidad;
+  private Integer cantidad;
   private Integer cantidadInventario;
   private BigDecimal precioUnitario;
   private BigDecimal costoTotal;

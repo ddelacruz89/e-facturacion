@@ -204,7 +204,7 @@ public class InTransferenciaServiceImpl implements InTransferenciaService {
     return inInventarioRepository
         .findByProductoAndAlmacen(productoId, almacenId, empresaId, sucursalId)
         .map(InInventario::getCantidad)
-        .orElse(0.0);
+        .orElse(0);
   }
 
   private InAlmacen resolveAlmacen(Integer almacenId, Integer empresaId, String nombre) {

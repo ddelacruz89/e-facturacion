@@ -13,5 +13,5 @@ public class InStockActualDTO {
   private String productoNombre;
   private Integer almacenId;
   private String lote;
-  private Double cantidad;
+  private Integer cantidad;
 }

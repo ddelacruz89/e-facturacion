@@ -2,9 +2,11 @@ package com.braintech.eFacturador.interfaces.inventario;
 
 import com.braintech.eFacturador.dto.inventario.InAjusteInventarioRequestDTO;
 import com.braintech.eFacturador.dto.inventario.InAjusteInventarioResumenDTO;
+import com.braintech.eFacturador.dto.inventario.InAjusteInventarioSearchCriteria;
 import com.braintech.eFacturador.dto.inventario.InStockActualDTO;
 import com.braintech.eFacturador.jpa.inventario.InAjusteInventario;
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface InAjusteInventarioService {
 
@@ -16,6 +18,9 @@ public interface InAjusteInventarioService {
 
   /** Lista el historial de ajustes de un almacén específico. */
   List<InAjusteInventarioResumenDTO> findByAlmacen(Integer almacenId);
+
+  /** Búsqueda paginada con filtros: fecha, usuario, estado, motivo. */
+  Page<InAjusteInventarioResumenDTO> buscar(InAjusteInventarioSearchCriteria criteria);
 
   /** Consulta el stock actual de un producto/lote en un almacén. */
   InStockActualDTO getStockActual(Integer productoId, Integer almacenId, String lote);

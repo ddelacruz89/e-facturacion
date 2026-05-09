@@ -8,8 +8,8 @@ public class InAjusteInventarioDetalleRequestDTO {
   private String lote;
 
   /** Stock actual que el frontend leyó antes de enviar (para auditoría). */
-  private Double cantidadActual;
+  private Integer cantidadActual;
 
   /** Nuevo stock deseado. */
-  private Double cantidadNueva;
+  private Integer cantidadNueva;
 }

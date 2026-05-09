@@ -4,6 +4,7 @@ import com.braintech.eFacturador.dao.inventario.InMovimientoDao;
 import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.dto.inventario.InMovimientoResumenDTO;
 import com.braintech.eFacturador.dto.inventario.InMovimientoSearchCriteria;
+import com.braintech.eFacturador.events.InStockBajoEvent;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.inventario.InMovimientoService;
 import com.braintech.eFacturador.jpa.inventario.InMovimiento;
@@ -12,6 +13,7 @@ import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,12 +25,26 @@ public class InMovimientoServiceImpl implements InMovimientoService {
   private final InMovimientoDao movimientoDao;
   private final SgSucursalRepository sucursalRepository;
   private final TenantContext tenantContext;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
   public InMovimiento registrar(InMovimiento movimiento) {
     stampTenant(movimiento);
-    return movimientoDao.save(movimiento);
+    InMovimiento saved = movimientoDao.save(movimiento);
+
+    // Publicar evento de stock (procesado async por InAlertaInventarioListener)
+    if (saved.getAlmacenId() != null && saved.getProductoId() != null) {
+      eventPublisher.publishEvent(
+          new InStockBajoEvent(
+              this,
+              saved.getProductoId(),
+              saved.getAlmacenId(),
+              saved.getEmpresaId(),
+              saved.getSucursalId() != null ? saved.getSucursalId().getId() : null,
+              saved.getCantidadInventario()));
+    }
+    return saved;
   }
 
   @Override
@@ -51,6 +67,20 @@ public class InMovimientoServiceImpl implements InMovimientoService {
       m.setFechaReg(now);
     }
     movimientoDao.saveAll(movimientos);
+
+    // Publicar eventos de stock (procesados async por InAlertaInventarioListener)
+    for (InMovimiento m : movimientos) {
+      if (m.getAlmacenId() != null && m.getProductoId() != null) {
+        eventPublisher.publishEvent(
+            new InStockBajoEvent(
+                this,
+                m.getProductoId(),
+                m.getAlmacenId(),
+                empresaId,
+                sucursalId,
+                m.getCantidadInventario()));
+      }
+    }
   }
 
   @Override

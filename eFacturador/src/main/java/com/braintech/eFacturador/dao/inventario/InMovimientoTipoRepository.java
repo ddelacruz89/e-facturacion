@@ -13,9 +13,9 @@ public interface InMovimientoTipoRepository extends JpaRepository<InMovimientoTi
   List<InMovimientoTipo> findByCrOrderByTipoMovimientoAsc(Boolean cr);
 
   /**
-   * Filtra por módulo. El campo {@code modulo} puede contener múltiples códigos separados por
-   * guión (ej. {@code "AI-OE-OC"}). Se busca el código como segmento exacto envolviendo el campo
-   * con guiones para evitar coincidencias parciales (ej. "AI" no coincide con "MAIN").
+   * Filtra por módulo. El campo {@code modulo} puede contener múltiples códigos separados por guión
+   * (ej. {@code "AI-OE-OC"}). Se busca el código como segmento exacto envolviendo el campo con
+   * guiones para evitar coincidencias parciales (ej. "AI" no coincide con "MAIN").
    */
   @Query(
       "SELECT t FROM InMovimientoTipo t "
