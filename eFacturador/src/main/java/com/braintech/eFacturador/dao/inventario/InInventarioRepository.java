@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.dao.inventario;
 
 import com.braintech.eFacturador.dto.inventario.InLoteStockDTO;
+import com.braintech.eFacturador.dto.inventario.InLoteStockItemDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.jpa.inventario.InInventario;
 import java.util.List;
@@ -63,6 +64,26 @@ public interface InInventarioRepository extends JpaRepository<InInventario, Inte
           + "AND i.sucursalId.id = :sucursalId "
           + "AND i.cantidad > 0")
   List<String> findLotesByProductoAndAlmacen(
+      @Param("productoId") Integer productoId,
+      @Param("almacenId") Integer almacenId,
+      @Param("empresaId") Integer empresaId,
+      @Param("sucursalId") Integer sucursalId);
+
+  /**
+   * Todos los registros de inventario con stock > 0 para un producto en un almacén, desglosados por
+   * lote. Usado para construir el dropdown de lotes en transferencias.
+   */
+  @Query(
+      "SELECT new com.braintech.eFacturador.dto.inventario.InLoteStockItemDTO("
+          + "i.loteId, i.cantidad) "
+          + "FROM InInventario i "
+          + "WHERE i.productoId.id = :productoId "
+          + "AND i.almacenId.id = :almacenId "
+          + "AND i.empresaId = :empresaId "
+          + "AND i.sucursalId.id = :sucursalId "
+          + "AND i.cantidad > 0 "
+          + "ORDER BY i.loteId ASC NULLS FIRST")
+  List<InLoteStockItemDTO> findLotesConStockByProductoAndAlmacen(
       @Param("productoId") Integer productoId,
       @Param("almacenId") Integer almacenId,
       @Param("empresaId") Integer empresaId,

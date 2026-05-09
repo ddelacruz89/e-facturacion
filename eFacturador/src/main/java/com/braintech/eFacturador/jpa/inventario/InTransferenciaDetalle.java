@@ -26,12 +26,20 @@ public class InTransferenciaDetalle implements Serializable {
 
   @JoinColumn(name = "producto_id", referencedColumnName = "id")
   @ManyToOne(optional = false)
-  @NotNull(message = "Producto no debe estar vacío")
+  @NotNull(message = "Producto no debe estar vacio")
   private MgProducto productoId;
 
+  /** Cantidad realmente transferida al momento de guardar (puede ser menor que cantSolicitada). */
   @Column(name = "cant")
-  @NotNull(message = "Cantidad no debe estar vacía")
+  @NotNull(message = "Cantidad no debe estar vacia")
   private Integer cant;
+
+  /**
+   * Cantidad que el usuario solicito transferir. Se registra para mostrar la diferencia cuando el
+   * stock disponible al guardar era menor al solicitado.
+   */
+  @Column(name = "cant_solicitada")
+  private Integer cantSolicitada;
 
   @Column(name = "lote")
   private String lote;

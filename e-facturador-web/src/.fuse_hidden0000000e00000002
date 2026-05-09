@@ -137,7 +137,7 @@ const HomeView = () => {
                 <Outlet />
             </div>
             <div className="foot">
-                <img src={logo} alt="Braintech" style={{ height: "40px" }} />
+                <img src={logo} alt="Mi Logo" width="125" />{" "}
             </div>
         </div>
     );

@@ -2,6 +2,7 @@ package com.braintech.eFacturador.jpa.producto;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -47,6 +48,7 @@ public class MgProductoUnidadSuplidor extends BaseEntity {
   @JsonBackReference
   private MgProducto productoId;
 
+  @JsonIgnore // LAZY — no se necesita en respuestas JSON; evita LazyInitializationException
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "producto_suplidor_id", referencedColumnName = "id")
   private List<MgProductoSuplidor> productosSuplidores;

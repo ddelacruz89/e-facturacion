@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.controllers.inventario;
 
+import com.braintech.eFacturador.dto.inventario.InProductoLotesStockDTO;
 import com.braintech.eFacturador.dto.inventario.InTransferenciaRequestDTO;
 import com.braintech.eFacturador.interfaces.inventario.InTransferenciaService;
 import com.braintech.eFacturador.models.Response;
@@ -45,10 +46,22 @@ public class InTransferenciaController {
     return ResponseEntity.ok(inTransferenciaService.disable(id));
   }
 
+  /** GET /stock?productoId=X&almacenId=Y — Stock total del producto en el almacén. */
   @GetMapping("/stock")
   public ResponseEntity<Response<?>> getStock(
       @RequestParam Integer productoId, @RequestParam Integer almacenId) {
     return ResponseEntity.ok(
         inTransferenciaService.getStockProductoEnAlmacen(productoId, almacenId));
+  }
+
+  /**
+   * GET /lotes-stock?productoId=X&almacenId=Y — Stock desglosado por lote. Devuelve totalDisponible
+   * + lista de lotes con su cantidad individual (solo los que tienen stock > 0).
+   */
+  @GetMapping("/lotes-stock")
+  public ResponseEntity<InProductoLotesStockDTO> getLotesStock(
+      @RequestParam Integer productoId, @RequestParam Integer almacenId) {
+    return ResponseEntity.ok(
+        inTransferenciaService.getLotesConStockEnAlmacen(productoId, almacenId));
   }
 }

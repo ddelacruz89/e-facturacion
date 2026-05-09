@@ -1,7 +1,10 @@
 export interface InTransferenciaDetalle {
     id?: number;
     productoId: number | { id: number; nombreProducto: string; [key: string]: any };
+    /** Cantidad realmente transferida (puede ser menor que cantSolicitada si habia stock insuficiente). */
     cant: number;
+    /** Cantidad que el usuario solicito transferir originalmente. */
+    cantSolicitada?: number;
     lote?: string;
     numeroReferencia?: number;
     cantidadUnidad?: number;

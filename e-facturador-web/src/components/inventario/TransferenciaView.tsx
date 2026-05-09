@@ -15,6 +15,15 @@ import {
     Paper,
     Chip,
     Tooltip,
+    Select,
+    MenuItem,
+    FormControl,
+    CircularProgress,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -34,15 +43,21 @@ import {
     updateTransferencia,
     getTransferencias,
     anularTransferencia,
-    getStockProductoEnAlmacen,
+    getLotesConStockEnAlmacen,
+    InProductoLotesStock,
 } from "../../apis/TransferenciaController";
 
-// ── tipos internos del formulario ────────────────────────────────────────────
+// ── SIN_LOTE sentinel ────────────────────────────────────────────────────────
+// El backend devuelve lote=null cuando el stock no tiene lote asignado.
+// En el Select de MUI usamos "" para representar ese caso.
+const SIN_LOTE = "";
+
+// ── tipos internos ────────────────────────────────────────────────────────────
 
 interface DetalleForm {
     productoId: any;
     cant: number;
-    lote?: string;
+    lote: string;            // "" = sin lote
     cantidadUnidad?: number;
     unidadDescripcion?: string;
 }
@@ -63,14 +78,10 @@ const initialForm: TransferenciaForm = {
 };
 
 const estadoColor: Record<string, "default" | "warning" | "success" | "error"> = {
-    PEN: "warning",
-    APR: "success",
-    INA: "error",
+    PEN: "warning", APR: "success", INA: "error",
 };
 const estadoLabel: Record<string, string> = {
-    PEN: "Pendiente",
-    APR: "Aprobada",
-    INA: "Anulada",
+    PEN: "Pendiente", APR: "Aprobada", INA: "Anulada",
 };
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -80,30 +91,39 @@ const nombreProducto = (p: any) => {
     if (typeof p === "object") return p.nombreProducto ?? p.nombre ?? `ID: ${p.id}`;
     return `ID: ${p}`;
 };
-
 const nombreAlmacen = (a: any) => {
     if (!a) return "—";
     if (typeof a === "object") return a.nombre ?? `ID: ${a.id}`;
     return `ID: ${a}`;
 };
+const getAlmacenId = (raw: any): number | undefined => {
+    if (!raw) return undefined;
+    if (typeof raw === "object") return raw?.id ?? raw?.value;
+    return raw;
+};
+const getProductoId = (raw: any): number | undefined => {
+    if (!raw) return undefined;
+    if (typeof raw === "object") return raw?.id;
+    return raw;
+};
 
-// ── componente principal ──────────────────────────────────────────────────────
+// ── componente ────────────────────────────────────────────────────────────────
 
 export const TransferenciaView: React.FC = () => {
     const [transferencias, setTransferencias] = useState<InTransferencia[]>([]);
     const [listLoaded, setListLoaded] = useState(false);
     const [showList, setShowList] = useState(false);
-
-    // índice de la fila cuyo producto se está buscando
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [partialWarnings, setPartialWarnings] = useState<{ nombre: string; solicitado: number; transferido: number }[]>([]);
     const [activeDetalleIndex, setActiveDetalleIndex] = useState<number | null>(null);
 
-    // stock disponible por índice de fila: { [rowIndex]: cantidad }
-    const [stockMap, setStockMap] = useState<Record<number, number>>({});
+    // Por índice de fila: stock desglosado por lote
+    const [lotesMap, setLotesMap] = useState<Record<number, InProductoLotesStock>>({});
+    // Loading por fila
+    const [loadingLotes, setLoadingLotes] = useState<Record<number, boolean>>({});
 
     const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: "success" | "error" | "warning" | "info";
+        open: boolean; message: string; severity: "success" | "error" | "warning" | "info";
     }>({ open: false, message: "", severity: "info" });
 
     const productoSearch = useModalSearch();
@@ -111,10 +131,7 @@ export const TransferenciaView: React.FC = () => {
     const { control, handleSubmit, watch, setValue, reset } = useForm<TransferenciaForm>({
         defaultValues: initialForm,
     });
-
     const { fields, append, remove } = useFieldArray({ control, name: "detalles" });
-
-    // ── snackbar ──────────────────────────────────────────────────────────────
 
     const showMsg = (message: string, severity: "success" | "error" | "warning" | "info") =>
         setSnackbar({ open: true, message, severity });
@@ -141,15 +158,43 @@ export const TransferenciaView: React.FC = () => {
             detalles: (t.detalles ?? []).map((d) => ({
                 productoId: d.productoId,
                 cant: d.cant,
-                lote: d.lote ?? "",
+                lote: d.lote ?? SIN_LOTE,
                 cantidadUnidad: d.cantidadUnidad,
                 unidadDescripcion: d.unidadDescripcion ?? "",
             })),
         });
+        setLotesMap({});
         setShowList(false);
     };
 
-    // ── búsqueda de producto por fila ─────────────────────────────────────────
+    // ── carga de lotes para una fila ──────────────────────────────────────────
+
+    const cargarLotes = async (index: number, productoId: number, almacenId: number) => {
+        setLoadingLotes((prev) => ({ ...prev, [index]: true }));
+        try {
+            const result = await getLotesConStockEnAlmacen(productoId, almacenId);
+            setLotesMap((prev) => ({ ...prev, [index]: result }));
+            // Seleccionar el primer lote disponible automáticamente
+            if (result.lotes.length > 0) {
+                const primerLote = result.lotes[0].lote ?? SIN_LOTE;
+                setValue(`detalles.${index}.lote`, primerLote);
+            }
+            // Auto-poblar unidad desde info del producto
+            if (result.unidadNombre) {
+                setValue(`detalles.${index}.cantidadUnidad`, result.cantidadUnidad ?? 1);
+                const desc = result.esFraccionario
+                    ? `${result.unidadNombre} x${result.cantidadUnidad} ${result.unidadFraccionSigla ?? ""}`.trim()
+                    : (result.unidadNombre ?? "");
+                setValue(`detalles.${index}.unidadDescripcion`, desc);
+            }
+        } catch {
+            // silencioso
+        } finally {
+            setLoadingLotes((prev) => ({ ...prev, [index]: false }));
+        }
+    };
+
+    // ── búsqueda de producto ──────────────────────────────────────────────────
 
     const handleOpenProductSearch = (index: number) => {
         setActiveDetalleIndex(index);
@@ -157,68 +202,82 @@ export const TransferenciaView: React.FC = () => {
     };
 
     const handleProductoSelect = productoSearch.handleSelect(async (producto: any) => {
-        if (activeDetalleIndex !== null) {
-            setValue(`detalles.${activeDetalleIndex}.productoId`, producto);
+        if (activeDetalleIndex === null) return;
+        setValue(`detalles.${activeDetalleIndex}.productoId`, producto);
+        setValue(`detalles.${activeDetalleIndex}.lote`, SIN_LOTE);
 
-            // intentar obtener stock si ya hay almacén origen seleccionado
-            const origenRaw = watch("origenAlmacenId");
-            const origenId =
-                typeof origenRaw === "object" ? origenRaw?.id ?? origenRaw?.value : origenRaw;
-            const productoId = typeof producto === "object" ? producto?.id : producto;
+        const origenId = getAlmacenId(watch("origenAlmacenId"));
+        const productoId = getProductoId(producto);
 
-            if (origenId && productoId) {
-                try {
-                    const result = await getStockProductoEnAlmacen(productoId, origenId);
-                    setStockMap((prev) => ({ ...prev, [activeDetalleIndex]: result.cantidad }));
-                } catch {
-                    // silencioso: si falla no bloqueamos la selección
-                }
-            }
-
-            setActiveDetalleIndex(null);
+        if (origenId && productoId) {
+            await cargarLotes(activeDetalleIndex, productoId, origenId);
         }
+        setActiveDetalleIndex(null);
     });
 
     // ── agregar detalle ───────────────────────────────────────────────────────
 
     const addDetalle = () => {
-        append({ productoId: undefined, cant: 1, lote: "", cantidadUnidad: undefined, unidadDescripcion: "" });
+        append({ productoId: undefined, cant: 1, lote: SIN_LOTE, cantidadUnidad: undefined, unidadDescripcion: "" });
+    };
+
+    // ── cuando cambia el almacén origen, recargar lotes de todas las filas ────
+
+    const handleOrigenChange = async (newOrigenRaw: any) => {
+        const origenId = getAlmacenId(newOrigenRaw);
+        if (!origenId) return;
+        const detalles = watch("detalles");
+        const updates: Record<number, InProductoLotesStock> = {};
+        for (let i = 0; i < detalles.length; i++) {
+            const productoId = getProductoId(detalles[i].productoId);
+            if (productoId) {
+                try {
+                    updates[i] = await getLotesConStockEnAlmacen(productoId, origenId);
+                } catch { /* silencioso */ }
+            }
+        }
+        setLotesMap(updates);
+    };
+
+    // ── stock del lote seleccionado en una fila ───────────────────────────────
+
+    const getStockLoteSeleccionado = (index: number): number | undefined => {
+        const info = lotesMap[index];
+        if (!info) return undefined;
+        const loteActual = watch(`detalles.${index}.lote`) ?? SIN_LOTE;
+        const item = info.lotes.find((l) => (l.lote ?? SIN_LOTE) === loteActual);
+        return item?.cantidad;
     };
 
     // ── submit ────────────────────────────────────────────────────────────────
 
+    // Abre el dialogo de confirmacion de stock antes de guardar
+    const handleGuardarClick = () => {
+        handleSubmit((data) => {
+            const origenId = getAlmacenId(data.origenAlmacenId);
+            const destinoId = getAlmacenId(data.destinoAlmacenId);
+            if (!origenId || !destinoId) { showMsg("Seleccione almacen origen y destino", "warning"); return; }
+            if (origenId === destinoId) { showMsg("El almacen origen y destino no pueden ser el mismo", "warning"); return; }
+            if (data.detalles.length === 0) { showMsg("Agregue al menos un producto al detalle", "warning"); return; }
+            setConfirmOpen(true);
+        })();
+    };
+
     const onSubmit: SubmitHandler<TransferenciaForm> = async (data) => {
-        const origenId =
-            typeof data.origenAlmacenId === "object"
-                ? data.origenAlmacenId?.id ?? data.origenAlmacenId?.value
-                : data.origenAlmacenId;
-        const destinoId =
-            typeof data.destinoAlmacenId === "object"
-                ? data.destinoAlmacenId?.id ?? data.destinoAlmacenId?.value
-                : data.destinoAlmacenId;
+        const origenId = getAlmacenId(data.origenAlmacenId);
+        const destinoId = getAlmacenId(data.destinoAlmacenId);
 
-        if (!origenId || !destinoId) {
-            showMsg("Seleccione almacén origen y destino", "warning");
-            return;
-        }
-        if (origenId === destinoId) {
-            showMsg("El almacén origen y destino no pueden ser el mismo", "warning");
-            return;
-        }
-        if (data.detalles.length === 0) {
-            showMsg("Agregue al menos un producto al detalle", "warning");
-            return;
-        }
+        if (!origenId || !destinoId) { showMsg("Seleccione almacén origen y destino", "warning"); return; }
+        if (origenId === destinoId) { showMsg("El almacén origen y destino no pueden ser el mismo", "warning"); return; }
+        if (data.detalles.length === 0) { showMsg("Agregue al menos un producto al detalle", "warning"); return; }
 
-        // validación de stock en frontend (usando stockMap cargado al seleccionar producto)
+        // Validar stock por lote
         for (let i = 0; i < data.detalles.length; i++) {
-            const disponible = stockMap[i];
-            if (disponible !== undefined && data.detalles[i].cant > disponible) {
+            const stockLote = getStockLoteSeleccionado(i);
+            if (stockLote !== undefined && data.detalles[i].cant > stockLote) {
                 const nombre = nombreProducto(data.detalles[i].productoId);
-                showMsg(
-                    `Stock insuficiente para "${nombre}": disponible ${disponible}, solicitado ${data.detalles[i].cant}`,
-                    "error"
-                );
+                const lote = data.detalles[i].lote || "Sin lote";
+                showMsg(`Stock insuficiente para "${nombre}" (${lote}): disponible ${stockLote}, solicitado ${data.detalles[i].cant}`, "error");
                 return;
             }
         }
@@ -230,22 +289,36 @@ export const TransferenciaView: React.FC = () => {
             detalles: data.detalles.map((d) => ({
                 productoId: typeof d.productoId === "object" ? d.productoId?.id : d.productoId,
                 cant: d.cant,
-                lote: d.lote,
+                lote: d.lote || undefined,
                 cantidadUnidad: d.cantidadUnidad,
                 unidadDescripcion: d.unidadDescripcion,
             })),
         };
 
         try {
+            let result: any;
             if (data.id) {
-                await updateTransferencia(data.id, payload);
+                result = await updateTransferencia(data.id, payload);
                 showMsg("Transferencia actualizada correctamente", "success");
             } else {
-                await createTransferencia(payload);
+                result = await createTransferencia(payload);
                 showMsg("Transferencia creada correctamente", "success");
             }
+            // Detectar items transferidos parcialmente (stock insuficiente al guardar)
+            if (result?.detalles) {
+                const parciales = result.detalles
+                    .filter((d: any) => d.cantSolicitada != null && d.cantSolicitada > d.cant)
+                    .map((d: any) => ({
+                        nombre: typeof d.productoId === "object"
+                            ? d.productoId?.nombreProducto ?? `Producto #${d.productoId?.id}`
+                            : `Producto #${d.productoId}`,
+                        solicitado: d.cantSolicitada as number,
+                        transferido: d.cant as number,
+                    }));
+                if (parciales.length > 0) setPartialWarnings(parciales);
+            }
             reset(initialForm);
-            setStockMap({});
+            setLotesMap({});
             if (listLoaded) loadList();
         } catch {
             showMsg("Error al guardar la transferencia", "error");
@@ -266,15 +339,10 @@ export const TransferenciaView: React.FC = () => {
 
     return (
         <main>
-            {/* formulario */}
-            <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+            <Box component="form" onSubmit={(e) => { e.preventDefault(); handleGuardarClick(); }}>
                 <ActionBar title="Transferencia de Inventario">
-                    <Button size="small" variant="contained" type="submit">
-                        Guardar
-                    </Button>
-                    <Button size="small" variant="outlined" type="button" onClick={() => { reset(initialForm); setStockMap({}); }}>
-                        Nuevo
-                    </Button>
+                    <Button size="small" variant="contained" type="submit">Guardar</Button>
+                    <Button size="small" variant="outlined" type="button" onClick={() => { reset(initialForm); setLotesMap({}); }}>Nuevo</Button>
                     <Button size="small" variant="outlined" type="button" onClick={loadList}>
                         {showList ? "Ocultar lista" : "Ver transferencias"}
                     </Button>
@@ -282,9 +350,7 @@ export const TransferenciaView: React.FC = () => {
 
                 {/* cabecera */}
                 <Paper sx={{ p: 2, mb: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                        Información General
-                    </Typography>
+                    <Typography variant="h6" gutterBottom>Información General</Typography>
                     <Grid container spacing={2}>
                         <AlmacenComboBox
                             name="origenAlmacenId"
@@ -292,6 +358,7 @@ export const TransferenciaView: React.FC = () => {
                             control={control}
                             size={4}
                             rules={{ required: "Requerido" }}
+                            onSelectionChange={handleOrigenChange}
                         />
                         <AlmacenComboBox
                             name="destinoAlmacenId"
@@ -322,85 +389,191 @@ export const TransferenciaView: React.FC = () => {
                                 <TableHead>
                                     <TableRow>
                                         <TableCell>Producto</TableCell>
-                                        <TableCell width={110}>Disponible</TableCell>
-                                        <TableCell width={100}>Cantidad</TableCell>
-                                        <TableCell width={120}>Lote</TableCell>
-                                        <TableCell width={120}>Cant. unidad</TableCell>
-                                        <TableCell width={160}>Unidad descripción</TableCell>
+                                        <TableCell width={120} align="center">Disponible total</TableCell>
+                                        <TableCell width={210}>Lote</TableCell>
+                                        <TableCell width={100} align="center">Stock lote</TableCell>
+                                        <TableCell width={95}>Cantidad</TableCell>
+                                        <TableCell width={110} align="center">Solicitado</TableCell>
+                                        <TableCell width={120}>Unidad</TableCell>
                                         <TableCell width={50} />
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {fields.map((field, index) => (
-                                        <TableRow key={field.id}>
-                                            <TableCell>
-                                                <SearchButton
-                                                    config={SEARCH_CONFIGS.PRODUCTO}
-                                                    onOpenSearch={() => handleOpenProductSearch(index)}
-                                                    variant="input"
-                                                    size="small"
-                                                    label="Producto"
-                                                    displayValue={nombreProducto(watch(`detalles.${index}.productoId`))}
-                                                    placeholder="Buscar producto..."
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                {stockMap[index] !== undefined ? (
-                                                    <Chip
-                                                        label={stockMap[index]}
+                                    {fields.map((field, index) => {
+                                        const infoLotes = lotesMap[index];
+                                        const stockLote = getStockLoteSeleccionado(index);
+                                        const cantActual = watch(`detalles.${index}.cant`) ?? 0;
+                                        const excede = stockLote !== undefined && cantActual > stockLote;
+                                        const cargando = loadingLotes[index];
+
+                                        return (
+                                            <TableRow key={field.id}>
+                                                {/* Producto */}
+                                                <TableCell>
+                                                    <SearchButton
+                                                        config={SEARCH_CONFIGS.PRODUCTO}
+                                                        onOpenSearch={() => handleOpenProductSearch(index)}
+                                                        variant="input"
                                                         size="small"
-                                                        color={
-                                                            watch(`detalles.${index}.cant`) > stockMap[index]
-                                                                ? "error"
-                                                                : "success"
-                                                        }
+                                                        label="Producto"
+                                                        displayValue={nombreProducto(watch(`detalles.${index}.productoId`))}
+                                                        placeholder="Buscar producto..."
                                                     />
-                                                ) : (
-                                                    <Typography variant="body2" color="text.disabled">
-                                                        —
-                                                    </Typography>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <NumericInput
-                                                    label=""
-                                                    name={`detalles.${index}.cant`}
-                                                    control={control}
-                                                    size={12}
-                                                    rules={{ required: true, min: 1 }}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <AlphanumericInput
-                                                    label=""
-                                                    name={`detalles.${index}.lote`}
-                                                    control={control}
-                                                    size={12}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <NumericInput
-                                                    label=""
-                                                    name={`detalles.${index}.cantidadUnidad`}
-                                                    control={control}
-                                                    size={12}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <AlphanumericInput
-                                                    label=""
-                                                    name={`detalles.${index}.unidadDescripcion`}
-                                                    control={control}
-                                                    size={12}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <IconButton size="small" color="error" onClick={() => remove(index)}>
-                                                    <DeleteIcon fontSize="small" />
-                                                </IconButton>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                                </TableCell>
+
+                                                {/* Disponible total */}
+                                                <TableCell align="center">
+                                                    {cargando ? (
+                                                        <CircularProgress size={16} />
+                                                    ) : infoLotes ? (
+                                                        <Chip
+                                                            label={`${infoLotes.totalDisponible} ud`}
+                                                            size="small"
+                                                            color={infoLotes.totalDisponible === 0 ? "error" : "success"}
+                                                        />
+                                                    ) : (
+                                                        <Typography variant="body2" color="text.disabled">—</Typography>
+                                                    )}
+                                                </TableCell>
+
+                                                {/* Lote dropdown */}
+                                                <TableCell>
+                                                    {infoLotes ? (
+                                                        <FormControl fullWidth size="small">
+                                                            <Select
+                                                                value={watch(`detalles.${index}.lote`) ?? SIN_LOTE}
+                                                                onChange={(e) =>
+                                                                    setValue(`detalles.${index}.lote`, e.target.value as string)
+                                                                }
+                                                                displayEmpty
+                                                                sx={{ fontSize: "0.8rem" }}
+                                                            >
+                                                                {infoLotes.lotes.map((item) => {
+                                                                    const key = item.lote ?? SIN_LOTE;
+                                                                    const label = item.lote
+                                                                        ? `Lote ${item.lote} — ${item.cantidad} ud`
+                                                                        : `Sin lote — ${item.cantidad} ud`;
+                                                                    return (
+                                                                        <MenuItem key={key} value={key}
+                                                                            sx={{ fontSize: "0.8rem" }}>
+                                                                            {label}
+                                                                        </MenuItem>
+                                                                    );
+                                                                })}
+                                                                {infoLotes.lotes.length === 0 && (
+                                                                    <MenuItem value={SIN_LOTE} disabled sx={{ fontSize: "0.8rem" }}>
+                                                                        Sin stock disponible
+                                                                    </MenuItem>
+                                                                )}
+                                                            </Select>
+                                                        </FormControl>
+                                                    ) : (
+                                                        <AlphanumericInput
+                                                            label=""
+                                                            name={`detalles.${index}.lote`}
+                                                            control={control}
+                                                            size={12}
+                                                        />
+                                                    )}
+                                                </TableCell>
+
+                                                {/* Stock del lote seleccionado */}
+                                                <TableCell align="center">
+                                                    {stockLote !== undefined ? (
+                                                        <Chip
+                                                            label={`${stockLote} ud`}
+                                                            size="small"
+                                                            color={excede ? "error" : "primary"}
+                                                            variant="outlined"
+                                                        />
+                                                    ) : (
+                                                        <Typography variant="body2" color="text.disabled">—</Typography>
+                                                    )}
+                                                </TableCell>
+
+                                                {/* Cantidad a transferir */}
+                                                <TableCell>
+                                                    <NumericInput
+                                                        label=""
+                                                        name={`detalles.${index}.cant`}
+                                                        control={control}
+                                                        size={12}
+                                                        rules={{ required: true, min: 1 }}
+                                                        error={excede ? { message: `Máx ${stockLote}` } as any : undefined}
+                                                    />
+                                                </TableCell>
+
+                                                {/* Solicitado / diferencia (solo visible cuando la fila tiene cantSolicitada != cant) */}
+                                                <TableCell align="center">
+                                                    {(() => {
+                                                        const det = watch(`detalles.${index}`) as any;
+                                                        const sol = det?.cantSolicitada as number | undefined;
+                                                        const tra = det?.cant as number | undefined;
+                                                        if (sol == null || sol === tra) {
+                                                            return <Typography variant="body2" color="text.disabled">—</Typography>;
+                                                        }
+                                                        return (
+                                                            <Tooltip title={`Solicitado: ${sol} | Transferido: ${tra}`}>
+                                                                <Chip
+                                                                    size="small"
+                                                                    label={`${sol} → ${tra ?? 0}`}
+                                                                    color="warning"
+                                                                    variant="outlined"
+                                                                    sx={{ fontSize: "0.72rem" }}
+                                                                />
+                                                            </Tooltip>
+                                                        );
+                                                    })()}
+                                                </TableCell>
+
+                                                {/* Unidad */}
+                                                <TableCell align="center">
+                                                    {infoLotes?.unidadNombre ? (
+                                                        <Tooltip
+                                                            title={
+                                                                infoLotes.esFraccionario
+                                                                    ? `1 ${infoLotes.unidadNombre} = ${infoLotes.cantidadUnidad} ${infoLotes.unidadFraccionNombre ?? ""}`
+                                                                    : `Unidad entera (${infoLotes.unidadNombre})`
+                                                            }
+                                                        >
+                                                            <Chip
+                                                                size="small"
+                                                                label={
+                                                                    infoLotes.esFraccionario
+                                                                        ? `${infoLotes.unidadSigla} × ${infoLotes.cantidadUnidad} ${infoLotes.unidadFraccionSigla ?? ""}`
+                                                                        : infoLotes.unidadNombre
+                                                                }
+                                                                color={infoLotes.esFraccionario ? "warning" : "default"}
+                                                                variant="outlined"
+                                                                sx={{ fontSize: "0.72rem" }}
+                                                            />
+                                                        </Tooltip>
+                                                    ) : (
+                                                        <AlphanumericInput
+                                                            label=""
+                                                            name={`detalles.${index}.unidadDescripcion`}
+                                                            control={control}
+                                                            size={12}
+                                                            placeholder="unidad"
+                                                        />
+                                                    )}
+                                                </TableCell>
+
+                                                <TableCell>
+                                                    <IconButton size="small" color="error" onClick={() => {
+                                                        remove(index);
+                                                        setLotesMap((prev) => {
+                                                            const next = { ...prev };
+                                                            delete next[index];
+                                                            return next;
+                                                        });
+                                                    }}>
+                                                        <DeleteIcon fontSize="small" />
+                                                    </IconButton>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                         </TableContainer>
@@ -411,9 +584,7 @@ export const TransferenciaView: React.FC = () => {
             {/* lista de transferencias */}
             {showList && (
                 <Paper sx={{ p: 2, mt: 2 }}>
-                    <Typography variant="h6" gutterBottom>
-                        Transferencias registradas
-                    </Typography>
+                    <Typography variant="h6" gutterBottom>Transferencias registradas</Typography>
                     {transferencias.length === 0 ? (
                         <Typography variant="body2" color="text.secondary" textAlign="center" py={3}>
                             No hay transferencias registradas.
@@ -447,9 +618,7 @@ export const TransferenciaView: React.FC = () => {
                                                 />
                                             </TableCell>
                                             <TableCell>
-                                                {t.fechaReg
-                                                    ? new Date(t.fechaReg).toLocaleDateString("es-DO")
-                                                    : "—"}
+                                                {t.fechaReg ? new Date(t.fechaReg).toLocaleDateString("es-DO") : "—"}
                                             </TableCell>
                                             <TableCell>
                                                 <Tooltip title="Editar">
@@ -459,10 +628,7 @@ export const TransferenciaView: React.FC = () => {
                                                 </Tooltip>
                                                 {t.estadoId !== "INA" && (
                                                     <Tooltip title="Anular">
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            onClick={() => handleAnular(t.id!)}>
+                                                        <IconButton size="small" color="error" onClick={() => handleAnular(t.id!)}>
                                                             <DeleteIcon fontSize="small" />
                                                         </IconButton>
                                                     </Tooltip>
@@ -497,6 +663,85 @@ export const TransferenciaView: React.FC = () => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+            {/* Dialogo de confirmacion de stock antes de guardar */}
+            <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    ⚠️ Confirmar transferencia
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        <strong>El stock mostrado puede haber cambiado desde que consultó los datos.</strong>
+                        <br /><br />
+                        Otras transacciones (ventas, ajustes u otras transferencias) pueden haber
+                        reducido el inventario disponible desde el momento en que cargó esta pantalla.
+                        <br /><br />
+                        El sistema verificará el stock real al guardar y transferirá únicamente la
+                        cantidad disponible en ese instante. Si hay diferencias, se le informará
+                        después de guardar.
+                        <br /><br />
+                        ¿Desea continuar?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmOpen(false)} color="inherit">Cancelar</Button>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                            setConfirmOpen(false);
+                            handleSubmit(onSubmit)();
+                        }}
+                    >
+                        Sí, guardar transferencia
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Dialogo de advertencia de transferencias parciales */}
+            <Dialog
+                open={partialWarnings.length > 0}
+                onClose={() => setPartialWarnings([])}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ color: "warning.dark" }}>
+                    ⚠️ Transferencia parcial — stock insuficiente al guardar
+                </DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        Los siguientes productos tenían menos stock del solicitado en el momento
+                        de guardar. Solo se transfirió lo disponible:
+                    </DialogContentText>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 700 }}>Producto</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700 }}>Solicitado</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700 }}>Transferido</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700 }}>Diferencia</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {partialWarnings.map((w, i) => (
+                                <TableRow key={i}>
+                                    <TableCell>{w.nombre}</TableCell>
+                                    <TableCell align="right">{w.solicitado}</TableCell>
+                                    <TableCell align="right">{w.transferido}</TableCell>
+                                    <TableCell align="right" sx={{ color: "error.main", fontWeight: 700 }}>
+                                        -{w.solicitado - w.transferido}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </DialogContent>
+                <DialogActions>
+                    <Button variant="contained" onClick={() => setPartialWarnings([])}>
+                        Entendido
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
         </main>
     );
 };
