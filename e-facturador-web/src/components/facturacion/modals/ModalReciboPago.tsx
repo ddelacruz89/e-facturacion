@@ -4,6 +4,8 @@ import { Factura, FacturaDetalle } from "../../../models/facturacion";
 import { UseFormReturn } from "react-hook-form";
 import { MoneyInput } from "../../../customers/CustomMUIComponents";
 import { TextInput } from "../../../customers/CustomComponents";
+import { formatCurrency } from "../../../utils/FacturaUtils";
+import { toast } from "react-toastify";
 
 interface Props {
     isOpen: boolean;
@@ -26,25 +28,32 @@ export default function ModalReciboPago({ isOpen, onClose, onConfirm, facturaFor
     }
 
     const handleConfirm = () => {
+        if (restante > 0) {
+            toast.error("Debe completar el pago");
+            return;
+        }
+
+        setValue("recibo.cambio", Math.abs(restante));
+        setValue("recibo.total", totalPagado);
         onConfirm();
     }
 
     const recibo = watch("recibo");
     const detalles: FacturaDetalle[] = watch("detalles");
-    const totalFactura = detalles.reduce((acc, row) => acc + (Number(row.montoTotal) || 0), 0);
-    const retencionItbis = detalles.reduce((acc, row) => acc + (Number(row.retencionItbis) || 0), 0);
-    const montoPagar = totalFactura - retencionItbis;
-    const pagos = [
-        recibo?.efectivo,
-        recibo?.tarjeta,
-        recibo?.cheque,
-        recibo?.transferencia,
-        recibo?.otros,
-        recibo?.notaCredito
+    const totalFactura: number = detalles.reduce((acc, row) => acc + (Number(row.montoTotal) || 0), 0);
+    const retencionItbis: number = detalles.reduce((acc, row) => acc + (Number(row.retencionItbis) || 0), 0);
+    const montoPagar: number = totalFactura - retencionItbis;
+    const pagos: number[] = [
+        recibo?.efectivo || 0,
+        recibo?.tarjeta || 0,
+        recibo?.cheque || 0,
+        recibo?.transferencia || 0,
+        recibo?.otros || 0,
+        recibo?.notaCredito || 0
     ];
 
-    const totalPagado = pagos.reduce((sum, val) => sum + (Number(val) || 0), 0);
-    const restante = montoPagar - totalPagado;
+    const totalPagado: number = pagos.reduce((sum: number, val: number) => sum + (Number(val)), 0);
+    const restante: number = montoPagar - totalPagado;
 
     const handleAddRemaining = (fieldName: any) => {
         if (restante > 0) {
@@ -55,6 +64,13 @@ export default function ModalReciboPago({ isOpen, onClose, onConfirm, facturaFor
 
     const renderPaymentField = (name: any, label: string) => {
         const fieldName = name.split('.')[1];
+
+        let rule = {
+            required: `No puede superar el monto a pagar restante: ${montoPagar - totalPagado}`,
+            validate: (value: any) =>
+                (Number(totalPagado) + Number(value)) <= Number(montoPagar) || `No puede superar el monto a pagar restante: ${montoPagar - totalPagado}`,
+        }
+
         return (
             <Grid size={{ xs: 12, sm: 6, md: 6 }} display="flex" alignItems="flex-start" gap={1}>
                 <Box flex={1}>
@@ -63,7 +79,7 @@ export default function ModalReciboPago({ isOpen, onClose, onConfirm, facturaFor
                         control={control}
                         label={label}
                         error={(errors.recibo as any)?.[fieldName]}
-                        rules={{ required: `${label} es requerido` }}
+                        rules={fieldName === "efectivo" ? undefined : rule}
                         size={12}
                     />
                 </Box>
@@ -177,14 +193,14 @@ export default function ModalReciboPago({ isOpen, onClose, onConfirm, facturaFor
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                                     <Typography variant="subtitle1" color="text.secondary">Total a Pagar:</Typography>
                                     <Typography variant="subtitle1" fontWeight="bold">
-                                        RD$ {montoPagar.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        RD$ {formatCurrency(montoPagar)}
                                     </Typography>
                                 </Box>
 
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                                     <Typography variant="subtitle1" color="text.secondary">Total Pagado:</Typography>
                                     <Typography variant="subtitle1" fontWeight="bold" color="success.main">
-                                        RD$ {totalPagado.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        RD$ {formatCurrency(totalPagado)}
                                     </Typography>
                                 </Box>
 
@@ -204,7 +220,7 @@ export default function ModalReciboPago({ isOpen, onClose, onConfirm, facturaFor
                                         {restante < 0 ? 'Cambio:' : 'Restante:'}
                                     </Typography>
                                     <Typography variant="h5" fontWeight="bold">
-                                        RD$ {Math.abs(restante).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        RD$ {formatCurrency(Math.abs(restante))}
                                     </Typography>
                                 </Box>
                             </CardContent>

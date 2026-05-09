@@ -103,18 +103,19 @@ export interface FacturaDetalle {
 export interface Recibo {
     id?: number;
     facturaId?: number;
-    secuencia?: number | null;
-    cheque?: string | null;           // numeric(38,2) -> string para evitar pérdida de precisión
-    comentario?: string | null;
-    efectivo?: string | null;         // numeric(38,2)
-    notaCredito?: string | null;      // numeric(38,2)
-    otros?: string | null;            // numeric(38,2)
-    tarjeta?: string | null;          // numeric(38,2)
-    total?: string | null;            // numeric(38,2)
-    transferencia?: string | null;    // numeric(38,2)
-    activo?: boolean | null;
-    fechaReg?: Date | null;
-    usuarioReg?: string | null;
+    secuencia?: number;
+    cheque?: number;           // numeric(38,2) -> string para evitar pérdida de precisión
+    comentario?: string;
+    efectivo?: number;         // numeric(38,2)
+    notaCredito?: number;      // numeric(38,2)
+    otros?: number;            // numeric(38,2)
+    tarjeta?: number;          // numeric(38,2)
+    total?: number;            // numeric(38,2)
+    transferencia?: number;    // numeric(38,2)
+    cambio?: number;    // numeric(38,2)
+    activo?: boolean;
+    fechaReg?: Date;
+    usuarioReg?: string;
 }
 
 export interface IFacturaResumen {
