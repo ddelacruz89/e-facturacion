@@ -6,14 +6,17 @@ import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.dto.inventario.InOrdenEntradaResumenDTO;
 import com.braintech.eFacturador.dto.inventario.InOrdenEntradaSearchCriteria;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
+import com.braintech.eFacturador.interfaces.inventario.InMovimientoService;
 import com.braintech.eFacturador.interfaces.inventario.InOrdenEntradaService;
 import com.braintech.eFacturador.jpa.inventario.InLote;
+import com.braintech.eFacturador.jpa.inventario.InMovimiento;
 import com.braintech.eFacturador.jpa.inventario.InOrdenEntrada;
 import com.braintech.eFacturador.jpa.inventario.InOrdenEntradaDetalle;
 import com.braintech.eFacturador.jpa.inventario.InOrdenEntradaDetalleLote;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,10 +27,14 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
 
+  /** tipo_movimiento_id = 13 - Entrada por Orden de Entrada. */
+  private static final int TIPO_ENTRADA_ORDEN = 13;
+
   private final InOrdenEntradaDao inOrdenEntradaDao;
   private final InLoteDao inLoteDao;
   private final SgSucursalRepository sgSucursalRepository;
   private final TenantContext tenantContext;
+  private final InMovimientoService movimientoService;
 
   @Override
   @Transactional
@@ -45,8 +52,13 @@ public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
     ordenEntrada.setSucursalId(sucursal);
 
     fixEntityGraph(ordenEntrada, empresaId, sucursalId, sucursal, username);
+    calcularCantidadesFraccionarias(ordenEntrada);
 
-    return inOrdenEntradaDao.save(ordenEntrada);
+    InOrdenEntrada saved = inOrdenEntradaDao.save(ordenEntrada);
+
+    generarMovimientos(saved);
+
+    return saved;
   }
 
   @Override
@@ -74,16 +86,73 @@ public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
     return inOrdenEntradaDao.searchByCriteria(criteria, empresaId);
   }
 
-  // ── helpers ───────────────────────────────────────────────────────────────────
+  // ── helpers ────────────────────────────────────────────────────────────────
 
   /**
-   * Corrige el grafo de entidades que viene del frontend desserializado:
-   *
-   * <ul>
-   *   <li>Cada detalle apunta de vuelta al padre real (no a la copia transitoria del JSON).
-   *   <li>Cada detalle-lote apunta de vuelta a su detalle real.
-   *   <li>Cada InLote recibe su productoId (no viene del frontend) y se crea solo si no existe.
-   * </ul>
+   * Para cada detalle calcula cantidadFraccionaria: cantidad x unidadCantidad cuando el producto es
+   * fraccionario (unidadCantidad mayor a 1), o igual a cantidad para productos enteros.
+   */
+  private void calcularCantidadesFraccionarias(InOrdenEntrada ordenEntrada) {
+    List<InOrdenEntradaDetalle> detalles = ordenEntrada.getInOrdenDetalleList();
+    if (detalles == null) return;
+    for (InOrdenEntradaDetalle detalle : detalles) {
+      int cantidad = detalle.getCantidad() != null ? detalle.getCantidad() : 0;
+      int factor =
+          (detalle.getUnidadCantidad() != null && detalle.getUnidadCantidad() > 1)
+              ? detalle.getUnidadCantidad()
+              : 1;
+      detalle.setCantidadFraccionaria(cantidad * factor);
+    }
+  }
+
+  /**
+   * Genera un InMovimiento de entrada (tipo 13) por cada linea de lote. La cantidad del movimiento
+   * se expresa en unidad de fraccion: lote.cantidad x factor donde factor = unidadCantidad del
+   * detalle (minimo 1). Ejemplo: 5 Cajas con factor 10 registra 50 Unidades en inventario.
+   */
+  private void generarMovimientos(InOrdenEntrada ordenEntrada) {
+    List<InOrdenEntradaDetalle> detalles = ordenEntrada.getInOrdenDetalleList();
+    if (detalles == null || detalles.isEmpty()) return;
+
+    List<InMovimiento> movimientos = new ArrayList<>();
+
+    for (InOrdenEntradaDetalle detalle : detalles) {
+      List<InOrdenEntradaDetalleLote> lotes = detalle.getInOrdenDetalleLotes();
+      if (lotes == null || lotes.isEmpty()) continue;
+
+      Integer productoId = detalle.getProductoId().getId();
+      int factor =
+          (detalle.getUnidadCantidad() != null && detalle.getUnidadCantidad() > 1)
+              ? detalle.getUnidadCantidad()
+              : 1;
+
+      for (InOrdenEntradaDetalleLote detalleLote : lotes) {
+        int cantLote = detalleLote.getCantidad() != null ? detalleLote.getCantidad() : 0;
+        if (cantLote <= 0) continue;
+
+        String lote = detalleLote.getInLotes() != null ? detalleLote.getInLotes().getLote() : null;
+
+        InMovimiento mov = new InMovimiento();
+        mov.setTipoMovimientoId(TIPO_ENTRADA_ORDEN);
+        mov.setAlmacenId(ordenEntrada.getAlmacenId());
+        mov.setProductoId(productoId);
+        mov.setLote(lote);
+        mov.setCantidad(cantLote * factor);
+        mov.setPrecioUnitario(detalle.getPrecioUnitario());
+        mov.setNumeroReferencia(ordenEntrada.getId());
+
+        movimientos.add(mov);
+      }
+    }
+
+    if (!movimientos.isEmpty()) {
+      movimientoService.registrarTodos(movimientos);
+    }
+  }
+
+  /**
+   * Corrige el grafo de entidades deserializado desde el frontend: back-references, lotes
+   * find-or-create.
    */
   private void fixEntityGraph(
       InOrdenEntrada ordenEntrada,
@@ -96,7 +165,6 @@ public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
     if (detalles == null) return;
 
     for (InOrdenEntradaDetalle detalle : detalles) {
-      // Reasignar el back-reference al padre real (no al objeto transitorio deserializado)
       detalle.setOrdenEntradaId(ordenEntrada);
 
       List<InOrdenEntradaDetalleLote> lotes = detalle.getInOrdenDetalleLotes();
@@ -109,12 +177,9 @@ public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
         InLote loteData = detalleLote.getInLotes();
         if (loteData == null) continue;
 
-        // El frontend no envía productoId dentro de InLote — lo tomamos del detalle padre
         loteData.setProductoId(detalle.getProductoId());
-
         Long productoLongId = detalle.getProductoId().getId().longValue();
 
-        // Find-or-create: solo crear si el lote no existe aún
         InLote managed =
             inLoteDao
                 .findById(loteData.getLote(), productoLongId, empresaId, sucursalId)

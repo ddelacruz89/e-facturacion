@@ -19,8 +19,10 @@ export interface InMovimientoResumenDTO {
     id: number;
     fechaReg: string;
     tipoMovimientoId: number;
+    tipoMovimientoNombre?: string;
     numeroReferencia?: number;
     almacenId: number;
+    almacenNombre?: string;
     productoId: number;
     productoNombre?: string;
     lote?: string;

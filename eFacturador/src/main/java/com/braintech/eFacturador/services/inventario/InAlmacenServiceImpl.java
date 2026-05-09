@@ -12,6 +12,7 @@ import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -139,7 +140,9 @@ public class InAlmacenServiceImpl implements InAlmacenService {
             a ->
                 criteria.getNombre() == null
                     || criteria.getNombre().isBlank()
-                    || a.getNombre().toLowerCase().contains(criteria.getNombre().toLowerCase()))
+                    || a.getNombre()
+                        .toLowerCase(Locale.ROOT)
+                        .contains(criteria.getNombre().toLowerCase(Locale.ROOT)))
         .filter(
             a ->
                 criteria.getEstadoId() == null

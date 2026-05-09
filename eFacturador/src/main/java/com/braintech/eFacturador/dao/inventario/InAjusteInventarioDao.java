@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 
 public interface InAjusteInventarioDao {
+
   InAjusteInventario save(InAjusteInventario ajuste);
 
   Optional<InAjusteInventario> findById(Integer id, Integer empresaId, Integer sucursalId);

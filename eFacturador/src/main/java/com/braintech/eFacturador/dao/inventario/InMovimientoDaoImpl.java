@@ -22,6 +22,21 @@ public class InMovimientoDaoImpl implements InMovimientoDao {
 
   @PersistenceContext private EntityManager em;
 
+  // ── SELECT fragment compartido por buscar e historial ────────────────────────
+  private static final String SELECT_DTO =
+      "SELECT new com.braintech.eFacturador.dto.inventario.InMovimientoResumenDTO("
+          + "  m.id, m.fechaReg,"
+          + "  m.tipoMovimientoId,"
+          + "  (SELECT t.tipoMovimiento FROM com.braintech.eFacturador.jpa.inventario.InMovimientoTipo t WHERE t.id = m.tipoMovimientoId),"
+          + "  m.numeroReferencia,"
+          + "  m.almacenId,"
+          + "  (SELECT a.nombre FROM com.braintech.eFacturador.jpa.inventario.InAlmacen a WHERE a.id = m.almacenId),"
+          + "  m.productoId,"
+          + "  (SELECT p.nombreProducto FROM com.braintech.eFacturador.jpa.producto.MgProducto p WHERE p.id = m.productoId),"
+          + "  m.lote, m.cantidad, m.cantidadInventario, m.precioUnitario, m.costoTotal,"
+          + "  m.usuarioReg, m.observacion"
+          + ") FROM InMovimiento m ";
+
   @Override
   @Transactional
   public InMovimiento save(InMovimiento movimiento) {
@@ -42,7 +57,6 @@ public class InMovimientoDaoImpl implements InMovimientoDao {
       } else {
         em.merge(m);
       }
-      // Flush periódico para no saturar el contexto de persistencia
       if (i % 50 == 0) {
         em.flush();
         em.clear();
@@ -72,23 +86,10 @@ public class InMovimientoDaoImpl implements InMovimientoDao {
 
     String whereBase =
         filtraSucursal
-            ? "WHERE m.empresaId = :empresaId AND m.sucursalId.id = :sucursalId"
-            : "WHERE m.empresaId = :empresaId";
-
-    String base =
-        "SELECT new com.braintech.eFacturador.dto.inventario.InMovimientoResumenDTO("
-            + "  m.id, m.fechaReg, m.tipoMovimientoId, m.numeroReferencia,"
-            + "  m.almacenId, m.productoId,"
-            + "  (SELECT p.nombreProducto FROM com.braintech.eFacturador.jpa.producto.MgProducto p WHERE p.id = m.productoId),"
-            + "  m.lote, m.cantidad, m.cantidadInventario, m.precioUnitario, m.costoTotal,"
-            + "  m.usuarioReg, m.observacion"
-            + ") FROM InMovimiento m "
-            + whereBase;
-
-    String countBase = "SELECT COUNT(m) FROM InMovimiento m " + whereBase;
+            ? "WHERE m.empresaId = :empresaId AND m.sucursalId.id = :sucursalId "
+            : "WHERE m.empresaId = :empresaId ";
 
     List<String> filters = new ArrayList<>();
-
     if (criteria.getFechaInicio() != null) filters.add("m.fechaReg >= :fechaInicio");
     if (criteria.getFechaFin() != null) filters.add("m.fechaReg <= :fechaFin");
     if (criteria.getAlmacenId() != null) filters.add("m.almacenId = :almacenId");
@@ -100,14 +101,15 @@ public class InMovimientoDaoImpl implements InMovimientoDao {
     if (criteria.getLote() != null && !criteria.getLote().isBlank())
       filters.add("m.lote LIKE :lote");
 
-    String where = filters.isEmpty() ? "" : " AND " + String.join(" AND ", filters);
-    String order = " ORDER BY m.fechaReg DESC";
+    String extra = filters.isEmpty() ? "" : "AND " + String.join(" AND ", filters) + " ";
+    String order = "ORDER BY m.fechaReg DESC";
 
     TypedQuery<InMovimientoResumenDTO> query =
-        em.createQuery(base + where + order, InMovimientoResumenDTO.class);
-    TypedQuery<Long> countQuery = em.createQuery(countBase + where, Long.class);
+        em.createQuery(SELECT_DTO + whereBase + extra + order, InMovimientoResumenDTO.class);
+    TypedQuery<Long> countQuery =
+        em.createQuery("SELECT COUNT(m) FROM InMovimiento m " + whereBase + extra, Long.class);
 
-    // Bind base params — empresaId siempre del TenantContext, nunca del frontend
+    // Params base
     query.setParameter("empresaId", empresaId);
     countQuery.setParameter("empresaId", empresaId);
     if (filtraSucursal) {
@@ -115,7 +117,7 @@ public class InMovimientoDaoImpl implements InMovimientoDao {
       countQuery.setParameter("sucursalId", criteria.getSucursalId());
     }
 
-    // Bind optional params
+    // Params opcionales
     if (criteria.getFechaInicio() != null) {
       LocalDateTime desde = criteria.getFechaInicio().atStartOfDay();
       query.setParameter("fechaInicio", desde);
@@ -149,7 +151,6 @@ public class InMovimientoDaoImpl implements InMovimientoDao {
 
     int page = criteria.getPage() != null ? criteria.getPage() : 0;
     int size = criteria.getSize() != null ? criteria.getSize() : 50;
-
     query.setFirstResult(page * size);
     query.setMaxResults(size);
 
@@ -164,13 +165,7 @@ public class InMovimientoDaoImpl implements InMovimientoDao {
       Integer productoId, Integer almacenId, Integer empresaId, Integer sucursalId) {
 
     return em.createQuery(
-            "SELECT new com.braintech.eFacturador.dto.inventario.InMovimientoResumenDTO("
-                + "  m.id, m.fechaReg, m.tipoMovimientoId, m.numeroReferencia,"
-                + "  m.almacenId, m.productoId,"
-                + "  (SELECT p.nombreProducto FROM com.braintech.eFacturador.jpa.producto.MgProducto p WHERE p.id = m.productoId),"
-                + "  m.lote, m.cantidad, m.cantidadInventario, m.precioUnitario, m.costoTotal,"
-                + "  m.usuarioReg, m.observacion"
-                + ") FROM InMovimiento m "
+            SELECT_DTO
                 + "WHERE m.productoId = :productoId AND m.almacenId = :almacenId "
                 + "  AND m.empresaId = :empresaId AND m.sucursalId.id = :sucursalId "
                 + "ORDER BY m.fechaReg DESC",

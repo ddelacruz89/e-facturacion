@@ -8,6 +8,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -68,79 +69,49 @@ public class InAjusteInventarioDaoImpl implements InAjusteInventarioDao {
   public Page<InAjusteInventarioResumenDTO> buscar(
       InAjusteInventarioSearchCriteria criteria, Integer empresaId, Integer sucursalId) {
 
-    // ── WHERE dinámico ────────────────────────────────────────────────────────
-    StringBuilder where =
-        new StringBuilder("WHERE a.empresaId = :empresaId AND a.sucursalId.id = :sucursalId");
+    StringBuilder jpql =
+        new StringBuilder(
+            "SELECT new com.braintech.eFacturador.dto.inventario.InAjusteInventarioResumenDTO("
+                + "  a.id, a.fechaReg, a.almacenId, a.estadoId,"
+                + "  (SELECT t.tipoMovimiento FROM InMovimientoTipo t WHERE t.id = a.movimientoTipoId),"
+                + "  a.observacion, a.usuarioReg, SIZE(a.detalles)"
+                + ") FROM InAjusteInventario a "
+                + "WHERE a.empresaId = :empresaId AND a.sucursalId.id = :sucursalId");
 
-    if (criteria.getFechaInicio() != null) {
-      where.append(" AND a.fechaReg >= :desde");
-    }
-    if (criteria.getFechaFin() != null) {
-      where.append(" AND a.fechaReg <= :hasta");
-    }
-    if (criteria.getUsuarioReg() != null && !criteria.getUsuarioReg().isBlank()) {
-      where.append(" AND LOWER(a.usuarioReg) LIKE :usuario");
-    }
-    if (criteria.getEstadoId() != null && !criteria.getEstadoId().isBlank()) {
-      where.append(" AND a.estadoId = :estadoId");
-    }
-    if (criteria.getMovimientoTipoId() != null) {
-      where.append(" AND a.movimientoTipoId = :movimientoTipoId");
-    }
+    if (criteria.getFechaInicio() != null) jpql.append(" AND a.fechaReg >= :desde");
+    if (criteria.getFechaFin() != null) jpql.append(" AND a.fechaReg <= :hasta");
+    if (criteria.getUsuarioReg() != null && !criteria.getUsuarioReg().isBlank())
+      jpql.append(" AND LOWER(a.usuarioReg) LIKE :usuario");
+    if (criteria.getEstadoId() != null && !criteria.getEstadoId().isBlank())
+      jpql.append(" AND a.estadoId = :estadoId");
+    if (criteria.getMovimientoTipoId() != null)
+      jpql.append(" AND a.movimientoTipoId = :movimientoTipoId");
 
-    String select =
-        "SELECT new com.braintech.eFacturador.dto.inventario.InAjusteInventarioResumenDTO("
-            + "  a.id, a.fechaReg, a.almacenId, a.estadoId,"
-            + "  (SELECT t.tipoMovimiento FROM InMovimientoTipo t WHERE t.id = a.movimientoTipoId),"
-            + "  a.observacion, a.usuarioReg, SIZE(a.detalles)"
-            + ") FROM InAjusteInventario a ";
+    jpql.append(" ORDER BY a.fechaReg DESC");
 
-    String countSelect = "SELECT COUNT(a) FROM InAjusteInventario a ";
+    TypedQuery<InAjusteInventarioResumenDTO> query =
+        em.createQuery(jpql.toString(), InAjusteInventarioResumenDTO.class)
+            .setParameter("empresaId", empresaId)
+            .setParameter("sucursalId", sucursalId);
 
-    TypedQuery<InAjusteInventarioResumenDTO> dataQuery =
-        em.createQuery(
-            select + where + " ORDER BY a.fechaReg DESC", InAjusteInventarioResumenDTO.class);
-    TypedQuery<Long> countQuery = em.createQuery(countSelect + where, Long.class);
+    if (criteria.getFechaInicio() != null)
+      query.setParameter("desde", criteria.getFechaInicio().atStartOfDay());
+    if (criteria.getFechaFin() != null)
+      query.setParameter("hasta", criteria.getFechaFin().atTime(LocalTime.MAX));
+    if (criteria.getUsuarioReg() != null && !criteria.getUsuarioReg().isBlank())
+      query.setParameter("usuario", "%" + criteria.getUsuarioReg().toLowerCase(Locale.ROOT) + "%");
+    if (criteria.getEstadoId() != null && !criteria.getEstadoId().isBlank())
+      query.setParameter("estadoId", criteria.getEstadoId());
+    if (criteria.getMovimientoTipoId() != null)
+      query.setParameter("movimientoTipoId", criteria.getMovimientoTipoId());
 
-    // ── bind params ──────────────────────────────────────────────────────────
-    dataQuery.setParameter("empresaId", empresaId);
-    dataQuery.setParameter("sucursalId", sucursalId);
-    countQuery.setParameter("empresaId", empresaId);
-    countQuery.setParameter("sucursalId", sucursalId);
+    int total = query.getResultList().size();
+    List<InAjusteInventarioResumenDTO> result =
+        query
+            .setFirstResult(criteria.getPage() * criteria.getSize())
+            .setMaxResults(criteria.getSize())
+            .getResultList();
 
-    if (criteria.getFechaInicio() != null) {
-      var desde = criteria.getFechaInicio().atStartOfDay();
-      dataQuery.setParameter("desde", desde);
-      countQuery.setParameter("desde", desde);
-    }
-    if (criteria.getFechaFin() != null) {
-      var hasta = criteria.getFechaFin().atTime(LocalTime.MAX);
-      dataQuery.setParameter("hasta", hasta);
-      countQuery.setParameter("hasta", hasta);
-    }
-    if (criteria.getUsuarioReg() != null && !criteria.getUsuarioReg().isBlank()) {
-      String like = "%" + criteria.getUsuarioReg().toLowerCase() + "%";
-      dataQuery.setParameter("usuario", like);
-      countQuery.setParameter("usuario", like);
-    }
-    if (criteria.getEstadoId() != null && !criteria.getEstadoId().isBlank()) {
-      dataQuery.setParameter("estadoId", criteria.getEstadoId());
-      countQuery.setParameter("estadoId", criteria.getEstadoId());
-    }
-    if (criteria.getMovimientoTipoId() != null) {
-      dataQuery.setParameter("movimientoTipoId", criteria.getMovimientoTipoId());
-      countQuery.setParameter("movimientoTipoId", criteria.getMovimientoTipoId());
-    }
-
-    // ── paginación ───────────────────────────────────────────────────────────
-    int page = Math.max(criteria.getPage(), 0);
-    int size = criteria.getSize() > 0 ? criteria.getSize() : 20;
-    dataQuery.setFirstResult(page * size);
-    dataQuery.setMaxResults(size);
-
-    List<InAjusteInventarioResumenDTO> content = dataQuery.getResultList();
-    long total = countQuery.getSingleResult();
-
-    return new PageImpl<>(content, PageRequest.of(page, size), total);
+    return new PageImpl<>(result, PageRequest.of(criteria.getPage(), criteria.getSize()), total);
   }
 }

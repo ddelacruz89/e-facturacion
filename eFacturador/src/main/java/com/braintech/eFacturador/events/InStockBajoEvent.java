@@ -10,6 +10,8 @@ import org.springframework.context.ApplicationEvent;
 @Getter
 public class InStockBajoEvent extends ApplicationEvent {
 
+  private static final long serialVersionUID = 1L;
+
   private final Integer productoId;
   private final Integer almacenId;
   private final Integer empresaId;

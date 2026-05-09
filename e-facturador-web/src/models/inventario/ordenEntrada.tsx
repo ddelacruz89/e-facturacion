@@ -28,6 +28,10 @@ export interface InOrdenEntradaDetalle {
     productoId?: number | MgProducto;
     unidadNombre?: string;
     unidadCantidad?: number;
+    /** Cantidad en unidad de fracción (usada en el movimiento de inventario).
+     *  Para fraccionarios: cantidad × unidadCantidad.
+     *  Para enteros: igual a cantidad. */
+    cantidadFraccionaria?: number;
     itbisAlSubTotal?: boolean;
     servicio?: boolean;
     estado?: string;

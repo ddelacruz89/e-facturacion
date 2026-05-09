@@ -27,9 +27,13 @@ public class InTransferenciaDetalle implements Serializable {
   @JoinColumn(name = "producto_id", referencedColumnName = "id")
   @ManyToOne(optional = false)
   @NotNull(message = "Producto no debe estar vacio")
-  // Excluir colecciones lazy de MgProducto — no se necesitan en el contexto de transferencia
-  @JsonIgnoreProperties({"productosModulos", "inventarios", "tags",
-      "productosAlmacenesLimites", "unidadProductorSuplidor"})
+  @JsonIgnoreProperties({
+    "productosModulos",
+    "inventarios",
+    "tags",
+    "productosAlmacenesLimites",
+    "unidadProductorSuplidor"
+  })
   private MgProducto productoId;
 
   /** Cantidad realmente transferida al momento de guardar (puede ser menor que cantSolicitada). */
@@ -53,4 +57,6 @@ public class InTransferenciaDetalle implements Serializable {
   @Column(name = "cantidad_unidad")
   private Integer cantidadUnidad;
 
-  @Column(name = "unidad_descripcion",
+  @Column(name = "unidad_descripcion", length = 50)
+  private String unidadDescripcion;
+}

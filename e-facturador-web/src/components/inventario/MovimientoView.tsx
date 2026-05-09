@@ -302,10 +302,10 @@ const MovimientoView: React.FC = () => {
                                                         (sucursalSeleccionada === TODOS_SUCURSAL ? "—" : sucursalSeleccionada)}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Chip label={r.tipoMovimientoId} size="small" />
+                                                    <Chip label={r.tipoMovimientoNombre ?? r.tipoMovimientoId} size="small" />
                                                 </TableCell>
                                                 <TableCell>{r.numeroReferencia ?? "—"}</TableCell>
-                                                <TableCell>{r.almacenId}</TableCell>
+                                                <TableCell>{r.almacenNombre ?? r.almacenId}</TableCell>
                                                 <TableCell>
                                                     {r.productoNombre
                                                         ? `${r.productoNombre} (${r.productoId})`

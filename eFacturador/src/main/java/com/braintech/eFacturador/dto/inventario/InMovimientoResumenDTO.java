@@ -17,8 +17,10 @@ public class InMovimientoResumenDTO {
   private Integer id;
   private LocalDateTime fechaReg;
   private Integer tipoMovimientoId;
+  private String tipoMovimientoNombre;
   private Integer numeroReferencia;
   private Integer almacenId;
+  private String almacenNombre;
   private Integer productoId;
   private String productoNombre;
   private String lote;
