@@ -13,9 +13,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.EqualsAndHashCode;
 
 @Entity
 @Table(name = "mf_factura_suplidor", schema = "facturacion")
@@ -51,6 +51,10 @@ public class MfFacturaSuplidor extends BaseDgII implements Serializable {
 
   @Column(name = "fecha_creacion")
   private LocalDateTime fechaCreacion;
+
+  /** Fecha de firma del e-CF (string tal como devuelve la DGII, ej. "2024-01-15T10:30:00"). */
+  @Column(name = "fecha_firma")
+  private String fechaFirma;
 
   @Column(name = "estado_id")
   private String estadoId;

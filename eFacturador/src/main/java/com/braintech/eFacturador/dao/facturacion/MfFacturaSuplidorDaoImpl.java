@@ -72,8 +72,7 @@ public class MfFacturaSuplidorDaoImpl implements MfFacturaSuplidorDao {
       query.setParameter("fechaInicio", criteria.getFechaInicio().atStartOfDay());
     }
     if (criteria.getFechaFin() != null) {
-      query.setParameter(
-          "fechaFin", LocalDateTime.of(criteria.getFechaFin(), LocalTime.MAX));
+      query.setParameter("fechaFin", LocalDateTime.of(criteria.getFechaFin(), LocalTime.MAX));
     }
 
     return query.getResultList();

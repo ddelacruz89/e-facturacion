@@ -23,12 +23,11 @@ public class MgRetencionItbisController {
   }
 
   /**
-   * Filtrado por tipo: ?tipo=ITBIS | ?tipo=ISR
-   * Útil para cargar solo las retenciones relevantes según el contexto.
+   * Filtrado por tipo: ?tipo=ITBIS | ?tipo=ISR Útil para cargar solo las retenciones relevantes
+   * según el contexto.
    */
   @GetMapping("/por-tipo")
-  public ResponseEntity<List<MgRetencionItbisResumenDTO>> getByTipo(
-      @RequestParam String tipo) {
+  public ResponseEntity<List<MgRetencionItbisResumenDTO>> getByTipo(@RequestParam String tipo) {
     return ResponseEntity.ok(service.findByTipo(tipo));
   }
 
@@ -40,8 +39,7 @@ public class MgRetencionItbisController {
 
   /** Crear nuevo registro. */
   @PostMapping
-  public ResponseEntity<MgRetencionItbis> save(
-      @RequestBody MgRetencionItbisRequestDTO dto) {
+  public ResponseEntity<MgRetencionItbis> save(@RequestBody MgRetencionItbisRequestDTO dto) {
     return ResponseEntity.ok(service.save(dto));
   }
 

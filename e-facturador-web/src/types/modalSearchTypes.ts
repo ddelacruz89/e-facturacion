@@ -497,6 +497,85 @@ export const SEARCH_CONFIGS = {
                 render: (value: any) => formatEstadoOrdenCompra(value),
             }
         ]
+    } as SearchConfig,
+
+    FACTURA_SUPLIDOR: {
+        title: "Buscar Factura Suplidor",
+        endpoint: "/api/v1/facturacion/facturas-suplidor/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10
+        },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace30Dias = new Date();
+            hace30Dias.setDate(hoy.getDate() - 30);
+            return {
+                fechaInicio: hace30Dias.toISOString().split('T')[0],
+                fechaFin: hoy.toISOString().split('T')[0],
+            };
+        })(),
+        fields: [
+            {
+                key: "fechaInicio",
+                label: "Fecha Inicio",
+                type: "date" as const,
+                placeholder: "Seleccione fecha inicio",
+            },
+            {
+                key: "fechaFin",
+                label: "Fecha Fin",
+                type: "date" as const,
+                placeholder: "Seleccione fecha fin",
+            },
+            {
+                key: "numeroFactura",
+                label: "No. Factura",
+                type: "text" as const,
+                placeholder: "Número de factura"
+            },
+            {
+                key: "suplidorId",
+                label: "Suplidor ID",
+                type: "number" as const,
+                placeholder: "ID del suplidor"
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "ACT", label: "Activo" },
+                    { value: "PEN", label: "Pendiente" },
+                    { value: "PAG", label: "Pagada" },
+                    { value: "ANU", label: "Anulada" },
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "7%" },
+            {
+                key: "fechaReg",
+                label: "Fecha",
+                width: "18%",
+                render: (value: any) => formatDateTimeForUi(value),
+            },
+            { key: "suplidorNombre", label: "Suplidor", width: "22%" },
+            { key: "numeroFactura", label: "No. Factura", width: "13%" },
+            { key: "ncf", label: "NCF", width: "13%" },
+            {
+                key: "total",
+                label: "Total",
+                width: "13%",
+                render: (value: any) => formatTotal16_2(value),
+            },
+            { key: "estadoId", label: "Estado", width: "8%" },
+            { key: "usuarioReg", label: "Usuario", width: "6%" },
+        ]
     } as SearchConfig
 };
 

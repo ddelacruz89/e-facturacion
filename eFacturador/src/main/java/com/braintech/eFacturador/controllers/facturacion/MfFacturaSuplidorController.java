@@ -18,8 +18,8 @@ public class MfFacturaSuplidorController {
   private final MfFacturaSuplidorService service;
 
   /**
-   * Búsqueda con filtros — devuelve resumen para la tabla del modal.
-   * POST /api/v1/facturacion/facturas-suplidor/buscar
+   * Búsqueda con filtros — devuelve resumen para la tabla del modal. POST
+   * /api/v1/facturacion/facturas-suplidor/buscar
    */
   @PostMapping("/buscar")
   public ResponseEntity<List<MfFacturaSuplidorResumenDTO>> buscar(
@@ -28,28 +28,21 @@ public class MfFacturaSuplidorController {
   }
 
   /**
-   * Objeto completo con detalles — se llama al hacer click en el modal.
-   * GET /api/v1/facturacion/facturas-suplidor/{id}
+   * Objeto completo con detalles — se llama al hacer click en el modal. GET
+   * /api/v1/facturacion/facturas-suplidor/{id}
    */
   @GetMapping("/{id}")
   public ResponseEntity<MfFacturaSuplidor> getById(@PathVariable Integer id) {
     return ResponseEntity.ok(service.findById(id));
   }
 
-  /**
-   * Crear nueva factura suplidor.
-   * POST /api/v1/facturacion/facturas-suplidor
-   */
+  /** Crear nueva factura suplidor. POST /api/v1/facturacion/facturas-suplidor */
   @PostMapping
-  public ResponseEntity<MfFacturaSuplidor> save(
-      @RequestBody MfFacturaSuplidorRequestDTO dto) {
+  public ResponseEntity<MfFacturaSuplidor> save(@RequestBody MfFacturaSuplidorRequestDTO dto) {
     return ResponseEntity.ok(service.save(dto));
   }
 
-  /**
-   * Actualizar factura suplidor existente.
-   * PUT /api/v1/facturacion/facturas-suplidor/{id}
-   */
+  /** Actualizar factura suplidor existente. PUT /api/v1/facturacion/facturas-suplidor/{id} */
   @PutMapping("/{id}")
   public ResponseEntity<MfFacturaSuplidor> update(
       @PathVariable Integer id, @RequestBody MfFacturaSuplidorRequestDTO dto) {

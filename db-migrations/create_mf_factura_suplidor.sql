@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS facturacion.mf_factura_suplidor (
     secuity_code                  VARCHAR(7),
     track_id                      VARCHAR(100),
     qr_url                        VARCHAR(500),
+    fecha_firma                   VARCHAR(45),
     aprobada                      BOOLEAN,
     razon_social                  VARCHAR(200),
     rnc                           VARCHAR(20),

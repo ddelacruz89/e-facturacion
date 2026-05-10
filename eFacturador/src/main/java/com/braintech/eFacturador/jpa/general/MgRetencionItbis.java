@@ -9,8 +9,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
- * Catálogo global de retenciones de ITBIS/ISR.
- * No pertenece a ningún tenant — es compartido por todas las empresas.
+ * Catálogo global de retenciones de ITBIS/ISR. No pertenece a ningún tenant — es compartido por
+ * todas las empresas.
  */
 @Entity
 @Table(name = "mg_retenciones_itbis", schema = "general")
@@ -33,17 +33,13 @@ public class MgRetencionItbis implements Serializable {
   @Column(name = "valor", nullable = false, precision = 10, scale = 0)
   private BigDecimal valor;
 
-  /**
-   * Cuenta contable que retiene (quien descuenta).
-   * FK → contabilidad.mc_catalago_cuenta
-   */
+  /** Cuenta contable que retiene (quien descuenta). FK → contabilidad.mc_catalago_cuenta */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "retener_cuenta_id")
   private McCatalogoCuenta retenerCuenta;
 
   /**
-   * Cuenta contable del retenido (a quien se le descuenta).
-   * FK → contabilidad.mc_catalago_cuenta
+   * Cuenta contable del retenido (a quien se le descuenta). FK → contabilidad.mc_catalago_cuenta
    */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "retenido_cuenta_id")
@@ -54,8 +50,8 @@ public class MgRetencionItbis implements Serializable {
   private String comentarioFactura;
 
   /**
-   * true → la retención se aplica sobre el total de la factura.
-   * false → se aplica solo sobre el ITBIS.
+   * true → la retención se aplica sobre el total de la factura. false → se aplica solo sobre el
+   * ITBIS.
    */
   @Column(name = "al_total")
   private Boolean alTotal = false;

@@ -31,6 +31,7 @@ public class MfFacturaSuplidorRequestDTO {
   private String secuityCode;
   private String trackId;
   private String qrUrl;
+  private String fechaFirma;
   private Boolean aprobada;
   private String razonSocial;
   private String rnc;

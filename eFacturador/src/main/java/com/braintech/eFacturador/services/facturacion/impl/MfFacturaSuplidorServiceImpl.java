@@ -89,6 +89,7 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
     e.setSecuityCode(dto.getSecuityCode());
     e.setTrackId(dto.getTrackId());
     e.setQrUrl(dto.getQrUrl());
+    e.setFechaFirma(dto.getFechaFirma());
     e.setAprobada(dto.getAprobada());
     e.setRazonSocial(dto.getRazonSocial());
     e.setRnc(dto.getRnc());

@@ -8,6 +8,10 @@ import logo from "./assets/logo-braintech.png";
 import { useSharedModulos } from "./hooks/useSharedModulos";
 import { ModuloDto } from "./models/seguridad";
 
+const FAC_EXTRA_MENUS = [
+    { id: 31, menu: "Facturas Suplidor", urlSql: "/factura-suplidor", url: "/factura-suplidor" },
+];
+
 const INV_EXTRA_MENUS = [
     { id: 11, menu: "Suplidores",              urlSql: "/suplidores",         url: "/suplidores" },
     { id: 12, menu: "Cotizaciones",            urlSql: "/cotizacion",         url: "/cotizacion" },
@@ -33,14 +37,19 @@ const HomeView = () => {
     const modulos = useMemo(() => {
         if (!rawModulos.length) return rawModulos;
 
-        const mapped = rawModulos.map((modulo) =>
-            modulo.id === "INV"
-                ? { ...modulo, menus: [...modulo.menus, ...INV_EXTRA_MENUS] }
-                : modulo
-        );
+        const mapped = rawModulos.map((modulo) => {
+            if (modulo.id === "INV")
+                return { ...modulo, menus: [...modulo.menus, ...INV_EXTRA_MENUS] };
+            if (modulo.id === "FAC")
+                return { ...modulo, menus: [...modulo.menus, ...FAC_EXTRA_MENUS] };
+            return modulo;
+        });
 
         if (!mapped.some((m) => m.id === "INV")) {
             mapped.push({ id: "INV", modulo: "Inventario", menus: INV_EXTRA_MENUS });
+        }
+        if (!mapped.some((m) => m.id === "FAC")) {
+            mapped.push({ id: "FAC", modulo: "Facturación", menus: FAC_EXTRA_MENUS });
         }
 
         return mapped;
