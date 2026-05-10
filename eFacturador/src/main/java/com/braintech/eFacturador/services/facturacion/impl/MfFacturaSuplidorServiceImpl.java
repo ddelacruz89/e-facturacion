@@ -2,6 +2,7 @@ package com.braintech.eFacturador.services.facturacion.impl;
 
 import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorDao;
 import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorRepository;
+import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorDetalleDescuentoRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorDetalleRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorResumenDTO;
@@ -10,6 +11,7 @@ import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.contabilidad.McCatalogoCuenta;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidor;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidorDetalle;
+import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidorDetalleDescuento;
 import com.braintech.eFacturador.jpa.facturacion.MgTipoFactura;
 import com.braintech.eFacturador.jpa.general.MgItbis;
 import com.braintech.eFacturador.jpa.general.MgRetencionItbis;
@@ -17,7 +19,6 @@ import com.braintech.eFacturador.jpa.inventario.InSuplidor;
 import com.braintech.eFacturador.services.facturacion.MfFacturaSuplidorService;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -181,8 +182,9 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
     if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
       return;
     }
-    List<MfFacturaSuplidorDetalle> lista = new ArrayList<>();
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
     String usuario = tenantContext.getCurrentUsername();
+
     for (MfFacturaSuplidorDetalleRequestDTO d : dto.getDetalles()) {
       MfFacturaSuplidorDetalle detalle = new MfFacturaSuplidorDetalle();
       detalle.setFacturaSuplidor(header);
@@ -212,8 +214,20 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
         detalle.setItbisObj(itbis);
       }
 
-      lista.add(detalle);
+      // Descuentos del renglón
+      if (d.getDescuentos() != null) {
+        for (MfFacturaSuplidorDetalleDescuentoRequestDTO descDto : d.getDescuentos()) {
+          MfFacturaSuplidorDetalleDescuento desc = new MfFacturaSuplidorDetalleDescuento();
+          desc.setDetalle(detalle);
+          desc.setTipo(descDto.getTipo());
+          desc.setValor(descDto.getValor());
+          desc.setMonto(descDto.getMonto());
+          desc.setEmpresaId(empresaId);
+          detalle.getDescuentos().add(desc);
+        }
+      }
+
+      header.getDetalles().add(detalle);
     }
-    header.getDetalles().addAll(lista);
   }
 }

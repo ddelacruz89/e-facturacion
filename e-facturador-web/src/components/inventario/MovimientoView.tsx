@@ -7,6 +7,8 @@ import {
     CircularProgress,
     Divider,
     FormControl,
+    IconButton,
+    InputAdornment,
     InputLabel,
     MenuItem,
     Paper,
@@ -24,6 +26,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import ActionBar from "../../customers/ActionBar";
 import { useAuth } from "../../contexts/AuthContext";
 import { getSucursalesActivas } from "../../apis/SucursalController";
@@ -33,6 +36,9 @@ import {
     InMovimientoResumenDTO,
     InMovimientoSearchCriteria,
 } from "../../apis/InMovimientoController";
+import { ModalSearch } from "../search/ModalSearch";
+import { useModalSearch } from "../../hooks/useModalSearch";
+import SEARCH_CONFIGS from "../../types/modalSearchTypes";
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -69,14 +75,28 @@ const MovimientoView: React.FC = () => {
         user?.sucursalId ? String(user.sucursalId) : TODOS_SUCURSAL
     );
 
-    // Filtros
+    // Filtros de fecha y texto libre
     const [fechaInicio, setFechaInicio] = useState(hace30Dias());
     const [fechaFin, setFechaFin] = useState(hoy());
-    const [almacenId, setAlmacenId] = useState("");
-    const [productoId, setProductoId] = useState("");
-    const [tipoMovimientoId, setTipoMovimientoId] = useState("");
     const [numeroReferencia, setNumeroReferencia] = useState("");
     const [lote, setLote] = useState("");
+
+    // Filtros de búsqueda modal — almacén
+    const [almacenId, setAlmacenId] = useState<number | undefined>(undefined);
+    const [almacenNombre, setAlmacenNombre] = useState("");
+
+    // Filtros de búsqueda modal — producto
+    const [productoId, setProductoId] = useState<number | undefined>(undefined);
+    const [productoNombre, setProductoNombre] = useState("");
+
+    // Filtros de búsqueda modal — tipo de movimiento
+    const [tipoMovimientoId, setTipoMovimientoId] = useState<number | undefined>(undefined);
+    const [tipoMovimientoNombre, setTipoMovimientoNombre] = useState("");
+
+    // Hooks de modal search (uno por campo)
+    const almacenSearch = useModalSearch();
+    const productoSearch = useModalSearch();
+    const tipoSearch = useModalSearch();
 
     // Resultados
     const [rows, setRows] = useState<InMovimientoResumenDTO[]>([]);
@@ -89,7 +109,6 @@ const MovimientoView: React.FC = () => {
     const [snackOpen, setSnackOpen] = useState(false);
     const [snackMsg, setSnackMsg] = useState("");
 
-    // Cargar sucursales al montar
     useEffect(() => {
         getSucursalesActivas().then(setSucursales).catch(() => {});
     }, []);
@@ -101,9 +120,9 @@ const MovimientoView: React.FC = () => {
             sucursalSeleccionada === TODOS_SUCURSAL
                 ? null
                 : Number(sucursalSeleccionada),
-        almacenId: almacenId ? Number(almacenId) : undefined,
-        productoId: productoId ? Number(productoId) : undefined,
-        tipoMovimientoId: tipoMovimientoId ? Number(tipoMovimientoId) : undefined,
+        almacenId,
+        productoId,
+        tipoMovimientoId,
         numeroReferencia: numeroReferencia ? Number(numeroReferencia) : undefined,
         lote: lote || undefined,
         page: p,
@@ -137,6 +156,38 @@ const MovimientoView: React.FC = () => {
             .catch(() => { setSnackMsg("Error al cargar"); setSnackOpen(true); })
             .finally(() => setLoading(false));
     };
+
+    // ── helper para los campos de búsqueda modal ──────────────────────────
+    const modalFieldProps = (
+        label: string,
+        nombre: string,
+        onSearch: () => void,
+        onClear: () => void
+    ) => ({
+        fullWidth: true,
+        size: "small" as const,
+        label,
+        value: nombre,
+        placeholder: nombre ? "" : "(todos)",
+        InputLabelProps: { shrink: !!nombre || undefined },
+        InputProps: {
+            readOnly: true,
+            sx: { cursor: "pointer" },
+            endAdornment: (
+                <InputAdornment position="end">
+                    {nombre && (
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); onClear(); }}>
+                            <ClearIcon fontSize="small" />
+                        </IconButton>
+                    )}
+                    <IconButton size="small" onClick={onSearch}>
+                        <SearchIcon fontSize="small" />
+                    </IconButton>
+                </InputAdornment>
+            ),
+        },
+        onClick: onSearch,
+    });
 
     return (
         <>
@@ -189,30 +240,39 @@ const MovimientoView: React.FC = () => {
                         />
                     </Grid>
 
-                    {/* Almacén */}
-                    <Grid size={{ xs: 6, md: 1 }}>
+                    {/* Almacén — búsqueda modal */}
+                    <Grid size={{ xs: 12, md: 2 }}>
                         <TextField
-                            fullWidth size="small" label="Almacén ID" type="number"
-                            value={almacenId}
-                            onChange={(e) => setAlmacenId(e.target.value)}
+                            {...modalFieldProps(
+                                "Almacén",
+                                almacenNombre,
+                                () => almacenSearch.openModal(SEARCH_CONFIGS.ALMACEN),
+                                () => { setAlmacenId(undefined); setAlmacenNombre(""); }
+                            )}
                         />
                     </Grid>
 
-                    {/* Producto */}
-                    <Grid size={{ xs: 6, md: 1 }}>
+                    {/* Producto — búsqueda modal */}
+                    <Grid size={{ xs: 12, md: 2 }}>
                         <TextField
-                            fullWidth size="small" label="Producto ID" type="number"
-                            value={productoId}
-                            onChange={(e) => setProductoId(e.target.value)}
+                            {...modalFieldProps(
+                                "Producto",
+                                productoNombre,
+                                () => productoSearch.openModal(SEARCH_CONFIGS.PRODUCTO_COMPRA),
+                                () => { setProductoId(undefined); setProductoNombre(""); }
+                            )}
                         />
                     </Grid>
 
-                    {/* Tipo movimiento */}
-                    <Grid size={{ xs: 6, md: 1 }}>
+                    {/* Tipo de movimiento — búsqueda modal */}
+                    <Grid size={{ xs: 12, md: 2 }}>
                         <TextField
-                            fullWidth size="small" label="Tipo mov." type="number"
-                            value={tipoMovimientoId}
-                            onChange={(e) => setTipoMovimientoId(e.target.value)}
+                            {...modalFieldProps(
+                                "Tipo movimiento",
+                                tipoMovimientoNombre,
+                                () => tipoSearch.openModal(SEARCH_CONFIGS.MOVIMIENTO_TIPO),
+                                () => { setTipoMovimientoId(undefined); setTipoMovimientoNombre(""); }
+                            )}
                         />
                     </Grid>
 
@@ -342,6 +402,47 @@ const MovimientoView: React.FC = () => {
                     </Paper>
                 )}
             </Box>
+
+            {/* ── Modales de búsqueda ─────────────────────────────────── */}
+
+            {almacenSearch.isOpen && almacenSearch.config && (
+                <ModalSearch
+                    open={almacenSearch.isOpen}
+                    onClose={almacenSearch.closeModal}
+                    onSelect={almacenSearch.handleSelect((item) => {
+                        setAlmacenId(item.id);
+                        setAlmacenNombre(item.nombre);
+                    })}
+                    config={almacenSearch.config}
+                    initialValues={almacenSearch.initialValues}
+                />
+            )}
+
+            {productoSearch.isOpen && productoSearch.config && (
+                <ModalSearch
+                    open={productoSearch.isOpen}
+                    onClose={productoSearch.closeModal}
+                    onSelect={productoSearch.handleSelect((item) => {
+                        setProductoId(item.id);
+                        setProductoNombre(item.nombreProducto);
+                    })}
+                    config={productoSearch.config}
+                    initialValues={productoSearch.initialValues}
+                />
+            )}
+
+            {tipoSearch.isOpen && tipoSearch.config && (
+                <ModalSearch
+                    open={tipoSearch.isOpen}
+                    onClose={tipoSearch.closeModal}
+                    onSelect={tipoSearch.handleSelect((item) => {
+                        setTipoMovimientoId(item.id);
+                        setTipoMovimientoNombre(item.tipoMovimiento);
+                    })}
+                    config={tipoSearch.config}
+                    initialValues={tipoSearch.initialValues}
+                />
+            )}
 
             <Snackbar open={snackOpen} autoHideDuration={4000} onClose={() => setSnackOpen(false)}>
                 <Alert severity="error" onClose={() => setSnackOpen(false)}>

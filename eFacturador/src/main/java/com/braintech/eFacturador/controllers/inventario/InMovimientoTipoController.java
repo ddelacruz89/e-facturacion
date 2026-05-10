@@ -1,5 +1,7 @@
 package com.braintech.eFacturador.controllers.inventario;
 
+import com.braintech.eFacturador.dto.inventario.InMovimientoTipoResumenDTO;
+import com.braintech.eFacturador.dto.inventario.InMovimientoTipoSearchCriteria;
 import com.braintech.eFacturador.interfaces.inventario.InMovimientoTipoService;
 import com.braintech.eFacturador.jpa.inventario.InMovimientoTipo;
 import java.util.List;
@@ -35,5 +37,15 @@ public class InMovimientoTipoController {
   @GetMapping("/por-modulo")
   public ResponseEntity<List<InMovimientoTipo>> getByModulo(@RequestParam String modulo) {
     return ResponseEntity.ok(tipoService.findByModulo(modulo));
+  }
+
+  /**
+   * POST /buscar — Búsqueda para el modal. Devuelve solo id, tipoMovimiento, cr y modulo. Filtros
+   * opcionales: q (nombre parcial), cr (true=entrada, false=salida).
+   */
+  @PostMapping("/buscar")
+  public ResponseEntity<List<InMovimientoTipoResumenDTO>> buscar(
+      @RequestBody InMovimientoTipoSearchCriteria criteria) {
+    return ResponseEntity.ok(tipoService.buscar(criteria));
   }
 }

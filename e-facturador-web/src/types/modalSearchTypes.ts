@@ -576,6 +576,76 @@ export const SEARCH_CONFIGS = {
             { key: "estadoId", label: "Estado", width: "8%" },
             { key: "usuarioReg", label: "Usuario", width: "6%" },
         ]
+    } as SearchConfig,
+
+    ALMACEN: {
+        title: "Buscar Almacén",
+        endpoint: "/api/v1/inventario/almacenes/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        defaultParams: { estadoId: "ACT" },
+        fields: [
+            {
+                key: "nombre",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Nombre del almacén"
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "ACT", label: "Activo" },
+                    { value: "INA", label: "Inactivo" }
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "8%" },
+            { key: "nombre", label: "Nombre", width: "42%" },
+            { key: "sucursalNombre", label: "Sucursal", width: "35%" },
+            { key: "estadoId", label: "Estado", width: "15%" }
+        ]
+    } as SearchConfig,
+
+    MOVIMIENTO_TIPO: {
+        title: "Buscar Tipo de Movimiento",
+        endpoint: "/api/v1/inventario/movimientos-tipos/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        fields: [
+            {
+                key: "q",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Nombre del tipo"
+            },
+            {
+                key: "cr",
+                label: "Efecto",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "true", label: "Entrada (crédito)" },
+                    { value: "false", label: "Salida (débito)" }
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "8%" },
+            { key: "tipoMovimiento", label: "Tipo", width: "45%" },
+            {
+                key: "cr",
+                label: "Efecto",
+                width: "22%",
+                render: (v: any) => (v ? "⬆ Entrada" : "⬇ Salida")
+            },
+            { key: "modulo", label: "Módulo", width: "25%" }
+        ]
     } as SearchConfig
 };
 

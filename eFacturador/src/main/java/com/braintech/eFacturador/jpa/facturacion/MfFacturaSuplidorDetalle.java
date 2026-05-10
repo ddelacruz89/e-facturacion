@@ -7,6 +7,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -91,4 +93,13 @@ public class MfFacturaSuplidorDetalle implements Serializable {
   /** FK a mf_factura_suplidor_forma_pagos — solo se guarda el ID, sin entidad mapeada. */
   @Column(name = "forma_pago_id")
   private Integer formaPagoId;
+
+  /** Lista de descuentos aplicados a este renglón ($ o %). */
+  @OneToMany(
+      mappedBy = "detalle",
+      cascade = CascadeType.ALL,
+      orphanRemoval = true,
+      fetch = FetchType.LAZY)
+  @JsonIgnoreProperties("detalle")
+  private List<MfFacturaSuplidorDetalleDescuento> descuentos = new ArrayList<>();
 }

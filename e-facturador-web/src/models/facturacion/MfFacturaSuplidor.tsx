@@ -20,6 +20,14 @@ export interface MfFacturaSuplidorSearchCriteria {
     fechaFin?: string;
 }
 
+// ── Descuento por renglón ────────────────────────────────────────────────
+export interface MfFacturaSuplidorDetalleDescuentoRequest {
+    id?: number;
+    tipo: '$' | '%';        // tipo de descuento
+    valor: number;          // % ingresado o RD$ directo
+    monto: number;          // RD$ calculado que se descuenta
+}
+
 // ── Detalle ───────────────────────────────────────────────────────────────
 export interface MfFacturaSuplidorDetalleRequest {
     id?: number;
@@ -31,7 +39,7 @@ export interface MfFacturaSuplidorDetalleRequest {
     retencion?: number;            // ISR retenido calculado
     retencionIsrPorciento?: number;   // % ISR viene del header
     retencionItbisPorciento?: number; // % ITBIS viene del header
-    montoDescuento?: number;
+    montoDescuento?: number;       // suma total de todos los descuentos
     montoRecargo?: number;
     itbis?: number;
     montoItbisRetenido?: number;
@@ -43,6 +51,7 @@ export interface MfFacturaSuplidorDetalleRequest {
     centroCostosId?: number;        // Centro de costos
     estado?: string;
     formaPagoId?: number;
+    descuentos?: MfFacturaSuplidorDetalleDescuentoRequest[]; // lista de descuentos
 }
 
 // ── Cabecera (request / form) ─────────────────────────────────────────────

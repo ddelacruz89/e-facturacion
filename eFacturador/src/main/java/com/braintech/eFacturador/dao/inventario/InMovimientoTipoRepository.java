@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.dao.inventario;
 
+import com.braintech.eFacturador.dto.inventario.InMovimientoTipoResumenDTO;
 import com.braintech.eFacturador.jpa.inventario.InMovimientoTipo;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,4 +23,17 @@ public interface InMovimientoTipoRepository extends JpaRepository<InMovimientoTi
           + "WHERE CONCAT('-', t.modulo, '-') LIKE CONCAT('%-', :modulo, '-%') "
           + "ORDER BY t.tipoMovimiento ASC")
   List<InMovimientoTipo> findByModulo(@Param("modulo") String modulo);
+
+  /**
+   * Búsqueda para el modal: proyecta solo id, tipoMovimiento, cr y modulo. Filtros opcionales: q
+   * (nombre parcial) y cr (efecto stock).
+   */
+  @Query(
+      "SELECT new com.braintech.eFacturador.dto.inventario.InMovimientoTipoResumenDTO("
+          + "t.id, t.tipoMovimiento, t.cr, t.modulo) "
+          + "FROM InMovimientoTipo t "
+          + "WHERE (:q IS NULL OR LOWER(t.tipoMovimiento) LIKE LOWER(CONCAT('%', :q, '%'))) "
+          + "AND (:cr IS NULL OR t.cr = :cr) "
+          + "ORDER BY t.tipoMovimiento ASC")
+  List<InMovimientoTipoResumenDTO> buscar(@Param("q") String q, @Param("cr") Boolean cr);
 }

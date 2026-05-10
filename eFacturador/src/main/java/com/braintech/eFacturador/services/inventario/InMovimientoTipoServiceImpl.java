@@ -1,6 +1,8 @@
 package com.braintech.eFacturador.services.inventario;
 
 import com.braintech.eFacturador.dao.inventario.InMovimientoTipoRepository;
+import com.braintech.eFacturador.dto.inventario.InMovimientoTipoResumenDTO;
+import com.braintech.eFacturador.dto.inventario.InMovimientoTipoSearchCriteria;
 import com.braintech.eFacturador.interfaces.inventario.InMovimientoTipoService;
 import com.braintech.eFacturador.jpa.inventario.InMovimientoTipo;
 import java.util.Comparator;
@@ -32,5 +34,12 @@ public class InMovimientoTipoServiceImpl implements InMovimientoTipoService {
   @Override
   public List<InMovimientoTipo> findByModulo(String modulo) {
     return tipoRepository.findByModulo(modulo);
+  }
+
+  @Override
+  public List<InMovimientoTipoResumenDTO> buscar(InMovimientoTipoSearchCriteria criteria) {
+    String q =
+        (criteria.getQ() != null && !criteria.getQ().isBlank()) ? criteria.getQ().trim() : null;
+    return tipoRepository.buscar(q, criteria.getCr());
   }
 }

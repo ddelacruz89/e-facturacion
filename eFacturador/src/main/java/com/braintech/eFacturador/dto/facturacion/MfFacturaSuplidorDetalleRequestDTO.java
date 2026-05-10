@@ -1,6 +1,8 @@
 package com.braintech.eFacturador.dto.facturacion;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -18,7 +20,10 @@ public class MfFacturaSuplidorDetalleRequestDTO {
   private BigDecimal subtotal;
   private BigDecimal retencion;
   private Double retencionPorciento;
+
+  /** Suma total de todos los descuentos del renglón (calculado). */
   private BigDecimal montoDescuento;
+
   private BigDecimal montoRecargo;
   private BigDecimal itbis;
   private BigDecimal montoItbisRetenido;
@@ -31,4 +36,7 @@ public class MfFacturaSuplidorDetalleRequestDTO {
   private Boolean indicadorBienServicio;
   private String estado;
   private Integer formaPagoId;
+
+  /** Descuentos aplicados a este renglón ($ o %). */
+  private List<MfFacturaSuplidorDetalleDescuentoRequestDTO> descuentos = new ArrayList<>();
 }

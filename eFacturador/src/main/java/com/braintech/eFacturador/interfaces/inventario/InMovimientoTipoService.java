@@ -1,5 +1,7 @@
 package com.braintech.eFacturador.interfaces.inventario;
 
+import com.braintech.eFacturador.dto.inventario.InMovimientoTipoResumenDTO;
+import com.braintech.eFacturador.dto.inventario.InMovimientoTipoSearchCriteria;
 import com.braintech.eFacturador.jpa.inventario.InMovimientoTipo;
 import java.util.List;
 
@@ -22,4 +24,10 @@ public interface InMovimientoTipoService {
    * @param modulo código de módulo, ej. {@code "AI"}, {@code "OE"}, {@code "OC"}.
    */
   List<InMovimientoTipo> findByModulo(String modulo);
+
+  /**
+   * Búsqueda para el modal: retorna resumen mínimo (id, nombre, cr, modulo). Filtros opcionales: q
+   * (nombre parcial) y cr.
+   */
+  List<InMovimientoTipoResumenDTO> buscar(InMovimientoTipoSearchCriteria criteria);
 }
