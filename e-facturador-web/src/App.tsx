@@ -31,6 +31,7 @@ const MovimientoView = lazy(() => import("./components/inventario/MovimientoView
 const ClientesView = lazy(() => import("./components/Cliente/ClientesView"));
 const AjusteInventarioView = lazy(() => import("./components/inventario/AjusteInventarioView"));
 const AlmacenView = lazy(() => import("./components/inventario/AlmacenView"));
+const StockArbolView = lazy(() => import("./components/inventario/StockArbolView"));
 
 // Routes component that uses authentication context
 const AppRoutes = () => {
@@ -70,6 +71,7 @@ const AppRoutes = () => {
                     <Route path="clientes" element={<ClientesView />} />
                     <Route path="ajuste-inventario" element={<AjusteInventarioView />} />
                     <Route path="almacenes" element={<AlmacenView />} />
+                    <Route path="stock-arbol" element={<StockArbolView />} />
                 </Route>
 
                 {/* Catch all route */}

@@ -18,6 +18,7 @@ const INV_EXTRA_MENUS = [
     { id: 17, menu: "Movimientos",             urlSql: "/movimientos",        url: "/movimientos" },
     { id: 18, menu: "Ajuste de Inventario",    urlSql: "/ajuste-inventario",  url: "/ajuste-inventario" },
     { id: 19, menu: "Almacenes",               urlSql: "/almacenes",          url: "/almacenes" },
+    { id: 20, menu: "Stock por Almacén/Lote",  urlSql: "/stock-arbol",        url: "/stock-arbol" },
 ];
 
 const HomeView = () => {
