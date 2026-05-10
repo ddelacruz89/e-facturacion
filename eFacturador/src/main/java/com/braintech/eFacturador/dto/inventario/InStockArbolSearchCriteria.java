@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 public class InStockArbolSearchCriteria {
 
   /**
-   * Sucursal a consultar. Null = todas las sucursales de la empresa.
-   * El frontend envía el ID elegido en el selector; si no selecciona ninguna, envía null.
+   * Sucursal a consultar. Null = todas las sucursales de la empresa. El frontend envía el ID
+   * elegido en el selector; si no selecciona ninguna, envía null.
    */
   private Integer sucursalId;
 

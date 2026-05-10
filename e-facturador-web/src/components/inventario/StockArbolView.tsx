@@ -203,9 +203,9 @@ const StockArbolView: React.FC = () => {
     const [sucursales, setSucursales] = useState<SgSucursal[]>([]);
     const [almacenes, setAlmacenes] = useState<InAlmacenResumenDTO[]>([]);
 
-    // Filtros
-    const [sucursalId, setSucursalId] = useState<number | "">("");
-    const [almacenId, setAlmacenId] = useState<number | "">("");
+    // Filtros — string vacío = "sin selección" (Select siempre maneja strings internamente)
+    const [sucursalId, setSucursalId] = useState<string>("");
+    const [almacenId, setAlmacenId] = useState<string>("");
     const [productoNombre, setProductoNombre] = useState("");
     const [soloConStock, setSoloConStock] = useState(true);
 
@@ -224,7 +224,7 @@ const StockArbolView: React.FC = () => {
             setSucursales(data);
             // Auto-seleccionar si solo hay una sucursal
             if (data.length === 1 && data[0].id != null) {
-                setSucursalId(data[0].id);
+                setSucursalId(String(data[0].id));
             }
         }).catch(() => {});
     }, []);
@@ -234,7 +234,7 @@ const StockArbolView: React.FC = () => {
         setAlmacenId(""); // limpiar selección previa de almacén
         buscarAlmacenes({
             estadoId: "A",
-            sucursalId: sucursalId !== "" ? sucursalId : undefined,
+            sucursalId: sucursalId !== "" ? Number(sucursalId) : undefined,
         })
             .then(setAlmacenes)
             .catch(() => {});
@@ -246,8 +246,8 @@ const StockArbolView: React.FC = () => {
         setErrorMsg("");
         try {
             const criteria: InStockArbolSearchCriteria = {
-                sucursalId: sucursalId !== "" ? sucursalId : null,
-                almacenId: almacenId !== "" ? almacenId : null,
+                sucursalId: sucursalId !== "" ? Number(sucursalId) : null,
+                almacenId: almacenId !== "" ? Number(almacenId) : null,
                 productoNombre: productoNombre.trim() || undefined,
                 soloConStock,
             };
@@ -275,9 +275,6 @@ const StockArbolView: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sucursales]);
 
-    const totalProductos = rows.length;
-    const totalUnidades = rows.reduce((s, p) => s + (p.totalCantidad ?? 0), 0);
-
     return (
         <Box sx={{ p: 2 }}>
             <ActionBar title="Inventario — Stock por Almacén y Lote" />
@@ -287,15 +284,13 @@ const StockArbolView: React.FC = () => {
                 <Grid container spacing={2} alignItems="flex-end">
 
                     {/* Sucursal */}
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                         <FormControl size="small" fullWidth>
                             <InputLabel>Sucursal</InputLabel>
                             <Select
                                 label="Sucursal"
                                 value={sucursalId}
-                                onChange={(e) =>
-                                    setSucursalId(e.target.value === "" ? "" : Number(e.target.value))
-                                }
+                                onChange={(e) => setSucursalId(e.target.value as string)}
                             >
                                 <MenuItem value="">Todas</MenuItem>
                                 {sucursales.map((s) => (
@@ -308,15 +303,13 @@ const StockArbolView: React.FC = () => {
                     </Grid>
 
                     {/* Almacén (depende de sucursal seleccionada) */}
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                         <FormControl size="small" fullWidth>
                             <InputLabel>Almacén</InputLabel>
                             <Select
                                 label="Almacén"
                                 value={almacenId}
-                                onChange={(e) =>
-                                    setAlmacenId(e.target.value === "" ? "" : Number(e.target.value))
-                                }
+                                onChange={(e) => setAlmacenId(e.target.value as string)}
                             >
                                 <MenuItem value="">Todos</MenuItem>
                                 {almacenes.map((a) => (
@@ -329,7 +322,7 @@ const StockArbolView: React.FC = () => {
                     </Grid>
 
                     {/* Producto */}
-                    <Grid item xs={12} sm={3}>
+                    <Grid size={{ xs: 12, sm: 3 }}>
                         <TextField
                             label="Producto"
                             size="small"
@@ -342,7 +335,7 @@ const StockArbolView: React.FC = () => {
                     </Grid>
 
                     {/* Stock + acciones */}
-                    <Grid item xs={12} sm={3} sx={{ display: "flex", gap: 1 }}>
+                    <Grid size={{ xs: 12, sm: 3 }} sx={{ display: "flex", gap: 1 }}>
                         <FormControl size="small" sx={{ minWidth: 130 }}>
                             <InputLabel>Stock</InputLabel>
                             <Select
@@ -380,23 +373,6 @@ const StockArbolView: React.FC = () => {
                     </Grid>
                 </Grid>
             </Paper>
-
-            {/* ── Resumen ───────────────────────────────────────────────── */}
-            {rows.length > 0 && (
-                <Box sx={{ display: "flex", gap: 2, mb: 1, flexWrap: "wrap" }}>
-                    <Chip
-                        icon={<InventoryIcon />}
-                        label={`${totalProductos} producto${totalProductos !== 1 ? "s" : ""}`}
-                        color="primary"
-                        variant="outlined"
-                    />
-                    <Chip
-                        label={`${fmtCantidad(totalUnidades)} unidades totales`}
-                        color="success"
-                        variant="outlined"
-                    />
-                </Box>
-            )}
 
             {/* ── Tabla árbol ───────────────────────────────────────────── */}
             <TableContainer component={Paper} elevation={2}>

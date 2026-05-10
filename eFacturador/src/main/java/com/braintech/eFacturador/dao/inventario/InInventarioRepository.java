@@ -2,7 +2,6 @@ package com.braintech.eFacturador.dao.inventario;
 
 import com.braintech.eFacturador.dto.inventario.InLoteStockDTO;
 import com.braintech.eFacturador.dto.inventario.InLoteStockItemDTO;
-import com.braintech.eFacturador.dto.inventario.InStockArbolFlatDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.jpa.inventario.InInventario;
 import java.util.List;
@@ -109,36 +108,4 @@ public interface InInventarioRepository extends JpaRepository<InInventario, Inte
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId,
       @Param("nombre") String nombre);
-
-  /**
-   * Consulta plana para construir el árbol de stock. Retorna una fila por cada combinación
-   * producto+almacén+lote. El servicio agrupa los resultados en estructura árbol.
-   *
-   * <p>Filtros opcionales:
-   *
-   * <ul>
-   *   <li>{@code sucursalId} — sucursal específica (null = todas las sucursales de la empresa)
-   *   <li>{@code productoNombre} — búsqueda parcial case-insensitive (null = sin filtro)
-   *   <li>{@code almacenId} — almacén específico (null = todos)
-   *   <li>{@code soloConStock} — true filtra cantidad > 0; false incluye cantidad = 0
-   * </ul>
-   */
-  @Query(
-      "SELECT new com.braintech.eFacturador.dto.inventario.InStockArbolFlatDTO("
-          + "  p.id, p.nombreProducto, a.id, a.nombre, i.loteId, i.cantidad) "
-          + "FROM InInventario i "
-          + "  JOIN i.productoId p "
-          + "  JOIN i.almacenId a "
-          + "WHERE i.empresaId = :empresaId "
-          + "  AND (:sucursalId IS NULL OR i.sucursalId.id = :sucursalId) "
-          + "  AND (:productoNombre IS NULL OR LOWER(p.nombreProducto) LIKE LOWER(CONCAT('%', :productoNombre, '%'))) "
-          + "  AND (:almacenId IS NULL OR a.id = :almacenId) "
-          + "  AND (:soloConStock = false OR i.cantidad > 0) "
-          + "ORDER BY p.nombreProducto ASC, a.nombre ASC, i.loteId ASC NULLS FIRST")
-  List<InStockArbolFlatDTO> findStockArbol(
-      @Param("empresaId") Integer empresaId,
-      @Param("sucursalId") Integer sucursalId,
-      @Param("productoNombre") String productoNombre,
-      @Param("almacenId") Integer almacenId,
-      @Param("soloConStock") boolean soloConStock);
 }
