@@ -50,6 +50,8 @@ export const CategoriaComboBox: React.FC<BaseComboProps> = ({ label = "Categorí
         value: categoria.id,
         label: categoria.categoria,
         disabled: false,
+        // Se incluye para que onSelectionChange lo reciba y el view detecte si es servicio
+        inventario: categoria.inventario,
     }));
 
     const handleSearch = useCallback(

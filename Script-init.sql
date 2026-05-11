@@ -88,7 +88,8 @@ VALUES
 (TRUE, 1, 0, 5, 'FA', NOW(), 'Tipo Comprobante', 'A', '/tipo/comprobante', NULL, 'Master'),
 (TRUE, 1, 0, 6, 'FA', NOW(), 'Facturación', 'A', '/facturacion', NULL, 'Master'),
 (TRUE, 1, 0, 7, 'TAR', NOW(), 'Producto', 'A', '/producto', NULL, 'Master'),
-(TRUE, 1, 0, 8, 'TAR', NOW(), 'Categoría', 'A', '/categoria', NULL, 'Master')
+(TRUE, 1, 0, 8, 'TAR', NOW(), 'Categoría', 'A', '/categoria', NULL, 'Master'),
+(TRUE, 1, 0, 9, 'TAR', NOW(), 'Paquetes', 'A', '/paquete', NULL, 'Master')
 
 
 INSERT INTO seguridad.sg_usuario

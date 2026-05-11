@@ -2,3 +2,4 @@
 export { default as ProductoView } from "./ProductoView";
 export { default as CategoriaView } from "./CategoriaView";
 export { default as UnidadView } from "./UnidadView";
+export { default as PaqueteView } from "./PaqueteView";

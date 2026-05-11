@@ -12,6 +12,7 @@ const FAC_EXTRA_MENUS = [
     { id: 31, menu: "Facturas Suplidor", urlSql: "/factura-suplidor", url: "/factura-suplidor" },
 ];
 
+
 const INV_EXTRA_MENUS = [
     { id: 11, menu: "Suplidores",              urlSql: "/suplidores",         url: "/suplidores" },
     { id: 12, menu: "Cotizaciones",            urlSql: "/cotizacion",         url: "/cotizacion" },
@@ -42,6 +43,7 @@ const HomeView = () => {
                 return { ...modulo, menus: [...modulo.menus, ...INV_EXTRA_MENUS] };
             if (modulo.id === "FAC")
                 return { ...modulo, menus: [...modulo.menus, ...FAC_EXTRA_MENUS] };
+
             return modulo;
         });
 
@@ -51,6 +53,7 @@ const HomeView = () => {
         if (!mapped.some((m) => m.id === "FAC")) {
             mapped.push({ id: "FAC", modulo: "Facturación", menus: FAC_EXTRA_MENUS });
         }
+
 
         return mapped;
     }, [rawModulos]);

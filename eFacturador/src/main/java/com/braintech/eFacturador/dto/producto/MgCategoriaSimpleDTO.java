@@ -8,4 +8,7 @@ import lombok.Data;
 public class MgCategoriaSimpleDTO {
   private Integer id;
   private String categoria;
+
+  /** true = Producto (maneja inventario), false = Servicio (sin inventario) */
+  private Boolean inventario;
 }

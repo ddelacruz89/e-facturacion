@@ -92,6 +92,15 @@ const ProductoViewExample = () => {
         name: "unidadProductorSuplidor",
     });
 
+    // -----------------------------------------------------------------------
+    // Estado: tipo de categoría
+    // -----------------------------------------------------------------------
+    /**
+     * esServicio = true cuando la categoría seleccionada tiene inventario = false.
+     * Controla qué campos/secciones se muestran y cómo se valida.
+     */
+    const [esServicio, setEsServicio] = useState(false);
+
     // State to manage expanded cards for unidad/fracción items
     const [expandedCards, setExpandedCards] = useState<{ [key: number]: boolean }>({});
 
@@ -133,14 +142,41 @@ const ProductoViewExample = () => {
         setSnackbar({ open: true, message, severity });
     };
 
+    // -----------------------------------------------------------------------
+    // Handler: cambio de categoría
+    // -----------------------------------------------------------------------
+    /**
+     * Recibe la ComboBoxOption completa (incluye el campo `inventario`
+     * que agregamos en CategoriaComboBox).
+     * - Si inventario === false → es Servicio
+     * - Si inventario === true o undefined → es Producto
+     */
+    const handleCategoriaChange = (option: any) => {
+        // inventario=true → Producto | inventario=false|null → Servicio
+        // Sólo marcamos servicio cuando hay una opción seleccionada y no tiene inventario
+        const esServicioNuevo = option != null && option?.inventario !== true;
+        setEsServicio(esServicioNuevo);
+
+        if (esServicioNuevo) {
+            // Servicios: limpiar existencia y límites de almacén
+            setValue("existencia", undefined as any);
+            setValue("productosAlmacenesLimites", []);
+
+            // Ajustar unidades existentes: cantidad=1, disponibleEnCompra=false
+            const unidades = watch("unidadProductorSuplidor") || [];
+            unidades.forEach((_: any, idx: number) => {
+                setValue(`unidadProductorSuplidor.${idx}.cantidad`, 1);
+                setValue(`unidadProductorSuplidor.${idx}.disponibleEnCompra`, false);
+            });
+        }
+    };
+
     // Validar que la combinación unidadId + cantidad + unidadFraccionId sea única
     const validateUnidadCombination = (currentIndex: number, unidadId: any, cantidad: any, unidadFraccionId: any): boolean => {
-        // Extraer el ID del objeto verificando si tiene propiedades en lugar de usar typeof
         const unidadIdValue = (unidadId && (unidadId.id || unidadId.value)) || unidadId;
         const unidadFraccionIdValue = (unidadFraccionId && (unidadFraccionId.id || unidadFraccionId.value)) || unidadFraccionId;
-        const cantidadValue = Number(cantidad) || 0; // Convertir a número
+        const cantidadValue = Number(cantidad) || 0;
 
-        // Si alguno es 0 o undefined, no validar aún
         if (
             !unidadIdValue ||
             !unidadFraccionIdValue ||
@@ -151,7 +187,6 @@ const ProductoViewExample = () => {
             return true;
         }
 
-        // Verificar todas las combinaciones duplicadas en el array completo
         const allUnidades = watch("unidadProductorSuplidor");
         const duplicateIndexes = new Set<number>();
 
@@ -163,9 +198,7 @@ const ProductoViewExample = () => {
                 unidad.unidadFraccionId;
             const existingCantidad = Number(unidad.cantidad) || 0;
 
-            // Si esta fila tiene valores completos
             if (existingUnidadId && existingUnidadFraccionId && existingCantidad > 0) {
-                // Buscar si hay otra fila con la misma combinación
                 const hasDuplicate = allUnidades.some((otherUnidad, otherIdx) => {
                     if (idx === otherIdx) return false;
 
@@ -191,10 +224,8 @@ const ProductoViewExample = () => {
             }
         });
 
-        // Actualizar el estado de duplicados
         setDuplicateRows(duplicateIndexes);
 
-        // Mostrar mensaje si hay duplicados
         if (duplicateIndexes.size > 0) {
             showSnackbar("Hay combinaciones duplicadas de Unidad Base, Cantidad y Unidad Fracción", "warning");
             return false;
@@ -213,6 +244,7 @@ const ProductoViewExample = () => {
     // Function to clear the form and search
     const clearForm = () => {
         setSelectedProduct(null);
+        setEsServicio(false);
         reset({
             empresaId: 0,
             secuencia: 0,
@@ -242,18 +274,14 @@ const ProductoViewExample = () => {
     // Handle product selection from modal search
     const handleProductSelect = modalSearch.handleSelect(async (product) => {
         try {
-            // Update the selected product state for display with summary data
             setSelectedProduct(product as MgProducto);
 
-            // Fetch the complete product data with all relationships
             const productoCompleto = await getProducto(product.id);
 
             console.log("Producto completo obtenido:", productoCompleto);
 
-            // Load the complete product into the form
             reset({
                 ...productoCompleto,
-                // Ensure arrays exist
                 unidadProductorSuplidor: productoCompleto.unidadProductorSuplidor || [],
                 productosModulos: productoCompleto.productosModulos || [],
                 inventarios: productoCompleto.inventarios || [],
@@ -261,7 +289,6 @@ const ProductoViewExample = () => {
                 productosAlmacenesLimites: productoCompleto.productosAlmacenesLimites || [],
             });
 
-            // Update selected product with complete data
             setSelectedProduct(productoCompleto);
 
             showSnackbar("Producto cargado correctamente", "success");
@@ -292,13 +319,12 @@ const ProductoViewExample = () => {
     const onSubmit: SubmitHandler<MgProducto> = async (data) => {
         console.log("Raw form data:", data);
 
-        // Validar con Yup
-        const validation = await validateProducto(data);
+        // Validar con Yup — se pasa esServicio como contexto
+        const validation = await validateProducto(data, esServicio);
 
         if (!validation.isValid) {
             console.log("❌ Errores de validación:", validation.errors);
 
-            // Mostrar todos los errores en snackbar
             const errorMessages = Object.values(validation.errors);
             const errorCount = errorMessages.length;
 
@@ -321,38 +347,31 @@ const ProductoViewExample = () => {
 
         console.log("✅ Validación exitosa");
 
-        // Transform ComboBox objects - keep categoria and itbis objects
         const transformedData: MgProducto = {
             ...data,
-            // Keep the complete categoria object instead of just ID
             categoriaId:
                 typeof data.categoriaId === "object" && data.categoriaId !== null
-                    ? (data.categoriaId as any) // Send the complete {id, name, description} object
+                    ? (data.categoriaId as any)
                     : data.categoriaId,
-            // Keep the complete itbis object instead of just ID
             itbisId:
                 typeof data.itbisId === "object" && data.itbisId !== null
-                    ? (data.itbisId as any) // Send the complete {id, name, description} object
+                    ? (data.itbisId as any)
                     : data.itbisId,
-
-            // Transform nested arrays - keep unidad objects
             unidadProductorSuplidor: data.unidadProductorSuplidor?.map((item) => ({
                 ...item,
-                // Keep the complete unidad objects instead of just IDs
                 unidadId:
                     typeof item.unidadId === "object" && item.unidadId !== null
-                        ? (item.unidadId as any) // Send the complete {id, name, description} object
+                        ? (item.unidadId as any)
                         : item.unidadId,
                 unidadFraccionId:
                     typeof item.unidadFraccionId === "object" && item.unidadFraccionId !== null
-                        ? (item.unidadFraccionId as any) // Send the complete {id, name, description} object
+                        ? (item.unidadFraccionId as any)
                         : item.unidadFraccionId,
                 productosSuplidores: item.productosSuplidores?.map((suplidor) => ({
                     ...suplidor,
-                    // Keep the complete suplidor object instead of just ID
                     suplidorId:
                         typeof suplidor.suplidorId === "object" && suplidor.suplidorId !== null
-                            ? (suplidor.suplidorId as any) // Send the complete {id, name, description} object
+                            ? (suplidor.suplidorId as any)
                             : suplidor.suplidorId,
                 })),
             })),
@@ -366,10 +385,8 @@ const ProductoViewExample = () => {
         saveProducto(transformedData)
             .then((response) => {
                 showSnackbar(successMessage, "success");
-                // Actualizar el producto seleccionado con la respuesta del servidor
                 setSelectedProduct(response);
 
-                // Actualizar solo los campos básicos sin recargar los combos
                 if (response.id) setValue("id", response.id);
                 if (response.secuencia) setValue("secuencia", response.secuencia);
                 if (response.fechaReg) setValue("fechaReg", response.fechaReg);
@@ -391,8 +408,9 @@ const ProductoViewExample = () => {
             usuarioReg: "",
             fechaReg: new Date(),
             activo: true,
+            // Servicios: cantidad fija en 1, solo disponible en venta
             cantidad: 1,
-            disponibleEnCompra: true,
+            disponibleEnCompra: esServicio ? false : true,
             disponibleEnVenta: true,
             unidadId: 0,
             unidadFraccionId: 0,
@@ -400,8 +418,7 @@ const ProductoViewExample = () => {
             productosSuplidores: [],
         });
 
-        // Auto-expand the newly added card
-        const newIndex = unidadProductorSuplidor.length; // Will be the index of the new item
+        const newIndex = unidadProductorSuplidor.length;
         setExpandedCards((prev) => ({
             ...prev,
             [newIndex]: true,
@@ -434,15 +451,13 @@ const ProductoViewExample = () => {
     return (
         <main>
             <Box component="form" onSubmit={handleSubmit(onSubmit, onError)}>
-                <ActionBar title="Producto">
+                <ActionBar title={esServicio ? "Servicio" : "Producto"}>
                     <Button
                         size="small"
                         sx={{
-                            color: "white", // White text
-                            backgroundColor: "#1976d2", // Example background
-                            "&:hover": {
-                                backgroundColor: "#1565c0",
-                            },
+                            color: "white",
+                            backgroundColor: "#1976d2",
+                            "&:hover": { backgroundColor: "#1565c0" },
                         }}
                         type="submit">
                         Guardar
@@ -450,11 +465,9 @@ const ProductoViewExample = () => {
                     <Button
                         size="small"
                         sx={{
-                            color: "white", // White text
-                            backgroundColor: "#1976d2", // Example background
-                            "&:hover": {
-                                backgroundColor: "#1565c0",
-                            },
+                            color: "white",
+                            backgroundColor: "#1976d2",
+                            "&:hover": { backgroundColor: "#1565c0" },
                         }}
                         type="button"
                         onClick={clearForm}>
@@ -463,7 +476,9 @@ const ProductoViewExample = () => {
                 </ActionBar>
 
                 <section>
-                    {/* Basic Information */}
+                    {/* ---------------------------------------------------------------- */}
+                    {/* Información Básica                                               */}
+                    {/* ---------------------------------------------------------------- */}
                     <Card sx={{ mb: 2 }}>
                         <CardContent>
                             <Typography variant="h6" gutterBottom>
@@ -491,7 +506,7 @@ const ProductoViewExample = () => {
                                 />
 
                                 <AlphanumericInput
-                                    label="Nombre del Producto"
+                                    label={esServicio ? "Nombre del Servicio" : "Nombre del Producto"}
                                     size={6}
                                     name="nombreProducto"
                                     control={control}
@@ -513,7 +528,6 @@ const ProductoViewExample = () => {
                                 />
                             </Grid>
 
-                            {/* Using the new SearchableComboBox components */}
                             <Grid container spacing={2}>
                                 <CategoriaComboBox
                                     name="categoriaId"
@@ -521,9 +535,7 @@ const ProductoViewExample = () => {
                                     error={errors.categoriaId as any}
                                     rules={{ required: "Seleccione una categoría" }}
                                     size={6}
-                                    onSelectionChange={(value) => {
-                                        console.log("Categoria selected:", value);
-                                    }}
+                                    onSelectionChange={handleCategoriaChange}
                                 />
                                 <ItbisComboBox
                                     name="itbisId"
@@ -537,7 +549,9 @@ const ProductoViewExample = () => {
                                 />
                             </Grid>
 
-                            {/* Precios e Inventario del Producto */}
+                            {/* -------------------------------------------------------- */}
+                            {/* Precios e Inventario                                     */}
+                            {/* -------------------------------------------------------- */}
                             <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, mb: 1 }}>
                                 Precios e Inventario
                             </Typography>
@@ -556,12 +570,14 @@ const ProductoViewExample = () => {
                                     error={errors.precioMinimo}
                                     size={2}
                                 />
+                                {/* Precio de costo, costo promedio y existencia: deshabilitados para servicios */}
                                 <MoneyInput
                                     label="Precio de Costo"
                                     name="precio"
                                     control={control}
                                     error={errors.precio}
                                     size={2}
+                                    disabled={esServicio}
                                 />
                                 <MoneyInput
                                     label="Precio Costo Promedio"
@@ -569,6 +585,7 @@ const ProductoViewExample = () => {
                                     control={control}
                                     error={errors.precioCostoAvg}
                                     size={2}
+                                    disabled={esServicio}
                                 />
                                 <NumericInput
                                     label="Existencia"
@@ -576,10 +593,13 @@ const ProductoViewExample = () => {
                                     control={control}
                                     error={errors.existencia}
                                     size={2}
+                                    disabled={esServicio}
                                 />
                             </Grid>
 
-                            {/* Configuración General del Producto */}
+                            {/* -------------------------------------------------------- */}
+                            {/* Configuración General                                    */}
+                            {/* -------------------------------------------------------- */}
                             <Typography variant="subtitle1" gutterBottom sx={{ mt: 2, mb: 1 }}>
                                 Configuración General
                             </Typography>
@@ -614,14 +634,33 @@ const ProductoViewExample = () => {
                                     </Box>
                                 )}
                             </Box>
+
+                            {/* Chip indicador cuando es servicio */}
+                            {esServicio && (
+                                <Box sx={{ mt: 1 }}>
+                                    <Chip
+                                        label="Servicio — solo disponible en venta · sin existencia · sin límites por almacén"
+                                        color="info"
+                                        size="small"
+                                        variant="outlined"
+                                    />
+                                </Box>
+                            )}
                         </CardContent>
                     </Card>
 
-                    {/* Warehouse Limits - Now at Product Level */}
-                    <Accordion>
+                    {/* ---------------------------------------------------------------- */}
+                    {/* Límites por Almacén (deshabilitado para servicios)              */}
+                    {/* ---------------------------------------------------------------- */}
+                    <Accordion disabled={esServicio}>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="h6">
+                            <Typography variant="h6" color={esServicio ? "text.disabled" : "text.primary"}>
                                 Límites por Almacén ({(watch("productosAlmacenesLimites") || []).length})
+                                {esServicio && (
+                                    <Typography component="span" variant="caption" color="text.disabled" sx={{ ml: 1 }}>
+                                        — no aplica para servicios
+                                    </Typography>
+                                )}
                             </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
@@ -632,6 +671,7 @@ const ProductoViewExample = () => {
                                 <Button
                                     variant="outlined"
                                     size="small"
+                                    disabled={esServicio}
                                     onClick={() => {
                                         const currentLimits = watch("productosAlmacenesLimites") || [];
                                         setValue("productosAlmacenesLimites", [
@@ -667,6 +707,7 @@ const ProductoViewExample = () => {
                                             <Button
                                                 color="error"
                                                 size="small"
+                                                disabled={esServicio}
                                                 onClick={() => {
                                                     const currentLimits = watch("productosAlmacenesLimites") || [];
                                                     const newLimits = currentLimits.filter(
@@ -683,12 +724,14 @@ const ProductoViewExample = () => {
                                                 label="Almacén"
                                                 control={control}
                                                 size={8}
+                                                disabled={esServicio}
                                             />
                                             <NumericInput
                                                 label="Límite"
                                                 name={`productosAlmacenesLimites.${limiteIndex}.limite`}
                                                 control={control}
                                                 size={4}
+                                                disabled={esServicio}
                                             />
                                         </Grid>
                                     </CardContent>
@@ -703,18 +746,24 @@ const ProductoViewExample = () => {
                         </AccordionDetails>
                     </Accordion>
 
-                    {/* Unit Fractions */}
+                    {/* ---------------------------------------------------------------- */}
+                    {/* Unidades y Proveedores                                           */}
+                    {/* ---------------------------------------------------------------- */}
                     <Accordion defaultExpanded>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="h6">Unidades y Proveedores ({unidadProductorSuplidor.length})</Typography>
+                            <Typography variant="h6">
+                                {esServicio ? "Unidades de Venta" : "Unidades y Proveedores"} ({unidadProductorSuplidor.length})
+                            </Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Defina las diferentes unidades de medida y sus proveedores.
+                                    {esServicio
+                                        ? "Defina las unidades de medida para la venta del servicio."
+                                        : "Defina las diferentes unidades de medida y sus proveedores."}
                                 </Typography>
                                 <Button variant="outlined" size="small" onClick={addUnidadFraccion}>
-                                    Agregar Unidad/Fracción
+                                    Agregar Unidad{esServicio ? "" : "/Fracción"}
                                 </Button>
                             </Box>
 
@@ -752,18 +801,23 @@ const ProductoViewExample = () => {
                                                     }}
                                                 />
                                                 <Box sx={{ mb: 0, "& > div": { mb: 0 } }}>
+                                                    {/* Cantidad: fija en 1 para servicios */}
                                                     <NumericInput
                                                         label="Cantidad"
                                                         name={`unidadProductorSuplidor.${index}.cantidad`}
                                                         control={control}
                                                         size={12}
-                                                        disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                        disabled={
+                                                            !watch(`unidadProductorSuplidor.${index}.activo`) || esServicio
+                                                        }
                                                         onBlur={(value: any) => {
-                                                            const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
-                                                            const unidadFraccionId = watch(
-                                                                `unidadProductorSuplidor.${index}.unidadFraccionId`,
-                                                            );
-                                                            validateUnidadCombination(index, unidadId, value, unidadFraccionId);
+                                                            if (!esServicio) {
+                                                                const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
+                                                                const unidadFraccionId = watch(
+                                                                    `unidadProductorSuplidor.${index}.unidadFraccionId`,
+                                                                );
+                                                                validateUnidadCombination(index, unidadId, value, unidadFraccionId);
+                                                            }
                                                         }}
                                                     />
                                                 </Box>
@@ -777,11 +831,13 @@ const ProductoViewExample = () => {
                                                         setTimeout(() => {
                                                             const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
                                                             const cantidad = watch(`unidadProductorSuplidor.${index}.cantidad`);
-                                                            validateUnidadCombination(index, unidadId, cantidad, value);
+                                                            if (!esServicio) {
+                                                                validateUnidadCombination(index, unidadId, cantidad, value);
+                                                            }
                                                         }, 50);
                                                     }}
-                                                />{" "}
-                                                {/* Action buttons in the same row, aligned to the right */}
+                                                />
+                                                {/* Action buttons */}
                                                 <Grid
                                                     size={{ xs: 12, sm: "auto" }}
                                                     sx={{ marginLeft: "auto", display: "flex", gap: 1, alignItems: "center" }}>
@@ -817,7 +873,6 @@ const ProductoViewExample = () => {
                                                         }}>
                                                         <ExpandMoreIcon />
                                                     </IconButton>
-                                                    {/* Solo mostrar botón eliminar si no ha sido guardado (no tiene ID) */}
                                                     {!watch(`unidadProductorSuplidor.${index}.id`) && (
                                                         <IconButton
                                                             size="small"
@@ -832,18 +887,24 @@ const ProductoViewExample = () => {
                                             {/* Expandable sections */}
                                             {expandedCards[index] && (
                                                 <>
-                                                    {/* Opciones de Disponibilidad */}
+                                                    {/* -------------------------------------------------- */}
+                                                    {/* Disponibilidad                                       */}
+                                                    {/* -------------------------------------------------- */}
                                                     <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1 }}>
                                                         Disponibilidad
                                                     </Typography>
                                                     <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                                                        {/* Disponible en compra: deshabilitado para servicios */}
                                                         <FormControlLabel
                                                             control={
                                                                 <Checkbox
                                                                     checked={watch(
                                                                         `unidadProductorSuplidor.${index}.disponibleEnCompra`,
                                                                     )}
-                                                                    disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                                    disabled={
+                                                                        esServicio ||
+                                                                        !watch(`unidadProductorSuplidor.${index}.activo`)
+                                                                    }
                                                                     onChange={(e) =>
                                                                         setValue(
                                                                             `unidadProductorSuplidor.${index}.disponibleEnCompra`,
@@ -854,13 +915,17 @@ const ProductoViewExample = () => {
                                                             }
                                                             label="Disponible en compra"
                                                         />
+                                                        {/* Disponible en venta: siempre activo para servicios */}
                                                         <FormControlLabel
                                                             control={
                                                                 <Checkbox
                                                                     checked={watch(
                                                                         `unidadProductorSuplidor.${index}.disponibleEnVenta`,
                                                                     )}
-                                                                    disabled={!watch(`unidadProductorSuplidor.${index}.activo`)}
+                                                                    disabled={
+                                                                        esServicio ||
+                                                                        !watch(`unidadProductorSuplidor.${index}.activo`)
+                                                                    }
                                                                     onChange={(e) =>
                                                                         setValue(
                                                                             `unidadProductorSuplidor.${index}.disponibleEnVenta`,
@@ -869,13 +934,15 @@ const ProductoViewExample = () => {
                                                                     }
                                                                 />
                                                             }
-                                                            label="Disponible en venta"
+                                                            label={esServicio ? "Disponible en venta (siempre)" : "Disponible en venta"}
                                                         />
                                                     </Box>
 
-                                                    {/* Suppliers Section */}
+                                                    {/* -------------------------------------------------- */}
+                                                    {/* Proveedores — disponible también para servicios     */}
+                                                    {/* -------------------------------------------------- */}
                                                     <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, mb: 1 }}>
-                                                        Proveedores
+                                                        {esServicio ? "Costo del Servicio (Proveedores)" : "Proveedores"}
                                                     </Typography>
                                                     <Box sx={{ mb: 2 }}>
                                                         <Button
@@ -886,19 +953,22 @@ const ProductoViewExample = () => {
                                                                     watch(
                                                                         `unidadProductorSuplidor.${index}.productosSuplidores`,
                                                                     ) || [];
-                                                                setValue(`unidadProductorSuplidor.${index}.productosSuplidores`, [
-                                                                    ...currentSuplidores,
-                                                                    {
-                                                                        empresaId: 0,
-                                                                        secuencia: 0,
-                                                                        usuarioReg: "",
-                                                                        fechaReg: new Date(),
-                                                                        activo: true,
-                                                                        precio: 0,
-                                                                        itbisDefault: false, // Default to false
-                                                                        suplidorId: 0,
-                                                                    },
-                                                                ]);
+                                                                setValue(
+                                                                    `unidadProductorSuplidor.${index}.productosSuplidores`,
+                                                                    [
+                                                                        ...currentSuplidores,
+                                                                        {
+                                                                            empresaId: 0,
+                                                                            secuencia: 0,
+                                                                            usuarioReg: "",
+                                                                            fechaReg: new Date(),
+                                                                            activo: true,
+                                                                            precio: 0,
+                                                                            itbisDefault: false,
+                                                                            suplidorId: 0,
+                                                                        },
+                                                                    ],
+                                                                );
                                                             }}>
                                                             Agregar Proveedor
                                                         </Button>
@@ -906,7 +976,9 @@ const ProductoViewExample = () => {
 
                                                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                                                         {(
-                                                            watch(`unidadProductorSuplidor.${index}.productosSuplidores`) || []
+                                                            watch(
+                                                                `unidadProductorSuplidor.${index}.productosSuplidores`,
+                                                            ) || []
                                                         ).map((suplidor, suplidorIndex) => (
                                                             <Card key={suplidorIndex} variant="outlined" sx={{ p: 1 }}>
                                                                 <CardContent sx={{ p: 1, "&:last-child": { pb: 1 } }}>
@@ -946,7 +1018,7 @@ const ProductoViewExample = () => {
                                                                             size={4}
                                                                         />
                                                                         <MoneyInput
-                                                                            label="Precio"
+                                                                            label={esServicio ? "Costo" : "Precio"}
                                                                             name={`unidadProductorSuplidor.${index}.productosSuplidores.${suplidorIndex}.precio`}
                                                                             control={control}
                                                                             size={3}
@@ -956,9 +1028,12 @@ const ProductoViewExample = () => {
                                                             </Card>
                                                         ))}
 
-                                                        {(!watch(`unidadProductorSuplidor.${index}.productosSuplidores`) ||
-                                                            watch(`unidadProductorSuplidor.${index}.productosSuplidores`)
-                                                                ?.length === 0) && (
+                                                        {(!watch(
+                                                            `unidadProductorSuplidor.${index}.productosSuplidores`,
+                                                        ) ||
+                                                            watch(
+                                                                `unidadProductorSuplidor.${index}.productosSuplidores`,
+                                                            )?.length === 0) && (
                                                             <Typography
                                                                 variant="body2"
                                                                 color="text.secondary"
@@ -976,7 +1051,9 @@ const ProductoViewExample = () => {
                         </AccordionDetails>
                     </Accordion>
 
-                    {/* Product Modules */}
+                    {/* ---------------------------------------------------------------- */}
+                    {/* Módulos del Producto                                             */}
+                    {/* ---------------------------------------------------------------- */}
                     <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                             <Typography variant="h6">Módulos del Producto ({productModulos.length})</Typography>
@@ -1004,16 +1081,17 @@ const ProductoViewExample = () => {
                         </AccordionDetails>
                     </Accordion>
 
-                    {/* Product Tags */}
+                    {/* ---------------------------------------------------------------- */}
+                    {/* Etiquetas                                                        */}
+                    {/* ---------------------------------------------------------------- */}
                     <Accordion>
                         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="h6">Etiquetas del Producto ({selectedTags.length})</Typography>
+                            <Typography variant="h6">Etiquetas ({selectedTags.length})</Typography>
                         </AccordionSummary>
                         <AccordionDetails>
                             <Box sx={{ mb: 2 }}>
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Agrega etiquetas para categorizar tu producto. Puedes buscar etiquetas existentes o crear
-                                    nuevas.
+                                    Agrega etiquetas para categorizar. Puedes buscar etiquetas existentes o crear nuevas.
                                 </Typography>
 
                                 <Autocomplete
@@ -1023,9 +1101,8 @@ const ProductoViewExample = () => {
                                     value={selectedTags}
                                     onChange={(event, newValue, reason, details) => {
                                         if (reason === "createOption" && typeof details?.option === "string") {
-                                            // Crear nueva etiqueta
                                             const newTag = {
-                                                id: Date.now(), // ID temporal
+                                                id: Date.now(),
                                                 nombre: details.option,
                                             };
                                             setAvailableTags((prev) => [...prev, newTag]);
@@ -1075,7 +1152,6 @@ const ProductoViewExample = () => {
                                 />
                             </Box>
 
-                            {/* Display selected tags */}
                             {selectedTags.length > 0 && (
                                 <Box sx={{ mt: 2 }}>
                                     <Typography variant="subtitle2" gutterBottom>

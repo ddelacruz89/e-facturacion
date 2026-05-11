@@ -127,6 +127,60 @@ const formatEstadoOrdenCompra = (value: any): string => {
 
 // Pre-defined search configurations for common entities
 export const SEARCH_CONFIGS = {
+    PAQUETE: {
+        title: "Buscar Paquete",
+        endpoint: "/api/v1/producto/paquete/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        defaultParams: {
+            fechaInicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            fechaFin: new Date().toISOString().split("T")[0],
+        },
+        fields: [
+            {
+                key: "nombre",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Nombre del paquete",
+            },
+            {
+                key: "fechaInicio",
+                label: "Fecha inicio",
+                type: "date" as const,
+            },
+            {
+                key: "fechaFin",
+                label: "Fecha fin",
+                type: "date" as const,
+            },
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "8%" },
+            {
+                key: "fechaReg",
+                label: "Fecha",
+                width: "20%",
+                render: (v: any) => formatDateTimeForUi(v),
+            },
+            { key: "nombre", label: "Nombre", width: "32%" },
+            {
+                key: "precioVenta",
+                label: "Precio",
+                width: "14%",
+                render: (v: any) => formatTotal16_2(v),
+            },
+            { key: "cantidadItems", label: "Ítems", width: "10%" },
+            { key: "usuarioReg", label: "Usuario", width: "10%" },
+            {
+                key: "activo",
+                label: "Estado",
+                width: "6%",
+                render: (v: any) => (v ? "Activo" : "Inactivo"),
+            },
+        ],
+    } as SearchConfig,
+
     PRODUCTO: {
         title: "Buscar Producto",
         endpoint: "/api/producto/search/advanced",
