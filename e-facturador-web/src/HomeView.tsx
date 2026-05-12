@@ -3,28 +3,10 @@ import { useAuth } from "./contexts/AuthContext";
 import { Button, Box, Typography } from "@mui/material";
 import { ExitToApp } from "@mui/icons-material";
 import "./menu.css"; // Asegúrate de que la ruta sea correcta
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import logo from "./assets/logo-braintech.png";
 import { useSharedModulos } from "./hooks/useSharedModulos";
 import { ModuloDto } from "./models/seguridad";
-
-const FAC_EXTRA_MENUS = [
-    { id: 31, menu: "Facturas Suplidor", urlSql: "/factura-suplidor", url: "/factura-suplidor" },
-];
-
-
-const INV_EXTRA_MENUS = [
-    { id: 11, menu: "Suplidores",              urlSql: "/suplidores",         url: "/suplidores" },
-    { id: 12, menu: "Cotizaciones",            urlSql: "/cotizacion",         url: "/cotizacion" },
-    { id: 13, menu: "Órdenes de Compra",       urlSql: "/orden-compra",       url: "/orden-compra" },
-    { id: 14, menu: "Órdenes de Entrada",      urlSql: "/orden-entrada",      url: "/orden-entrada" },
-    { id: 15, menu: "Transferencias",          urlSql: "/transferencias",     url: "/transferencias" },
-    { id: 16, menu: "Lotes",                   urlSql: "/lotes",              url: "/lotes" },
-    { id: 17, menu: "Movimientos",             urlSql: "/movimientos",        url: "/movimientos" },
-    { id: 18, menu: "Ajuste de Inventario",    urlSql: "/ajuste-inventario",  url: "/ajuste-inventario" },
-    { id: 19, menu: "Almacenes",               urlSql: "/almacenes",          url: "/almacenes" },
-    { id: 20, menu: "Stock por Almacén/Lote",  urlSql: "/stock-arbol",        url: "/stock-arbol" },
-];
 
 const HomeView = () => {
     const [mostrarPanel, setMostrarPanel] = useState(false);
@@ -32,31 +14,7 @@ const HomeView = () => {
     const { user, logout } = useAuth();
     const [moduloActivo, setModuloActivo] = useState<ModuloDto>({ id: "", menus: [], modulo: "" });
 
-    const { data: rawModulos } = useSharedModulos();
-
-    // Agregar menús de INV temporales sin mutar el cache compartido
-    const modulos = useMemo(() => {
-        if (!rawModulos.length) return rawModulos;
-
-        const mapped = rawModulos.map((modulo) => {
-            if (modulo.id === "INV")
-                return { ...modulo, menus: [...modulo.menus, ...INV_EXTRA_MENUS] };
-            if (modulo.id === "FAC")
-                return { ...modulo, menus: [...modulo.menus, ...FAC_EXTRA_MENUS] };
-
-            return modulo;
-        });
-
-        if (!mapped.some((m) => m.id === "INV")) {
-            mapped.push({ id: "INV", modulo: "Inventario", menus: INV_EXTRA_MENUS });
-        }
-        if (!mapped.some((m) => m.id === "FAC")) {
-            mapped.push({ id: "FAC", modulo: "Facturación", menus: FAC_EXTRA_MENUS });
-        }
-
-
-        return mapped;
-    }, [rawModulos]);
+    const { data: modulos } = useSharedModulos();
 
     const handleLogout = () => {
         logout();

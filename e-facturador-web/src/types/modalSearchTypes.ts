@@ -127,6 +127,32 @@ const formatEstadoOrdenCompra = (value: any): string => {
 
 // Pre-defined search configurations for common entities
 export const SEARCH_CONFIGS = {
+    ROL: {
+        title: "Buscar Rol",
+        endpoint: "/api/v1/seguridad/rol/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        defaultParams: {
+            fechaInicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            fechaFin: new Date().toISOString().split("T")[0],
+        },
+        fields: [
+            { key: "nombre", label: "Nombre", type: "text" as const, placeholder: "Nombre del rol" },
+            { key: "fechaInicio", label: "Fecha inicio", type: "date" as const },
+            { key: "fechaFin", label: "Fecha fin", type: "date" as const },
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "7%" },
+            { key: "nombre", label: "Nombre", width: "25%" },
+            { key: "descripcion", label: "Descripción", width: "30%" },
+            { key: "cantidadPermisos", label: "Permisos", width: "12%" },
+            { key: "cantidadUsuarios", label: "Usuarios", width: "12%" },
+            { key: "usuarioReg", label: "Creado por", width: "10%" },
+            { key: "activo", label: "Estado", width: "8%", render: (v: any) => (v ? "Activo" : "Inactivo") },
+        ],
+    } as SearchConfig,
+
     PAQUETE: {
         title: "Buscar Paquete",
         endpoint: "/api/v1/producto/paquete/buscar",
