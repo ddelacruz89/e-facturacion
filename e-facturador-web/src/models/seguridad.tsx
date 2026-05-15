@@ -12,11 +12,30 @@ export interface SgEmpresa {
     logo?: number[] | null; // se puede ajustar según cómo manejes los archivos binarios
 }
 export interface SgUsuario {
-    username: string; // Clave primaria, única
-    empresaId?: number | 0; // Puede ser null u opcional
-    password: string; // Requerido
-    cambioPassword?: boolean | false; // Opcional
-    nombre: string; // Requerido
+    username: string;
+    empresaId?: number;
+    loginEmail?: string;
+    password: string;
+    cambioPassword?: boolean;
+    nombre: string;
+    estadoId?: string;
+    fechaReg?: string;
+    usuarioReg?: string;
+}
+
+export interface SgUsuarioResumenDTO {
+    username: string;
+    nombre: string;
+    loginEmail?: string;
+    fechaReg: string;
+    usuarioReg: string;
+    estadoId?: string;
+}
+
+export interface SgUsuarioSearchCriteria {
+    q?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
 }
 export interface SgPermiso {
     id?: number;

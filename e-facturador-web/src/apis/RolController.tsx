@@ -25,8 +25,8 @@ export function getUsuariosRol(rolId: number): Promise<SgUsuarioRol[]> {
     return apiClient.get(`${BASE}/${rolId}/usuarios`).then((r) => r.data);
 }
 
-export function addUsuarioRol(rolId: number, username: string): Promise<SgUsuarioRol> {
-    return apiClient.post(`${BASE}/${rolId}/usuarios`, { username }).then((r) => r.data);
+export function addUsuarioRol(rolId: number, username: string, sucursalId: number): Promise<SgUsuarioRol> {
+    return apiClient.post(`${BASE}/${rolId}/usuarios`, { username, sucursalId }).then((r) => r.data);
 }
 
 export function removeUsuarioRol(rolId: number, asignacionId: number): Promise<void> {

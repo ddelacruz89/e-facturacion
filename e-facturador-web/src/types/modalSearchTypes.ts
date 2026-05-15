@@ -357,45 +357,31 @@ export const SEARCH_CONFIGS = {
 
     USUARIO: {
         title: "Buscar Usuario",
-        endpoint: "/api/usuario/search/advanced",
-        keyField: "id",
+        endpoint: "/api/v1/seguridad/usuario/buscar",
+        method: "POST" as const,
+        keyField: "username",
+        searchOnLoad: true,
+        defaultParams: { q: "" },
         fields: [
             {
-                key: "id",
-                label: "ID",
-                type: "number" as const,
-                placeholder: "Ingrese ID del usuario"
-            },
-            {
                 key: "q",
-                label: "Nombre",
+                label: "Usuario / Nombre",
                 type: "text" as const,
-                placeholder: "Ingrese nombre del usuario"
+                placeholder: "Buscar por username o nombre",
             },
-            {
-                key: "email",
-                label: "Email",
-                type: "text" as const,
-                placeholder: "Ingrese email"
-            },
-            {
-                key: "activo",
-                label: "Estado",
-                type: "select" as const,
-                options: [
-                    { value: "", label: "Todos" },
-                    { value: "true", label: "Activo" },
-                    { value: "false", label: "Inactivo" }
-                ]
-            }
         ],
         displayColumns: [
-            { key: "id", label: "ID", width: "10%" },
-            { key: "nombre", label: "Nombre", width: "25%" },
-            { key: "email", label: "Email", width: "30%" },
-            { key: "role", label: "Rol", width: "20%" },
-            { key: "activo", label: "Estado", width: "15%" }
-        ]
+            { key: "username", label: "Username", width: "20%" },
+            { key: "nombre", label: "Nombre", width: "35%" },
+            { key: "loginEmail", label: "Email", width: "25%" },
+            {
+                key: "fechaReg",
+                label: "Fecha Reg.",
+                width: "12%",
+                render: (v: any) => v ? new Date(v).toLocaleString("es-DO", { dateStyle: "short", timeStyle: "short" }) : "",
+            },
+            { key: "estadoId", label: "Estado", width: "8%" },
+        ],
     } as SearchConfig,
 
     ORDEN_ENTRADA: {

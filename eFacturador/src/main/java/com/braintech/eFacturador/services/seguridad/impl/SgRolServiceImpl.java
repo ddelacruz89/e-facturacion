@@ -128,9 +128,12 @@ public class SgRolServiceImpl implements SgRolService {
 
   @Override
   @Transactional
-  public SgUsuarioRol addUsuarioRol(Integer rolId, String username) {
+  public SgUsuarioRol addUsuarioRol(Integer rolId, String username, Integer sucursalId) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
-    Integer sucursalId = tenantContext.getCurrentSucursalId();
+    // Si el frontend no envía sucursalId, se usa la sucursal del token
+    if (sucursalId == null) {
+      sucursalId = tenantContext.getCurrentSucursalId();
+    }
     String currentUser = tenantContext.getCurrentUsername();
 
     SgRol rol =

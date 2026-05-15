@@ -16,7 +16,7 @@ public interface SgRolService {
 
   List<SgUsuarioRol> getUsuariosRol(Integer rolId);
 
-  SgUsuarioRol addUsuarioRol(Integer rolId, String username);
+  SgUsuarioRol addUsuarioRol(Integer rolId, String username, Integer sucursalId);
 
   void removeUsuarioRol(Integer asignacionId);
 }

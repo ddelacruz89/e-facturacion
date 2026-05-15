@@ -49,11 +49,14 @@ public class SgRolController {
     return ResponseEntity.ok(rolService.getUsuariosRol(id));
   }
 
-  /** Asignar un usuario al rol en la sucursal actual. Body: { "username": "..." } */
+  /** Asignar un usuario al rol. Body: { "username": "...", "sucursalId": 1 } */
   @PostMapping("/{id}/usuarios")
   public ResponseEntity<SgUsuarioRol> addUsuario(
-      @PathVariable Integer id, @RequestBody Map<String, String> body) {
-    return ResponseEntity.ok(rolService.addUsuarioRol(id, body.get("username")));
+      @PathVariable Integer id, @RequestBody Map<String, Object> body) {
+    String username = (String) body.get("username");
+    Integer sucursalId =
+        body.get("sucursalId") != null ? Integer.valueOf(body.get("sucursalId").toString()) : null;
+    return ResponseEntity.ok(rolService.addUsuarioRol(id, username, sucursalId));
   }
 
   /** Remover una asignación usuario-rol. */

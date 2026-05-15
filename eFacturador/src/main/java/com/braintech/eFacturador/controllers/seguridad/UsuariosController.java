@@ -1,36 +1,40 @@
 package com.braintech.eFacturador.controllers.seguridad;
 
+import com.braintech.eFacturador.dto.seguridad.SgUsuarioResumenDTO;
+import com.braintech.eFacturador.dto.seguridad.SgUsuarioSearchCriteria;
+import com.braintech.eFacturador.interfaces.seguridad.SgUsuarioService;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
-import com.braintech.eFacturador.models.Response;
-import com.braintech.eFacturador.services.seguridad.UsuarioServices;
+import java.util.List;
 import lombok.AllArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("api/seguridad/usuario")
+@RequestMapping("api/v1/seguridad/usuario")
 @AllArgsConstructor
 public class UsuariosController {
-  UsuarioServices usuarioServices;
 
-  @GetMapping
-  public ResponseEntity<?> getUsuario() {
-    Response<?> response = usuarioServices.getFindByAll();
-    if (response.status() == HttpStatus.OK) {
-      return ResponseEntity.ok(response);
-    } else {
-      return ResponseEntity.status(response.status()).body(response);
-    }
+  private final SgUsuarioService usuarioService;
+
+  @PostMapping("/buscar")
+  public ResponseEntity<List<SgUsuarioResumenDTO>> buscar(
+      @RequestBody SgUsuarioSearchCriteria criteria) {
+    return ResponseEntity.ok(usuarioService.buscar(criteria));
+  }
+
+  @GetMapping("/{username}")
+  public ResponseEntity<SgUsuario> getById(@PathVariable String username) {
+    return ResponseEntity.ok(usuarioService.getById(username));
   }
 
   @PostMapping
-  public ResponseEntity<?> saveUsuario(@RequestBody SgUsuario entity) {
-    Response<?> response = usuarioServices.save(entity);
-    if (response.status() == HttpStatus.OK) {
-      return ResponseEntity.ok(response);
-    } else {
-      return ResponseEntity.status(response.status()).body(response);
-    }
+  public ResponseEntity<SgUsuario> save(@RequestBody SgUsuario usuario) {
+    return ResponseEntity.ok(usuarioService.save(usuario));
+  }
+
+  @PutMapping("/{username}")
+  public ResponseEntity<SgUsuario> update(
+      @PathVariable String username, @RequestBody SgUsuario usuario) {
+    return ResponseEntity.ok(usuarioService.update(username, usuario));
   }
 }

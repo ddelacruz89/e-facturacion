@@ -23,7 +23,7 @@ public interface SgRolRepository extends JpaRepository<SgRol, Integer> {
       FROM SgRol r
       WHERE r.empresaId = :empresaId
         AND r.fechaReg BETWEEN :desde AND :hasta
-        AND (:nombre IS NULL OR LOWER(r.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+        AND (CAST(:nombre AS String) IS NULL OR LOWER(r.nombre) LIKE LOWER(CONCAT('%', CAST(:nombre AS String), '%')))
       ORDER BY r.fechaReg DESC
       """)
   List<SgRolResumenDTO> buscar(

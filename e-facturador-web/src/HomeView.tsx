@@ -35,8 +35,11 @@ const HomeView = () => {
                         borderBottom: "1px solid #ddd",
                     }}>
                     <Typography variant="body2" color="text.secondary">
-                        Bienvenido, <strong>{user?.username}</strong> | Empresa: <strong>{user?.empresaId}</strong>
-                        {user?.sucursalId && ` | Sucursal: ${user.sucursalId}`}
+                        Bienvenido, <strong>{user?.username}</strong>
+                        {" | "}<strong>{user?.empresaNombre ?? `Empresa #${user?.empresaId}`}</strong>
+                        {(user?.sucursalNombre ?? user?.sucursalId) && (
+                            <> {" — "}<strong>{user?.sucursalNombre ?? `Sucursal #${user?.sucursalId}`}</strong></>
+                        )}
                     </Typography>
                     <Button
                         variant="outlined"

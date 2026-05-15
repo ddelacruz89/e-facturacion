@@ -1,12 +1,20 @@
 package com.braintech.eFacturador.seguridad.model;
 
+import java.util.List;
+
 public class LoginResponse {
   private String token;
   private String username;
   private Integer empresaId;
   private Integer sucursalId;
+  private String sucursalNombre;
+  private String empresaNombre;
 
-  // getters y setters
+  // Flujo multi-sucursal: cuando el usuario tiene acceso a más de una sucursal
+  private Boolean requiresSucursalSelection;
+  private String preAuthToken;
+  private List<SucursalOpcionDTO> sucursalesDisponibles;
+
   public String getToken() {
     return token;
   }
@@ -37,5 +45,45 @@ public class LoginResponse {
 
   public void setSucursalId(Integer sucursalId) {
     this.sucursalId = sucursalId;
+  }
+
+  public String getSucursalNombre() {
+    return sucursalNombre;
+  }
+
+  public void setSucursalNombre(String sucursalNombre) {
+    this.sucursalNombre = sucursalNombre;
+  }
+
+  public String getEmpresaNombre() {
+    return empresaNombre;
+  }
+
+  public void setEmpresaNombre(String empresaNombre) {
+    this.empresaNombre = empresaNombre;
+  }
+
+  public Boolean getRequiresSucursalSelection() {
+    return requiresSucursalSelection;
+  }
+
+  public void setRequiresSucursalSelection(Boolean requiresSucursalSelection) {
+    this.requiresSucursalSelection = requiresSucursalSelection;
+  }
+
+  public String getPreAuthToken() {
+    return preAuthToken;
+  }
+
+  public void setPreAuthToken(String preAuthToken) {
+    this.preAuthToken = preAuthToken;
+  }
+
+  public List<SucursalOpcionDTO> getSucursalesDisponibles() {
+    return sucursalesDisponibles;
+  }
+
+  public void setSucursalesDisponibles(List<SucursalOpcionDTO> sucursalesDisponibles) {
+    this.sucursalesDisponibles = sucursalesDisponibles;
   }
 }

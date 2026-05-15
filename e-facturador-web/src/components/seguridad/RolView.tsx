@@ -8,9 +8,18 @@ import {
     CardContent,
     Checkbox,
     Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     FormControlLabel,
     IconButton,
+    List,
+    ListItem,
     Snackbar,
+    Step,
+    StepLabel,
+    Stepper,
     Switch,
     Tab,
     Table,
@@ -31,10 +40,9 @@ import ActionBar from "../../customers/ActionBar";
 import ModalSearch from "../search/ModalSearch";
 import SearchButton from "../search/SearchButton";
 import useModalSearch from "../../hooks/useModalSearch";
-import { SEARCH_CONFIGS } from "../../types/modalSearchTypes";
+import { SEARCH_CONFIGS, SearchResultItem } from "../../types/modalSearchTypes";
 import { getModulos } from "../../apis/ModulosController";
 import {
-    buscarRoles,
     getRol,
     saveRol,
     updateRol,
@@ -42,7 +50,9 @@ import {
     addUsuarioRol,
     removeUsuarioRol,
 } from "../../apis/RolController";
+import { getSucursalesActivas } from "../../apis/SucursalController";
 import { ModuloDto, MenuDto, SgRol, SgPermiso, SgUsuarioRol } from "../../models/seguridad";
+import { SgSucursal } from "../../models/seguridad/SgSucursal";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -112,17 +122,28 @@ const RolView: React.FC = () => {
         severity: "success" | "error" | "warning" | "info";
     }>({ open: false, message: "", severity: "info" });
 
+    // Wizard de asignación de usuario
+    const [sucursales, setSucursales] = useState<SgSucursal[]>([]);
+    const [assignOpen, setAssignOpen] = useState(false);
+    const [assignStep, setAssignStep] = useState(0); // 0 = usuario, 1 = sucursales
+    const [pendingUser, setPendingUser] = useState<{ username: string; nombre: string } | null>(null);
+    const [checkedSucursales, setCheckedSucursales] = useState<Set<number>>(new Set());
+    const [saving, setSaving] = useState(false);
+
     const rolSearch     = useModalSearch();
     const usuarioSearch = useModalSearch();
 
     const showSnackbar = (message: string, severity: "success" | "error" | "warning" | "info") =>
         setSnackbar({ open: true, message, severity });
 
-    // Cargar todos los módulos al montar
+    // Cargar módulos y sucursales al montar
     useEffect(() => {
         getModulos()
             .then(setModulos)
             .catch(() => showSnackbar("Error al cargar módulos", "error"));
+        getSucursalesActivas()
+            .then(setSucursales)
+            .catch(() => showSnackbar("Error al cargar sucursales", "error"));
     }, []);
 
     // -----------------------------------------------------------------------
@@ -265,21 +286,84 @@ const RolView: React.FC = () => {
     };
 
     // -----------------------------------------------------------------------
-    // Usuarios-Rol
+    // Wizard de asignación usuario → sucursales
     // -----------------------------------------------------------------------
-    const handleUsuarioSelect = usuarioSearch.handleSelect(async (resumen: any) => {
+
+    const closeAssignWizard = () => {
+        setAssignOpen(false);
+        setAssignStep(0);
+        setPendingUser(null);
+        setCheckedSucursales(new Set());
+    };
+
+    // Paso 1: usuario seleccionado en el modal
+    const handleUsuarioSelect = usuarioSearch.handleSelect(async (resumen: SearchResultItem) => {
         if (!selectedRol?.id) {
             showSnackbar("Guarda el rol primero antes de asignar usuarios", "warning");
             return;
         }
-        try {
-            const nueva = await addUsuarioRol(selectedRol.id, resumen.username ?? resumen.id);
-            setUsuariosRol((prev) => [...prev, nueva]);
-            showSnackbar("Usuario asignado", "success");
-        } catch {
-            showSnackbar("Error al asignar usuario", "error");
-        }
+        const username = (resumen.username ?? resumen.id) as string;
+        const nombre = (resumen.nombre ?? username) as string;
+
+        // Pre-marcar sucursales donde el usuario ya tiene este rol
+        const yaAsignadas = new Set(
+            usuariosRol
+                .filter((ur) => ur.usuario?.username === username)
+                .map((ur) => ur.sucursalId?.id)
+                .filter((id): id is number => id != null)
+        );
+
+        setPendingUser({ username, nombre });
+        setCheckedSucursales(yaAsignadas);
+        setAssignStep(0);
+        setAssignOpen(true);
     });
+
+    const toggleSucursal = (id: number) => {
+        setCheckedSucursales((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    // Paso final: confirmar los cambios (agrega nuevas, elimina las desmarcadas)
+    const handleConfirmAssign = async () => {
+        if (!pendingUser || !selectedRol?.id) return;
+        setSaving(true);
+        try {
+            const existentes = usuariosRol.filter(
+                (ur) => ur.usuario?.username === pendingUser.username
+            );
+            const existenteIds = new Set(
+                existentes.map((ur) => ur.sucursalId?.id).filter((id): id is number => id != null)
+            );
+
+            // Agregar sucursales nuevamente marcadas
+            for (const sucId of Array.from(checkedSucursales)) {
+                if (!existenteIds.has(sucId)) {
+                    const nueva = await addUsuarioRol(selectedRol.id!, pendingUser.username, sucId);
+                    setUsuariosRol((prev) => [...prev, nueva]);
+                }
+            }
+
+            // Eliminar asignaciones desmarcadas
+            for (const ur of existentes) {
+                if (ur.sucursalId?.id != null && !checkedSucursales.has(ur.sucursalId.id)) {
+                    await removeUsuarioRol(selectedRol.id!, ur.id!);
+                    setUsuariosRol((prev) => prev.filter((u) => u.id !== ur.id));
+                }
+            }
+
+            showSnackbar("Asignación actualizada", "success");
+            closeAssignWizard();
+        } catch {
+            showSnackbar("Error al actualizar asignación", "error");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     const handleRemoveUsuario = async (asignacion: SgUsuarioRol) => {
         if (!selectedRol?.id || !asignacion.id) return;
@@ -623,6 +707,85 @@ const RolView: React.FC = () => {
                     initialValues={usuarioSearch.initialValues}
                 />
             )}
+
+            {/* Wizard: asignar usuario a sucursales */}
+            <Dialog open={assignOpen} onClose={closeAssignWizard} maxWidth="sm" fullWidth>
+                <DialogTitle>
+                    Asignar usuario al rol
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Stepper activeStep={assignStep} sx={{ mb: 3 }}>
+                        <Step><StepLabel>Usuario</StepLabel></Step>
+                        <Step><StepLabel>Sucursales</StepLabel></Step>
+                    </Stepper>
+
+                    {assignStep === 0 && pendingUser && (
+                        <Box sx={{ textAlign: "center", py: 2 }}>
+                            <Typography variant="h6">{pendingUser.nombre}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                @{pendingUser.username}
+                            </Typography>
+                            <Typography variant="body2" sx={{ mt: 2 }} color="text.secondary">
+                                En el siguiente paso podrás elegir las sucursales donde este
+                                usuario tendrá acceso con el rol <strong>{selectedRol?.nombre}</strong>.
+                            </Typography>
+                        </Box>
+                    )}
+
+                    {assignStep === 1 && (
+                        <>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                Selecciona las sucursales. Las que ya estaban asignadas
+                                aparecen marcadas.
+                            </Typography>
+                            <List disablePadding>
+                                {sucursales.map((s) => (
+                                    <ListItem key={s.id} disablePadding>
+                                        <FormControlLabel
+                                            sx={{ width: "100%", px: 1, py: 0.5 }}
+                                            control={
+                                                <Checkbox
+                                                    checked={checkedSucursales.has(s.id!)}
+                                                    onChange={() => toggleSucursal(s.id!)}
+                                                />
+                                            }
+                                            label={
+                                                <Box>
+                                                    <Typography variant="body1">{s.nombre}</Typography>
+                                                </Box>
+                                            }
+                                        />
+                                    </ListItem>
+                                ))}
+                            </List>
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={closeAssignWizard} disabled={saving}>
+                        Cancelar
+                    </Button>
+                    {assignStep === 0 ? (
+                        <Button
+                            variant="contained"
+                            onClick={() => setAssignStep(1)}>
+                            Siguiente →
+                        </Button>
+                    ) : (
+                        <>
+                            <Button onClick={() => setAssignStep(0)} disabled={saving}>
+                                ← Atrás
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={handleConfirmAssign}
+                                disabled={saving}>
+                                {saving ? "Guardando…" : "Confirmar"}
+                            </Button>
+                        </>
+                    )}
+                </DialogActions>
+            </Dialog>
 
             <Snackbar
                 open={snackbar.open}

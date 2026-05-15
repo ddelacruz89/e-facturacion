@@ -1,6 +1,8 @@
 package com.braintech.eFacturador.dao.seguridad;
 
+import com.braintech.eFacturador.dto.seguridad.SgUsuarioResumenDTO;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,4 +39,23 @@ public interface SgUsuarioRepository extends JpaRepository<SgUsuario, String> {
       @Param("id") String id,
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId);
+
+  /** Búsqueda de resumen: filtra por empresa, rango de fechas y texto en username/nombre. */
+  @Query(
+      """
+      SELECT new com.braintech.eFacturador.dto.seguridad.SgUsuarioResumenDTO(
+          u.username, u.nombre, u.loginEmail, u.fechaReg, u.usuarioReg, u.estadoId)
+      FROM SgUsuario u
+      WHERE u.empresaId = :empresaId
+        AND u.fechaReg BETWEEN :desde AND :hasta
+        AND (CAST(:q AS String) IS NULL
+             OR LOWER(u.username) LIKE LOWER(CONCAT('%', CAST(:q AS String), '%'))
+             OR LOWER(u.nombre)   LIKE LOWER(CONCAT('%', CAST(:q AS String), '%')))
+      ORDER BY u.nombre ASC
+      """)
+  List<SgUsuarioResumenDTO> buscar(
+      @Param("empresaId") Integer empresaId,
+      @Param("desde") LocalDateTime desde,
+      @Param("hasta") LocalDateTime hasta,
+      @Param("q") String q);
 }
