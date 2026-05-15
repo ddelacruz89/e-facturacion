@@ -42,12 +42,12 @@ public class MgProducto extends BaseEntity implements Serializable {
 
   @Serial private static final long serialVersionUID = 1L;
 
-  @Column(name = "codigoBarra")
+  @Column(name = "codigoBarra", nullable = true)
   @FieldDescription("Codigo de Barra")
   private String codigoBarra;
 
   @NotNull
-  @Column(name = "nombre_producto")
+  @Column(name = "nombre_producto", nullable = false)
   private String nombreProducto;
 
   @Column(name = "descripcion")

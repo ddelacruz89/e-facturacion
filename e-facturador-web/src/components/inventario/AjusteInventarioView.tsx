@@ -20,6 +20,7 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    TextField,
     Tooltip,
     Typography,
 } from "@mui/material";
@@ -95,6 +96,9 @@ const AjusteInventarioView: React.FC = () => {
     const [loteSeleccionado, setLoteSeleccionado] = useState<string>("");
     const [cargandoLotes, setCargandoLotes] = useState(false);
     const [cargandoStock, setCargandoStock] = useState(false);
+
+    // ── justificación ──
+    const [observacion, setObservacion] = useState("");
 
     // ── líneas del ajuste ──
     const [lineas, setLineas] = useState<LineaAjuste[]>([]);
@@ -263,12 +267,14 @@ const AjusteInventarioView: React.FC = () => {
             await aplicarAjuste({
                 almacenId: almacenId as number,
                 movimientoTipoId: movimientoTipoId as number,
+                observacion: observacion.trim() || undefined,
                 detalles,
             });
             showSnack("Ajuste aplicado correctamente", "success");
             setLineas([]);
             setMovimientoTipoId("");
             setMotivoCr(null);
+            setObservacion("");
         } catch {
             showSnack("Error al aplicar el ajuste", "error");
         } finally {
@@ -334,34 +340,42 @@ const AjusteInventarioView: React.FC = () => {
             <>
                     {/* ── Motivo del ajuste ─────────────────────────────── */}
                     <Paper variant="outlined" sx={{ mx: 2.5, mt: 1.5, p: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                            <Box sx={{ flex: 1 }}>
-                                <MovimientoTipoSelect
-                                    modulo="AI"
-                                    value={movimientoTipoId}
-                                    onChange={setMovimientoTipoId}
-                                    onChangeTipo={(tipo) => setMotivoCr(tipo ? tipo.cr : null)}
-                                    label="Motivo de ajuste"
-                                    required
-                                />
-                            </Box>
-                            {motivoCr === true && (
-                                <Chip
-                                    label="↑ Solo aumentar stock"
-                                    color="primary"
+                        <Grid container spacing={2} alignItems="center">
+                            <Grid size={{ xs: 12, md: 5 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                                    <Box sx={{ flex: 1 }}>
+                                        <MovimientoTipoSelect
+                                            modulo="AI"
+                                            value={movimientoTipoId}
+                                            onChange={setMovimientoTipoId}
+                                            onChangeTipo={(tipo) => setMotivoCr(tipo ? tipo.cr : null)}
+                                            label="Motivo de ajuste"
+                                            required
+                                        />
+                                    </Box>
+                                    {motivoCr === true && (
+                                        <Chip label="↑ Solo aumentar stock" color="primary" size="small" variant="outlined" />
+                                    )}
+                                    {motivoCr === false && (
+                                        <Chip label="↓ Solo reducir stock" color="warning" size="small" variant="outlined" />
+                                    )}
+                                </Box>
+                            </Grid>
+                            <Grid size={{ xs: 12, md: 7 }}>
+                                <TextField
+                                    fullWidth
                                     size="small"
-                                    variant="outlined"
+                                    label="Justificación"
+                                    placeholder="Describa el motivo del ajuste..."
+                                    value={observacion}
+                                    onChange={(e) => setObservacion(e.target.value)}
+                                    multiline
+                                    rows={2}
+                                    inputProps={{ maxLength: 500 }}
+                                    helperText={`${observacion.length}/500`}
                                 />
-                            )}
-                            {motivoCr === false && (
-                                <Chip
-                                    label="↓ Solo reducir stock"
-                                    color="warning"
-                                    size="small"
-                                    variant="outlined"
-                                />
-                            )}
-                        </Box>
+                            </Grid>
+                        </Grid>
                     </Paper>
 
                     {/* ── Agregar producto ──────────────────────────────── */}

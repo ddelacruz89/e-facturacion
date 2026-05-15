@@ -56,6 +56,6 @@ public class SgMenu extends BaseEntity implements Serializable {
 
   @Transient
   public String getModuloId() {
-    return this.moduloId.getId();
+    return this.moduloId != null ? this.moduloId.getId() : null;
   }
 }

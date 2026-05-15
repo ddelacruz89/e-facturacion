@@ -14,6 +14,7 @@ import {
     MenuItem,
     OutlinedInput,
     Pagination,
+    Paper,
     Select,
     Table,
     TableBody,
@@ -21,16 +22,20 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    TextField,
     Tooltip,
     Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import MovimientoTipoSelect from "../shared/MovimientoTipoSelect";
 import {
     buscarAjustes,
+    getAjuste,
+    InAjusteInventario,
     InAjusteInventarioResumenDTO,
     InAjusteInventarioSearchCriteria,
     PageResponse,
@@ -84,6 +89,11 @@ const AjusteBuscarModal: React.FC<Props> = ({ open, onClose }) => {
     const [cargando, setCargando] = useState(false);
     const [page, setPage] = useState(0);
 
+    // ── detalle (click en fila) ──
+    const [ajusteDetalle, setAjusteDetalle] = useState<InAjusteInventario | null>(null);
+    const [resumenDetalle, setResumenDetalle] = useState<InAjusteInventarioResumenDTO | null>(null);
+    const [loadingDetalle, setLoadingDetalle] = useState(false);
+
     const buscar = useCallback(async (p = 0) => {
         setCargando(true);
         try {
@@ -111,6 +121,24 @@ const AjusteBuscarModal: React.FC<Props> = ({ open, onClose }) => {
         if (open) buscar(0);
     }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const handleRowClick = async (resumen: InAjusteInventarioResumenDTO) => {
+        setLoadingDetalle(true);
+        setResumenDetalle(resumen);
+        try {
+            const detalle = await getAjuste(resumen.id);
+            setAjusteDetalle(detalle);
+        } catch {
+            setAjusteDetalle(null);
+        } finally {
+            setLoadingDetalle(false);
+        }
+    };
+
+    const handleCloseDetalle = () => {
+        setAjusteDetalle(null);
+        setResumenDetalle(null);
+    };
+
     const handleReset = () => {
         setFechaInicio(defaultFechaInicio());
         setFechaFin(toIsoDate(new Date()));
@@ -130,6 +158,7 @@ const AjusteBuscarModal: React.FC<Props> = ({ open, onClose }) => {
     };
 
     return (
+        <>
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
             <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1 }}>
                 <Typography variant="h6" fontWeight={700}>Buscar Ajustes de Inventario</Typography>
@@ -255,7 +284,12 @@ const AjusteBuscarModal: React.FC<Props> = ({ open, onClose }) => {
                                 </TableRow>
                             ) : (
                                 resultado.content.map((r) => (
-                                    <TableRow key={r.id} hover>
+                                    <TableRow
+                                        key={r.id}
+                                        hover
+                                        onClick={() => handleRowClick(r)}
+                                        sx={{ cursor: "pointer" }}
+                                    >
                                         <TableCell>{r.id}</TableCell>
                                         <TableCell sx={{ whiteSpace: "nowrap" }}>{fmtFecha(r.fechaReg)}</TableCell>
                                         <TableCell>{r.movimientoTipoNombre ?? "—"}</TableCell>
@@ -294,6 +328,148 @@ const AjusteBuscarModal: React.FC<Props> = ({ open, onClose }) => {
                 )}
             </DialogContent>
         </Dialog>
+
+        {/* ── Dialog de detalle (solo lectura) ───────────────────────────────── */}
+        <Dialog
+            open={!!ajusteDetalle || loadingDetalle}
+            onClose={handleCloseDetalle}
+            maxWidth="md"
+            fullWidth
+        >
+            <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, pb: 1 }}>
+                <IconButton size="small" onClick={handleCloseDetalle}>
+                    <ArrowBackIcon />
+                </IconButton>
+                <Typography variant="h6" fontWeight={700} sx={{ flexGrow: 1 }}>
+                    Ajuste #{resumenDetalle?.id ?? ""}
+                </Typography>
+                <IconButton size="small" onClick={handleCloseDetalle}>
+                    <CloseIcon />
+                </IconButton>
+            </DialogTitle>
+
+            <Divider />
+
+            <DialogContent sx={{ pt: 2 }}>
+                {loadingDetalle ? (
+                    <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                        <CircularProgress />
+                    </Box>
+                ) : ajusteDetalle ? (
+                    <>
+                        {/* ── Encabezado ───────────────────────────────────── */}
+                        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+                            <Grid container spacing={2}>
+                                <Grid size={{ xs: 6, sm: 3 }}>
+                                    <TextField
+                                        label="ID"
+                                        value={ajusteDetalle.id}
+                                        size="small"
+                                        fullWidth
+                                        InputProps={{ readOnly: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 6, sm: 4 }}>
+                                    <TextField
+                                        label="Fecha"
+                                        value={fmtFecha(ajusteDetalle.fechaReg)}
+                                        size="small"
+                                        fullWidth
+                                        InputProps={{ readOnly: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 6, sm: 2 }}>
+                                    <TextField
+                                        label="Almacén"
+                                        value={ajusteDetalle.almacenId}
+                                        size="small"
+                                        fullWidth
+                                        InputProps={{ readOnly: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 6, sm: 3 }}>
+                                    <TextField
+                                        label="Estado"
+                                        value={ajusteDetalle.estadoId === "APL" ? "Aplicado" : ajusteDetalle.estadoId === "ANU" ? "Anulado" : ajusteDetalle.estadoId}
+                                        size="small"
+                                        fullWidth
+                                        InputProps={{ readOnly: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 4 }}>
+                                    <TextField
+                                        label="Motivo"
+                                        value={resumenDetalle?.movimientoTipoNombre ?? "—"}
+                                        size="small"
+                                        fullWidth
+                                        InputProps={{ readOnly: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 4 }}>
+                                    <TextField
+                                        label="Usuario"
+                                        value={ajusteDetalle.usuarioReg}
+                                        size="small"
+                                        fullWidth
+                                        InputProps={{ readOnly: true }}
+                                    />
+                                </Grid>
+                                <Grid size={{ xs: 12, sm: 4 }}>
+                                    <TextField
+                                        label="Justificación"
+                                        value={ajusteDetalle.observacion || "—"}
+                                        size="small"
+                                        fullWidth
+                                        multiline
+                                        rows={2}
+                                        InputProps={{ readOnly: true }}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Paper>
+
+                        {/* ── Detalle de productos ─────────────────────────── */}
+                        <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
+                            Líneas del ajuste ({ajusteDetalle.detalles?.length ?? 0})
+                        </Typography>
+                        <TableContainer sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, maxHeight: 300 }}>
+                            <Table size="small" stickyHeader>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>#</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Producto ID</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Lote</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Stock anterior</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Stock nuevo</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700, bgcolor: "grey.100" }}>Diferencia</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {(ajusteDetalle.detalles ?? []).map((d, idx) => (
+                                        <TableRow key={d.id}>
+                                            <TableCell>{idx + 1}</TableCell>
+                                            <TableCell>{d.productoId}</TableCell>
+                                            <TableCell sx={{ color: d.lote ? undefined : "text.secondary", fontStyle: d.lote ? undefined : "italic" }}>
+                                                {d.lote || "Sin lote"}
+                                            </TableCell>
+                                            <TableCell align="right">{d.cantidadActual}</TableCell>
+                                            <TableCell align="right">{d.cantidadNueva}</TableCell>
+                                            <TableCell
+                                                align="right"
+                                                sx={{ fontWeight: 600, color: d.diferencia > 0 ? "success.main" : d.diferencia < 0 ? "error.main" : "text.secondary" }}
+                                            >
+                                                {d.diferencia > 0 ? `+${d.diferencia}` : d.diferencia}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </>
+                ) : null}
+            </DialogContent>
+        </Dialog>
+    </>
     );
 };
 

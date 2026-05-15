@@ -436,6 +436,17 @@ export const OrdenCompraView: React.FC = () => {
             return;
         }
 
+        const nuevoProductoId = getDetalleProductoId(detalleForm);
+        const yaExiste = (detalles || []).some(
+            (d: any) => getDetalleProductoId(d) === nuevoProductoId && d.estadoId !== "INA",
+        );
+        if (yaExiste) {
+            setSnackbarMessage("Este producto ya fue agregado a la orden");
+            setSnackbarSeverity("error");
+            setSnackbarOpen(true);
+            return;
+        }
+
         append({
             productoId: detalleForm.productoId,
             cantidad: detalleForm.cantidad,

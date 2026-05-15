@@ -3,6 +3,7 @@ package com.braintech.eFacturador.jpa.inventario;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -29,6 +30,13 @@ public class InLote implements Serializable {
   @Id
   @ManyToOne
   @JoinColumn(name = "producto_id", referencedColumnName = "id")
+  @JsonIgnoreProperties({
+    "productosModulos",
+    "inventarios",
+    "tags",
+    "productosAlmacenesLimites",
+    "unidadProductorSuplidor"
+  })
   private MgProducto productoId;
 
   /** Parte del PK — aísla datos por tenant. */

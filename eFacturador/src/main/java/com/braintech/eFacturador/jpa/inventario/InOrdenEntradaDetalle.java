@@ -51,6 +51,13 @@ public class InOrdenEntradaDetalle implements Serializable {
 
   @JoinColumn(name = "producto_id")
   @ManyToOne(optional = false)
+  @JsonIgnoreProperties({
+    "productosModulos",
+    "inventarios",
+    "tags",
+    "productosAlmacenesLimites",
+    "unidadProductorSuplidor"
+  })
   private MgProducto productoId;
 
   @Column(name = "unidad_entrada_nombre")
