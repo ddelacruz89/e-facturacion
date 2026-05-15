@@ -17,7 +17,7 @@ public class MfFacturaSuplidorDetalleRequestDTO {
   private BigDecimal precioUnitario;
   private BigDecimal montoItem;
   private String concepto;
-  private BigDecimal subtotal;
+  private BigDecimal subTotal;
   private BigDecimal retencion;
   private Double retencionPorciento;
 

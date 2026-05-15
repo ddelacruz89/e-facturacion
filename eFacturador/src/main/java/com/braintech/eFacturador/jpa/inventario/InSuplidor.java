@@ -50,6 +50,13 @@ public class InSuplidor extends BaseEntity implements Serializable {
   @Column(name = "estado_id")
   private String estadoId;
 
+  /**
+   * Tipo de identificación: "C" = Cédula, "R" = RNC. El valor se guarda sin formato (solo dígitos
+   * en {@code rnc}).
+   */
+  @Column(name = "tipo_identificacion")
+  private String tipoIdentificacion;
+
   @ManyToOne(optional = false)
   @JoinColumn(name = "tipo_comprobante_id", referencedColumnName = "id")
   private MgTipoComprobante tipoComprobante;

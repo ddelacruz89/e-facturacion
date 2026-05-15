@@ -233,6 +233,33 @@ export const SEARCH_CONFIGS = {
         ]
     } as SearchConfig,
 
+    /** Búsqueda de productos de categoría Servicio (categoriaId = 1) — para Orden de Entrada */
+    PRODUCTO_SERVICIO: {
+        title: "Buscar Servicio",
+        endpoint: "/api/producto/search/advanced",
+        keyField: "id",
+        searchOnLoad: true,
+        defaultParams: { categoriaId: 1 },
+        fields: [
+            {
+                key: "id",
+                label: "ID",
+                type: "number" as const,
+                placeholder: "Ingrese ID"
+            },
+            {
+                key: "nombreProducto",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Ingrese nombre del servicio"
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "10%" },
+            { key: "nombreProducto", label: "Nombre", width: "90%" }
+        ]
+    } as SearchConfig,
+
     /** Búsqueda de productos disponibles en compra — para Orden de Compra y Cotización */
     PRODUCTO_COMPRA: {
         title: "Buscar Producto (Compra)",
@@ -267,45 +294,40 @@ export const SEARCH_CONFIGS = {
 
     SUPLIDOR: {
         title: "Buscar Suplidor",
-        endpoint: "/api/suplidor/search/advanced",
+        endpoint: "/api/v1/inventario/suplidores/buscar",
+        method: "POST" as const,
         keyField: "id",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10,
+        },
         fields: [
             {
-                key: "id",
-                label: "ID",
-                type: "number" as const,
-                placeholder: "Ingrese ID del suplidor"
-            },
-            {
-                key: "q",
+                key: "nombre",
                 label: "Nombre",
                 type: "text" as const,
-                placeholder: "Ingrese nombre del suplidor"
+                placeholder: "Nombre del suplidor",
             },
             {
                 key: "rnc",
                 label: "RNC",
                 type: "text" as const,
-                placeholder: "Ingrese RNC"
+                placeholder: "RNC",
             },
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "7%" },
+            { key: "nombre", label: "Nombre", width: "38%" },
+            { key: "rnc", label: "RNC", width: "20%" },
+            { key: "telefono1", label: "Teléfono", width: "20%" },
             {
                 key: "activo",
                 label: "Estado",
-                type: "select" as const,
-                options: [
-                    { value: "", label: "Todos" },
-                    { value: "true", label: "Activo" },
-                    { value: "false", label: "Inactivo" }
-                ]
-            }
+                width: "15%",
+                render: (v: any) => (v ? "Activo" : "Inactivo"),
+            },
         ],
-        displayColumns: [
-            { key: "id", label: "ID", width: "10%" },
-            { key: "nombre", label: "Nombre", width: "30%" },
-            { key: "rnc", label: "RNC", width: "20%" },
-            { key: "telefono", label: "Teléfono", width: "20%" },
-            { key: "email", label: "Email", width: "20%" }
-        ]
     } as SearchConfig,
 
     CATEGORIA: {

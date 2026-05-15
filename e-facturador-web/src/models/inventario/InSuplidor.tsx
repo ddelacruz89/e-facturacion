@@ -13,6 +13,8 @@ export interface InSuplidor {
 
     // From InSuplidor entity
     nombre: string; // @Basic(optional = false)
+    /** "C" = Cédula  |  "R" = RNC. El campo rnc se guarda sin formato (solo dígitos). */
+    tipoIdentificacion?: string;
     rnc?: string;
     direccion?: string;
     contacto1?: string;

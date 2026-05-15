@@ -3,17 +3,22 @@ import {
     Alert,
     Box,
     Button,
+    Chip,
+    Checkbox,
     Divider,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     FormControlLabel,
+    InputAdornment,
+    IconButton,
     Paper,
     Radio,
     RadioGroup,
     Snackbar,
     TextField,
+    Tooltip,
     Typography,
     Table,
     TableHead,
@@ -23,6 +28,8 @@ import {
     TableContainer,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
+import SearchIcon from "@mui/icons-material/Search";
+import MiscellaneousServicesIcon from "@mui/icons-material/MiscellaneousServices";
 import { useForm } from "react-hook-form";
 import ActionBar from "../../customers/ActionBar";
 import { AlmacenComboBox } from "../../customers/ProductComboBoxes";
@@ -32,6 +39,7 @@ import useModalSearch from "../../hooks/useModalSearch";
 import { SEARCH_CONFIGS } from "../../types/modalSearchTypes";
 import { convertirOrdenCompraAOrdenEntrada, getOrdenEntrada, saveOrdenEntrada, updateOrdenEntrada } from "../../apis/OrdenEntradaController";
 import { getOrdenCompra } from "../../apis/OrdenCompraController";
+import { getProducto } from "../../apis/ProductoController";
 
 interface OrdenEntradaForm {
     almacenId?: number | string | { id?: number };
@@ -66,8 +74,17 @@ const OrdenEntradaView: React.FC = () => {
     const [loteFechaVencimiento, setLoteFechaVencimiento] = useState("");
     const [loteItems, setLoteItems] = useState<LoteDraft[]>([]);
 
+    // ── Estado del dialog de servicio ────────────────────────────────────────
+    const [servicioDialogOpen, setServicioDialogOpen] = useState(false);
+    const [servicioProducto, setServicioProducto] = useState<any>(null);
+    const [servicioCantidad, setServicioCantidad] = useState<number>(1);
+    const [servicioPrecio, setServicioPrecio] = useState<number>(0);
+    const [servicioConItbis, setServicioConItbis] = useState(false);
+    const [servicioUnidad, setServicioUnidad] = useState("");
+
     const ordenSearch = useModalSearch();
     const ordenEntradaSearch = useModalSearch();
+    const productoServicioSearch = useModalSearch();
 
     const {
         control,
@@ -115,12 +132,9 @@ const OrdenEntradaView: React.FC = () => {
             setSelectedOrdenCompra(ordenCompleta);
 
             const almacenId = getNumericId(almacenValue);
-            if (!almacenId) {
-                showSnackbar("Seleccione un almacén para convertir la orden", "info");
-                return;
+            if (almacenId) {
+                await convertirOrdenSeleccionada(resumen.id, almacenId, true);
             }
-
-            await convertirOrdenSeleccionada(resumen.id, almacenId, true);
         } catch (error: any) {
             showSnackbar(error?.message || "Error al cargar la orden de compra", "error");
         }
@@ -137,6 +151,81 @@ const OrdenEntradaView: React.FC = () => {
         }
     });
 
+    // ── Handlers del dialog de servicio ─────────────────────────────────────
+
+    const handleProductoServicioSelect = productoServicioSearch.handleSelect(async (producto: any) => {
+        try {
+            const productoCompleto = await getProducto(producto.id);
+            setServicioProducto(productoCompleto);
+            if (productoCompleto?.precioVenta != null) {
+                setServicioPrecio(Number(productoCompleto.precioVenta));
+            }
+        } catch {
+            setServicioProducto(producto);
+        }
+    });
+
+    const openServicioDialog = () => {
+        setServicioProducto(null);
+        setServicioCantidad(1);
+        setServicioPrecio(0);
+        setServicioConItbis(false);
+        setServicioUnidad("");
+        setServicioDialogOpen(true);
+    };
+
+    const ITBIS_RATE = 0.18;
+
+    const handleAgregarServicio = () => {
+        if (!servicioProducto) {
+            showSnackbar("Debe seleccionar un producto de servicio", "error");
+            return;
+        }
+        if (!servicioUnidad.trim()) {
+            showSnackbar("La unidad es requerida (Ej: Unidad, Servicio, Viaje...)", "error");
+            return;
+        }
+        if (servicioCantidad <= 0) {
+            showSnackbar("La cantidad debe ser mayor a cero", "error");
+            return;
+        }
+        if (servicioPrecio <= 0) {
+            showSnackbar("El precio debe ser mayor a cero", "error");
+            return;
+        }
+
+        const subTotal = servicioCantidad * servicioPrecio;
+        const itbisMonto = servicioConItbis ? subTotal * ITBIS_RATE : 0;
+        const total = subTotal + itbisMonto;
+
+        const nuevaLinea = {
+            productoId: servicioProducto,
+            cantidad: servicioCantidad,
+            precioUnitario: servicioPrecio,
+            subTotal,
+            itbis: itbisMonto,
+            total,
+            descuentoPorciento: 0,
+            extra: false,
+            servicio: true,
+            unidadNombre: servicioUnidad.trim(),
+            unidadCantidad: 1,
+            inOrdenDetalleLotes: [],
+        };
+
+        const detalles = [...(lastOrdenEntrada?.inOrdenDetalleList || []), nuevaLinea];
+        setLastOrdenEntrada({
+            ...lastOrdenEntrada,
+            inOrdenDetalleList: detalles,
+            monto: (lastOrdenEntrada?.monto || 0) + subTotal,
+            itbis: (lastOrdenEntrada?.itbis || 0) + itbisMonto,
+            total: (lastOrdenEntrada?.total || 0) + total,
+        });
+
+        setServicioDialogOpen(false);
+        showSnackbar("Servicio agregado a la orden", "success");
+    };
+
     const handleNuevo = () => {
         reset(initialValues);
         setSelectedOrdenCompra(null);
@@ -149,9 +238,11 @@ const OrdenEntradaView: React.FC = () => {
             return;
         }
 
-        // Verificar que todos los detalles tengan lotes/series asignados
+        // Verificar que todos los detalles de PRODUCTO (no servicio) tengan lotes/series asignados
         const detalles: any[] = lastOrdenEntrada.inOrdenDetalleList || [];
-        const sinLote = detalles.filter((d: any) => !d.inOrdenDetalleLotes || d.inOrdenDetalleLotes.length === 0);
+        const sinLote = detalles.filter(
+            (d: any) => !d.servicio && (!d.inOrdenDetalleLotes || d.inOrdenDetalleLotes.length === 0),
+        );
         if (sinLote.length > 0) {
             const nombres = sinLote
                 .map((d: any) => d.productoId?.nombreProducto || d.productoId?.nombre || `Línea ${detalles.indexOf(d) + 1}`)
@@ -160,32 +251,25 @@ const OrdenEntradaView: React.FC = () => {
             return;
         }
 
+        const almacenId = getNumericId(almacenValue);
+        if (!almacenId && !lastOrdenEntrada.id) {
+            showSnackbar("Debe seleccionar un almacén destino", "error");
+            return;
+        }
+
+        const ordenAGuardar = lastOrdenEntrada.id
+            ? lastOrdenEntrada
+            : { ...lastOrdenEntrada, almacenId };
+
         try {
             const saved = lastOrdenEntrada.id
-                ? await updateOrdenEntrada(lastOrdenEntrada.id, lastOrdenEntrada)
-                : await saveOrdenEntrada(lastOrdenEntrada);
+                ? await updateOrdenEntrada(lastOrdenEntrada.id, ordenAGuardar)
+                : await saveOrdenEntrada(ordenAGuardar);
             setLastOrdenEntrada(saved);
             showSnackbar("Orden de entrada guardada correctamente", "success");
         } catch (error: any) {
             showSnackbar(error?.message || "Error al guardar la orden de entrada", "error");
         }
-    };
-
-    const onConvertir = async () => {
-        const ordenCompraId = getNumericId(selectedOrdenCompra?.id);
-        const almacenId = getNumericId(almacenValue);
-
-        if (!ordenCompraId) {
-            showSnackbar("Debe seleccionar una orden de compra", "error");
-            return;
-        }
-
-        if (!almacenId) {
-            showSnackbar("Debe seleccionar un almacén", "error");
-            return;
-        }
-
-        await convertirOrdenSeleccionada(ordenCompraId, almacenId, true);
     };
 
     useEffect(() => {
@@ -194,7 +278,7 @@ const OrdenEntradaView: React.FC = () => {
 
         if (!ordenCompraId || !almacenId) return;
 
-        convertirOrdenSeleccionada(ordenCompraId, almacenId, false);
+        convertirOrdenSeleccionada(ordenCompraId, almacenId, true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [almacenValue]);
 
@@ -324,11 +408,8 @@ const OrdenEntradaView: React.FC = () => {
 
     return (
         <>
-            <form onSubmit={handleSubmit(onConvertir)}>
+            <div>
                 <ActionBar title="Órdenes de Entrada">
-                    <Button type="submit" variant="contained" color="primary">
-                        Convertir a entrada
-                    </Button>
                     {lastOrdenEntrada && (
                         <Button type="button" variant="contained" color="success" onClick={handleGuardar}>
                             Guardar
@@ -340,17 +421,14 @@ const OrdenEntradaView: React.FC = () => {
                 </ActionBar>
 
                 <Grid container spacing={2} sx={{ p: 2.5 }}>
-                    <Grid size={{ xs: 12, md: 4 }}>
-                        <SearchButton
-                            config={SEARCH_CONFIGS.ORDEN_ENTRADA}
-                            onOpenSearch={ordenEntradaSearch.openModal}
-                            variant="input"
-                            label="Orden de entrada"
-                            displayValue={lastOrdenEntrada?.id ? `OE #${lastOrdenEntrada.id}` : ""}
-                            placeholder="Buscar orden de entrada existente"
-                            size="small"
-                        />
-                    </Grid>
+                    <AlmacenComboBox
+                        control={control}
+                        name="almacenId"
+                        label="Almacén destino"
+                        error={errors.almacenId as any}
+                        size={4}
+                        disabled={!!lastOrdenEntrada?.id}
+                    />
 
                     <Grid size={{ xs: 12, md: 4 }}>
                         <SearchButton
@@ -362,16 +440,21 @@ const OrdenEntradaView: React.FC = () => {
                             displayValue={selectedOrdenCompra?.id ? `OC #${selectedOrdenCompra.id}` : ""}
                             placeholder="Seleccione una orden de compra pendiente"
                             size="small"
+                            disabled={!getNumericId(almacenValue) || !!lastOrdenEntrada?.id}
                         />
                     </Grid>
 
-                    <AlmacenComboBox
-                        control={control}
-                        name="almacenId"
-                        label="Almacén"
-                        error={errors.almacenId as any}
-                        size={4}
-                    />
+                    <Grid size={{ xs: 12, md: 4 }}>
+                        <SearchButton
+                            config={SEARCH_CONFIGS.ORDEN_ENTRADA}
+                            onOpenSearch={ordenEntradaSearch.openModal}
+                            variant="input"
+                            label="Orden de entrada"
+                            displayValue={lastOrdenEntrada?.id ? `OE #${lastOrdenEntrada.id}` : ""}
+                            placeholder="Buscar orden de entrada existente"
+                            size="small"
+                        />
+                    </Grid>
                 </Grid>
 
 
@@ -387,16 +470,7 @@ const OrdenEntradaView: React.FC = () => {
                             </Typography>
                             <Grid container spacing={2}>
                                 <Grid size={{ xs: 12, md: 2 }}>
-                                    <TextField fullWidth size="small" label="ID" value={lastOrdenEntrada.id || ""} disabled />
-                                </Grid>
-                                <Grid size={{ xs: 12, md: 2 }}>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        label="Almacén"
-                                        value={lastOrdenEntrada.almacenId || ""}
-                                        disabled
-                                    />
+                                    <TextField fullWidth size="small" label="ID" value={lastOrdenEntrada.id || "Nuevo"} disabled />
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 2.5 }}>
                                     <TextField
@@ -407,7 +481,7 @@ const OrdenEntradaView: React.FC = () => {
                                         disabled
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12, md: 2.5 }}>
+                                <Grid size={{ xs: 12, md: 2 }}>
                                     <TextField
                                         fullWidth
                                         size="small"
@@ -416,7 +490,7 @@ const OrdenEntradaView: React.FC = () => {
                                         disabled
                                     />
                                 </Grid>
-                                <Grid size={{ xs: 12, md: 3 }}>
+                                <Grid size={{ xs: 12, md: 2.5 }}>
                                     <TextField
                                         fullWidth
                                         size="small"
@@ -429,9 +503,20 @@ const OrdenEntradaView: React.FC = () => {
                         </Paper>
 
                         <Paper variant="outlined" sx={{ p: 2 }}>
-                            <Typography variant="h6" sx={{ mb: 1.5 }}>
-                                Detalles convertidos
-                            </Typography>
+                            <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }}>
+                                <Typography variant="h6">Detalles convertidos</Typography>
+                                {!lastOrdenEntrada?.id && (
+                                    <Button
+                                        type="button"
+                                        size="small"
+                                        variant="outlined"
+                                        color="secondary"
+                                        startIcon={<MiscellaneousServicesIcon />}
+                                        onClick={openServicioDialog}>
+                                        Agregar Servicio
+                                    </Button>
+                                )}
+                            </Box>
                             <TableContainer>
                                 <Table size="small">
                                     <TableHead
@@ -445,7 +530,7 @@ const OrdenEntradaView: React.FC = () => {
                                         }}>
                                         <TableRow>
                                             <TableCell>#</TableCell>
-                                            <TableCell>Producto</TableCell>
+                                            <TableCell>Producto / Servicio</TableCell>
                                             <TableCell>Unidad</TableCell>
                                             <TableCell align="right">Cantidad</TableCell>
                                             <TableCell align="right">Precio</TableCell>
@@ -463,44 +548,67 @@ const OrdenEntradaView: React.FC = () => {
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
-                                            (lastOrdenEntrada?.inOrdenDetalleList || []).map((detalle: any, idx: number) => (
-                                                <TableRow
-                                                    key={detalle?.id || idx}
-                                                    sx={
-                                                        !detalle?.inOrdenDetalleLotes?.length
-                                                            ? { backgroundColor: "rgba(211, 47, 47, 0.08)" }
-                                                            : {}
-                                                    }>
-                                                    <TableCell>{idx + 1}</TableCell>
-                                                    <TableCell>
-                                                        {detalle?.productoId?.nombreProducto ||
-                                                            detalle?.productoId?.nombre ||
-                                                            detalle?.productoId?.id ||
-                                                            ""}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {detalle?.unidadNombre
-                                                            ? `${detalle.unidadNombre}${detalle.unidadCantidad ? ` / ${detalle.unidadCantidad}` : ""}`
-                                                            : "—"}
-                                                    </TableCell>
-                                                    <TableCell align="right">{detalle?.cantidad ?? 0}</TableCell>
-                                                    <TableCell align="right">{formatCurrency(detalle?.precioUnitario)}</TableCell>
-                                                    <TableCell align="right">{formatCurrency(detalle?.subTotal)}</TableCell>
-                                                    <TableCell align="right">{formatCurrency(detalle?.itbis)}</TableCell>
-                                                    <TableCell align="right">{formatCurrency(detalle?.total)}</TableCell>
-                                                    <TableCell align="center">
-                                                        <Button
-                                                            type="button"
-                                                            size="small"
-                                                            variant="outlined"
-                                                            onClick={() => openLoteModal(idx)}>
-                                                            {detalle?.inOrdenDetalleLotes?.length
-                                                                ? `Editar (${detalle.inOrdenDetalleLotes.length})`
-                                                                : "Agregar"}
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
+                                            (lastOrdenEntrada?.inOrdenDetalleList || []).map((detalle: any, idx: number) => {
+                                                const esServicio = Boolean(detalle?.servicio);
+                                                const sinLoteProducto =
+                                                    !esServicio &&
+                                                    (!detalle?.inOrdenDetalleLotes ||
+                                                        detalle.inOrdenDetalleLotes.length === 0);
+                                                return (
+                                                    <TableRow
+                                                        key={detalle?.id || idx}
+                                                        sx={
+                                                            esServicio
+                                                                ? { backgroundColor: "rgba(2, 136, 209, 0.06)" }
+                                                                : sinLoteProducto
+                                                                  ? { backgroundColor: "rgba(211, 47, 47, 0.08)" }
+                                                                  : {}
+                                                        }>
+                                                        <TableCell>{idx + 1}</TableCell>
+                                                        <TableCell>
+                                                            <Box display="flex" alignItems="center" gap={1}>
+                                                                {esServicio && (
+                                                                    <Chip
+                                                                        label="Servicio"
+                                                                        size="small"
+                                                                        color="info"
+                                                                        variant="outlined"
+                                                                    />
+                                                                )}
+                                                                {detalle?.productoId?.nombreProducto ||
+                                                                    detalle?.productoId?.nombre ||
+                                                                    detalle?.productoId?.id ||
+                                                                    ""}
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {detalle?.unidadNombre
+                                                                ? `${detalle.unidadNombre}${detalle.unidadCantidad ? ` / ${detalle.unidadCantidad}` : ""}`
+                                                                : "—"}
+                                                        </TableCell>
+                                                        <TableCell align="right">{detalle?.cantidad ?? 0}</TableCell>
+                                                        <TableCell align="right">{formatCurrency(detalle?.precioUnitario)}</TableCell>
+                                                        <TableCell align="right">{formatCurrency(detalle?.subTotal)}</TableCell>
+                                                        <TableCell align="right">{formatCurrency(detalle?.itbis)}</TableCell>
+                                                        <TableCell align="right">{formatCurrency(detalle?.total)}</TableCell>
+                                                        <TableCell align="center">
+                                                            {esServicio ? (
+                                                                <Chip label="N/A" size="small" variant="outlined" />
+                                                            ) : (
+                                                                <Button
+                                                                    type="button"
+                                                                    size="small"
+                                                                    variant="outlined"
+                                                                    onClick={() => openLoteModal(idx)}>
+                                                                    {detalle?.inOrdenDetalleLotes?.length
+                                                                        ? `Editar (${detalle.inOrdenDetalleLotes.length})`
+                                                                        : "Agregar"}
+                                                                </Button>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
                                         )}
                                     </TableBody>
                                 </Table>
@@ -510,7 +618,7 @@ const OrdenEntradaView: React.FC = () => {
                 )}
 
                 <Divider sx={{ my: 2 }} />
-            </form>
+            </div>
 
             {ordenSearch.config && (
                 <ModalSearch
@@ -531,6 +639,152 @@ const OrdenEntradaView: React.FC = () => {
                     initialValues={ordenEntradaSearch.initialValues}
                 />
             )}
+
+            {/* Modal búsqueda de producto para servicio */}
+            {productoServicioSearch.config && (
+                <ModalSearch
+                    open={productoServicioSearch.isOpen}
+                    onClose={productoServicioSearch.closeModal}
+                    onSelect={handleProductoServicioSelect}
+                    config={productoServicioSearch.config}
+                    initialValues={productoServicioSearch.initialValues}
+                />
+            )}
+
+            {/* Dialog agregar servicio */}
+            <Dialog open={servicioDialogOpen} onClose={() => setServicioDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <MiscellaneousServicesIcon color="secondary" />
+                        Agregar Servicio / Gasto
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                        {/* Búsqueda de producto */}
+                        <Grid size={{ xs: 12 }}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Producto / Servicio"
+                                value={servicioProducto?.nombreProducto || ""}
+                                placeholder="Haga clic en 🔍 para buscar"
+                                InputProps={{
+                                    readOnly: true,
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <Tooltip title="Buscar producto">
+                                                <IconButton
+                                                    size="small"
+                                                    color="primary"
+                                                    onClick={() =>
+                                                        productoServicioSearch.openModal(
+                                                            SEARCH_CONFIGS.PRODUCTO_SERVICIO,
+                                                        )
+                                                    }>
+                                                    <SearchIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                        </Grid>
+
+                        {/* Unidad */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                label="Unidad *"
+                                value={servicioUnidad}
+                                placeholder="Ej: Unidad, Servicio, Viaje..."
+                                onChange={(e) => setServicioUnidad(e.target.value)}
+                            />
+                        </Grid>
+
+                        {/* Cantidad */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                type="number"
+                                label="Cantidad"
+                                value={servicioCantidad || ""}
+                                inputProps={{ min: 1 }}
+                                onChange={(e) => setServicioCantidad(Math.max(1, Number(e.target.value) || 1))}
+                            />
+                        </Grid>
+
+                        {/* Precio */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <TextField
+                                fullWidth
+                                size="small"
+                                type="number"
+                                label="Precio unitario"
+                                value={servicioPrecio || ""}
+                                disabled
+                                helperText="Precio tomado del producto"
+                            />
+                        </Grid>
+
+                        {/* ITBIS */}
+                        <Grid size={{ xs: 12 }}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={servicioConItbis}
+                                        onChange={(e) => setServicioConItbis(e.target.checked)}
+                                        size="small"
+                                    />
+                                }
+                                label="Aplica ITBIS (18%)"
+                            />
+                        </Grid>
+
+                        {/* Vista previa de totales */}
+                        {servicioPrecio > 0 && (
+                            <Grid size={{ xs: 12 }}>
+                                <Box
+                                    sx={{
+                                        p: 1.5,
+                                        borderRadius: 1,
+                                        bgcolor: "action.hover",
+                                        display: "flex",
+                                        gap: 3,
+                                    }}>
+                                    {(() => {
+                                        const sub = servicioCantidad * servicioPrecio;
+                                        const itb = servicioConItbis ? sub * ITBIS_RATE : 0;
+                                        return (
+                                            <>
+                                                <Typography variant="body2">
+                                                    Subtotal: <strong>{formatCurrency(sub)}</strong>
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    ITBIS: <strong>{formatCurrency(itb)}</strong>
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    Total: <strong>{formatCurrency(sub + itb)}</strong>
+                                                </Typography>
+                                            </>
+                                        );
+                                    })()}
+                                </Box>
+                            </Grid>
+                        )}
+                    </Grid>
+                </DialogContent>
+                <DialogActions>
+                    <Button type="button" color="inherit" onClick={() => setServicioDialogOpen(false)}>
+                        Cancelar
+                    </Button>
+                    <Button type="button" variant="contained" color="secondary" onClick={handleAgregarServicio}>
+                        Agregar
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <Snackbar open={snackbarOpen} autoHideDuration={5000} onClose={() => setSnackbarOpen(false)}>
                 <Alert severity={snackbarSeverity} onClose={() => setSnackbarOpen(false)}>

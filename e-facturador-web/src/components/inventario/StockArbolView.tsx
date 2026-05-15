@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     Alert,
     Box,
@@ -33,14 +33,17 @@ import LabelIcon from "@mui/icons-material/Label";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import UnfoldLessIcon from "@mui/icons-material/UnfoldLess";
 import ActionBar from "../../customers/ActionBar";
-import { getSucursalesActivas } from "../../apis/SucursalController";
+import { useSharedSucursalesActivas } from "../../apis/SucursalController";
 import { SgSucursal } from "../../models/seguridad/SgSucursal";
 import { buscarAlmacenes, InAlmacenResumenDTO } from "../../apis/AlmacenController";
 import {
-    buscarStockArbol,
     InStockArbolSearchCriteria,
     InStockAlmacenNodoDTO,
+    InStockLoteNodoDTO,
     InStockProductoNodoDTO,
+    buscarStockProductos,
+    buscarAlmacenesPorProducto,
+    buscarLotesPorProductoAlmacen,
 } from "../../apis/InStockArbolController";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -49,7 +52,7 @@ const fmtCantidad = (v: number) => v?.toLocaleString("en-US") ?? "0";
 
 // ── sub-componentes ───────────────────────────────────────────────────────────
 
-/** Fila nivel 3: lote */
+/** Fila nivel 3: lote (hoja del árbol, sin hijos) */
 const FilaLote: React.FC<{ lote: string | null; cantidad: number }> = ({ lote, cantidad }) => (
     <TableRow sx={{ bgcolor: "#f9fbe7" }}>
         <TableCell sx={{ width: 40, border: 0 }} />
@@ -70,24 +73,63 @@ const FilaLote: React.FC<{ lote: string | null; cantidad: number }> = ({ lote, c
     </TableRow>
 );
 
-/** Fila nivel 2: almacén (colapsable → lotes) */
-const FilaAlmacen: React.FC<{ almacen: InStockAlmacenNodoDTO; expandAll: boolean }> = ({
-    almacen,
-    expandAll,
-}) => {
+// ── FilaAlmacen ───────────────────────────────────────────────────────────────
+
+interface FilaAlmacenProps {
+    almacen: InStockAlmacenNodoDTO;
+    productoId: number;
+    criteria: InStockArbolSearchCriteria;
+    expandAll: boolean;
+}
+
+/** Fila nivel 2: almacén (colapsable → lotes cargados lazy al primer expand) */
+const FilaAlmacen: React.FC<FilaAlmacenProps> = ({ almacen, productoId, criteria, expandAll }) => {
     const [open, setOpen] = useState(false);
-    useEffect(() => setOpen(expandAll), [expandAll]);
+    const [lotes, setLotes] = useState<InStockLoteNodoDTO[]>([]);
+    const [loading, setLoading] = useState(false);
+    const loaded = useRef(false);
+
+    // Sincronizar con el botón "expandir todo"
+    useEffect(() => {
+        if (expandAll && !open) {
+            handleExpand();
+        } else if (!expandAll) {
+            setOpen(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [expandAll]);
+
+    const handleExpand = async () => {
+        const next = !open;
+        setOpen(next);
+        if (next && !loaded.current) {
+            setLoading(true);
+            try {
+                const data = await buscarLotesPorProductoAlmacen(
+                    productoId,
+                    almacen.almacenId,
+                    criteria
+                );
+                setLotes(data);
+                loaded.current = true;
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
 
     return (
         <>
             <TableRow
                 sx={{ bgcolor: "#e8f5e9", cursor: "pointer", "&:hover": { bgcolor: "#c8e6c9" } }}
-                onClick={() => setOpen((v) => !v)}
+                onClick={handleExpand}
             >
                 <TableCell sx={{ width: 40, border: 0 }} />
                 <TableCell sx={{ width: 40, py: 0.8 }}>
                     <IconButton size="small" tabIndex={-1}>
-                        {open ? <KeyboardArrowDownIcon fontSize="small" /> : <KeyboardArrowRightIcon fontSize="small" />}
+                        {open
+                            ? <KeyboardArrowDownIcon fontSize="small" />
+                            : <KeyboardArrowRightIcon fontSize="small" />}
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ py: 0.8 }}>
@@ -96,12 +138,15 @@ const FilaAlmacen: React.FC<{ almacen: InStockAlmacenNodoDTO; expandAll: boolean
                         <Typography variant="body2" fontWeight={500}>
                             {almacen.almacenNombre}
                         </Typography>
-                        <Chip
-                            label={`${almacen.lotes.length} ${almacen.lotes.length === 1 ? "lote" : "lotes"}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ height: 18, fontSize: 10 }}
-                        />
+                        {loading && <CircularProgress size={12} sx={{ ml: 0.5 }} />}
+                        {loaded.current && !loading && (
+                            <Chip
+                                label={`${lotes.length} ${lotes.length === 1 ? "lote" : "lotes"}`}
+                                size="small"
+                                variant="outlined"
+                                sx={{ height: 18, fontSize: 10 }}
+                            />
+                        )}
                     </Box>
                 </TableCell>
                 <TableCell align="right" sx={{ pr: 3, py: 0.8 }}>
@@ -116,13 +161,21 @@ const FilaAlmacen: React.FC<{ almacen: InStockAlmacenNodoDTO; expandAll: boolean
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Table size="small" sx={{ tableLayout: "fixed" }}>
                             <TableBody>
-                                {almacen.lotes.map((lote, idx) => (
-                                    <FilaLote
-                                        key={`${lote.lote ?? "null"}_${idx}`}
-                                        lote={lote.lote}
-                                        cantidad={lote.cantidad}
-                                    />
-                                ))}
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center" sx={{ py: 1.5 }}>
+                                            <CircularProgress size={18} />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    lotes.map((lote, idx) => (
+                                        <FilaLote
+                                            key={`${lote.lote ?? "null"}_${idx}`}
+                                            lote={lote.lote}
+                                            cantidad={lote.cantidad}
+                                        />
+                                    ))
+                                )}
                             </TableBody>
                         </Table>
                     </Collapse>
@@ -132,13 +185,45 @@ const FilaAlmacen: React.FC<{ almacen: InStockAlmacenNodoDTO; expandAll: boolean
     );
 };
 
-/** Fila nivel 1: producto (colapsable → almacenes) */
-const FilaProducto: React.FC<{ producto: InStockProductoNodoDTO; expandAll: boolean }> = ({
-    producto,
-    expandAll,
-}) => {
+// ── FilaProducto ──────────────────────────────────────────────────────────────
+
+interface FilaProductoProps {
+    producto: InStockProductoNodoDTO;
+    criteria: InStockArbolSearchCriteria;
+    expandAll: boolean;
+}
+
+/** Fila nivel 1: producto (colapsable → almacenes cargados lazy al primer expand) */
+const FilaProducto: React.FC<FilaProductoProps> = ({ producto, criteria, expandAll }) => {
     const [open, setOpen] = useState(false);
-    useEffect(() => setOpen(expandAll), [expandAll]);
+    const [almacenes, setAlmacenes] = useState<InStockAlmacenNodoDTO[]>([]);
+    const [loading, setLoading] = useState(false);
+    const loaded = useRef(false);
+
+    // Sincronizar con el botón "expandir todo"
+    useEffect(() => {
+        if (expandAll && !open) {
+            handleExpand();
+        } else if (!expandAll) {
+            setOpen(false);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [expandAll]);
+
+    const handleExpand = async () => {
+        const next = !open;
+        setOpen(next);
+        if (next && !loaded.current) {
+            setLoading(true);
+            try {
+                const data = await buscarAlmacenesPorProducto(producto.productoId, criteria);
+                setAlmacenes(data);
+                loaded.current = true;
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
 
     return (
         <>
@@ -149,11 +234,13 @@ const FilaProducto: React.FC<{ producto: InStockProductoNodoDTO; expandAll: bool
                     "&:hover": { bgcolor: "#bbdefb" },
                     "& td": { borderBottom: "1px solid #90caf9" },
                 }}
-                onClick={() => setOpen((v) => !v)}
+                onClick={handleExpand}
             >
                 <TableCell sx={{ width: 40, py: 1 }}>
                     <IconButton size="small" tabIndex={-1}>
-                        {open ? <KeyboardArrowDownIcon fontSize="small" /> : <KeyboardArrowRightIcon fontSize="small" />}
+                        {open
+                            ? <KeyboardArrowDownIcon fontSize="small" />
+                            : <KeyboardArrowRightIcon fontSize="small" />}
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ width: 40, border: 0 }} />
@@ -163,13 +250,16 @@ const FilaProducto: React.FC<{ producto: InStockProductoNodoDTO; expandAll: bool
                         <Typography variant="body2" fontWeight={700}>
                             {producto.productoNombre}
                         </Typography>
-                        <Chip
-                            label={`${producto.almacenes.length} ${producto.almacenes.length === 1 ? "almacén" : "almacenes"}`}
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            sx={{ height: 18, fontSize: 10 }}
-                        />
+                        {loading && <CircularProgress size={14} sx={{ ml: 0.5 }} />}
+                        {loaded.current && !loading && (
+                            <Chip
+                                label={`${almacenes.length} ${almacenes.length === 1 ? "almacén" : "almacenes"}`}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                                sx={{ height: 18, fontSize: 10 }}
+                            />
+                        )}
                     </Box>
                 </TableCell>
                 <TableCell align="right" sx={{ pr: 3, py: 1 }}>
@@ -184,9 +274,23 @@ const FilaProducto: React.FC<{ producto: InStockProductoNodoDTO; expandAll: bool
                     <Collapse in={open} timeout="auto" unmountOnExit>
                         <Table size="small" sx={{ tableLayout: "fixed" }}>
                             <TableBody>
-                                {producto.almacenes.map((alm) => (
-                                    <FilaAlmacen key={alm.almacenId} almacen={alm} expandAll={expandAll} />
-                                ))}
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center" sx={{ py: 1.5 }}>
+                                            <CircularProgress size={22} />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    almacenes.map((alm) => (
+                                        <FilaAlmacen
+                                            key={alm.almacenId}
+                                            almacen={alm}
+                                            productoId={producto.productoId}
+                                            criteria={criteria}
+                                            expandAll={expandAll}
+                                        />
+                                    ))
+                                )}
                             </TableBody>
                         </Table>
                     </Collapse>
@@ -199,15 +303,21 @@ const FilaProducto: React.FC<{ producto: InStockProductoNodoDTO; expandAll: bool
 // ── componente principal ──────────────────────────────────────────────────────
 
 const StockArbolView: React.FC = () => {
-    // Catálogos
-    const [sucursales, setSucursales] = useState<SgSucursal[]>([]);
+    // Catálogos — shared hook: una sola llamada al API sin importar cuántas instancias o
+    // cuántas veces StrictMode ejecute los efectos.
+    const { data: sucursales } = useSharedSucursalesActivas();
     const [almacenes, setAlmacenes] = useState<InAlmacenResumenDTO[]>([]);
 
-    // Filtros — string vacío = "sin selección" (Select siempre maneja strings internamente)
+    // Filtros
     const [sucursalId, setSucursalId] = useState<string>("");
     const [almacenId, setAlmacenId] = useState<string>("");
     const [productoNombre, setProductoNombre] = useState("");
     const [soloConStock, setSoloConStock] = useState(true);
+
+    // Criterios activos usados en la última búsqueda (los mismos se pasan a nivel 2 y 3)
+    const [activeCriteria, setActiveCriteria] = useState<InStockArbolSearchCriteria>({
+        soloConStock: true,
+    });
 
     // Datos
     const [rows, setRows] = useState<InStockProductoNodoDTO[]>([]);
@@ -218,40 +328,20 @@ const StockArbolView: React.FC = () => {
     const [snackOpen, setSnackOpen] = useState(false);
     const [expandAll, setExpandAll] = useState(false);
 
-    // ── Carga inicial de sucursales ───────────────────────────────────────
-    useEffect(() => {
-        getSucursalesActivas().then((data) => {
-            setSucursales(data);
-            // Auto-seleccionar si solo hay una sucursal
-            if (data.length === 1 && data[0].id != null) {
-                setSucursalId(String(data[0].id));
-            }
-        }).catch(() => {});
-    }, []);
-
-    // ── Recargar almacenes cuando cambia la sucursal ──────────────────────
-    useEffect(() => {
-        setAlmacenId(""); // limpiar selección previa de almacén
-        buscarAlmacenes({
-            estadoId: "A",
-            sucursalId: sucursalId !== "" ? Number(sucursalId) : undefined,
-        })
-            .then(setAlmacenes)
-            .catch(() => {});
-    }, [sucursalId]);
-
-    // ── Buscar ────────────────────────────────────────────────────────────
+    // ── Buscar (nivel 1) ──────────────────────────────────────────────────
     const buscar = useCallback(async () => {
         setLoading(true);
         setErrorMsg("");
+        setExpandAll(false);
         try {
             const criteria: InStockArbolSearchCriteria = {
                 sucursalId: sucursalId !== "" ? Number(sucursalId) : null,
-                almacenId: almacenId !== "" ? Number(almacenId) : null,
+                almacenId:  almacenId  !== "" ? Number(almacenId)  : null,
                 productoNombre: productoNombre.trim() || undefined,
                 soloConStock,
             };
-            const data = await buscarStockArbol(criteria);
+            setActiveCriteria(criteria);
+            const data = await buscarStockProductos(criteria);
             setRows(data);
             if (data.length === 0) {
                 setErrorMsg("No se encontraron productos con los filtros aplicados.");
@@ -265,15 +355,43 @@ const StockArbolView: React.FC = () => {
         }
     }, [sucursalId, almacenId, productoNombre, soloConStock]);
 
-    // Búsqueda inicial (espera a que sucursales carguen para no lanzar doble búsqueda)
-    const [initialSearchDone, setInitialSearchDone] = useState(false);
+    // ── Auto-seleccionar sucursal si solo hay una ─────────────────────────
+    // useRef evita que StrictMode ejecute la selección dos veces.
+    const autoSelectDone = useRef(false);
     useEffect(() => {
-        if (!initialSearchDone && sucursales.length >= 0) {
-            setInitialSearchDone(true);
-            buscar();
+        if (autoSelectDone.current || sucursales.length === 0) return;
+        autoSelectDone.current = true;
+        if (sucursales.length === 1 && sucursales[0].id != null) {
+            setSucursalId(String(sucursales[0].id));
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sucursales]);
+
+    // ── Búsqueda inicial al montar (exactamente una vez) ──────────────────
+    // useRef persiste a través del ciclo mount→cleanup→remount de StrictMode,
+    // lo que garantiza una sola llamada al API incluso en desarrollo.
+    const mountSearchDone = useRef(false);
+    useEffect(() => {
+        if (mountSearchDone.current) return;
+        mountSearchDone.current = true;
+        buscar();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // ── Recargar almacenes cuando cambia la sucursal ──────────────────────
+    // El guard de prev-value evita la doble ejecución de StrictMode con el
+    // mismo sucursalId, pero deja pasar los cambios reales del usuario.
+    const prevSucursalIdRef = useRef<string | undefined>(undefined);
+    useEffect(() => {
+        if (prevSucursalIdRef.current === sucursalId) return;
+        prevSucursalIdRef.current = sucursalId;
+        setAlmacenId("");
+        buscarAlmacenes({
+            estadoId: "A",
+            sucursalId: sucursalId !== "" ? Number(sucursalId) : undefined,
+        })
+            .then(setAlmacenes)
+            .catch(() => {});
+    }, [sucursalId]);
 
     return (
         <Box sx={{ p: 2 }}>
@@ -294,15 +412,13 @@ const StockArbolView: React.FC = () => {
                             >
                                 <MenuItem value="">Todas</MenuItem>
                                 {sucursales.map((s) => (
-                                    <MenuItem key={s.id} value={s.id}>
-                                        {s.nombre}
-                                    </MenuItem>
+                                    <MenuItem key={s.id} value={s.id}>{s.nombre}</MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
                     </Grid>
 
-                    {/* Almacén (depende de sucursal seleccionada) */}
+                    {/* Almacén (depende de sucursal) */}
                     <Grid size={{ xs: 12, sm: 3 }}>
                         <FormControl size="small" fullWidth>
                             <InputLabel>Almacén</InputLabel>
@@ -313,9 +429,7 @@ const StockArbolView: React.FC = () => {
                             >
                                 <MenuItem value="">Todos</MenuItem>
                                 {almacenes.map((a) => (
-                                    <MenuItem key={a.id} value={a.id}>
-                                        {a.nombre}
-                                    </MenuItem>
+                                    <MenuItem key={a.id} value={a.id}>{a.nombre}</MenuItem>
                                 ))}
                             </Select>
                         </FormControl>
@@ -411,6 +525,7 @@ const StockArbolView: React.FC = () => {
                                 <FilaProducto
                                     key={producto.productoId}
                                     producto={producto}
+                                    criteria={activeCriteria}
                                     expandAll={expandAll}
                                 />
                             ))

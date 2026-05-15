@@ -109,6 +109,9 @@ public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
    * Genera un InMovimiento de entrada (tipo 13) por cada linea de lote. La cantidad del movimiento
    * se expresa en unidad de fraccion: lote.cantidad x factor donde factor = unidadCantidad del
    * detalle (minimo 1). Ejemplo: 5 Cajas con factor 10 registra 50 Unidades en inventario.
+   *
+   * <p>Los detalles marcados como {@code servicio = true} (transporte, fletes, gastos, etc.) no
+   * generan movimiento de inventario — solo impactan el costo financiero de la orden.
    */
   private void generarMovimientos(InOrdenEntrada ordenEntrada) {
     List<InOrdenEntradaDetalle> detalles = ordenEntrada.getInOrdenDetalleList();
@@ -117,6 +120,9 @@ public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
     List<InMovimiento> movimientos = new ArrayList<>();
 
     for (InOrdenEntradaDetalle detalle : detalles) {
+      // Los servicios (transporte, fletes, gastos) no tocan inventario físico
+      if (Boolean.TRUE.equals(detalle.getServicio())) continue;
+
       List<InOrdenEntradaDetalleLote> lotes = detalle.getInOrdenDetalleLotes();
       if (lotes == null || lotes.isEmpty()) continue;
 
@@ -166,6 +172,9 @@ public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
 
     for (InOrdenEntradaDetalle detalle : detalles) {
       detalle.setOrdenEntradaId(ordenEntrada);
+
+      // Los servicios no tienen lotes — saltar procesamiento de lotes
+      if (Boolean.TRUE.equals(detalle.getServicio())) continue;
 
       List<InOrdenEntradaDetalleLote> lotes = detalle.getInOrdenDetalleLotes();
       if (lotes == null) continue;

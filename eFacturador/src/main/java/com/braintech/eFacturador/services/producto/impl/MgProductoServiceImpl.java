@@ -283,10 +283,17 @@ public class MgProductoServiceImpl implements MgProductoService {
               cb.lower(product.get("descripcion")),
               "%" + criteria.getDescripcion().toLowerCase(Locale.ROOT) + "%"));
     }
+    if (criteria.getCategoriaId() != null) {
+      predicates.add(cb.equal(product.get("categoriaId").get("id"), criteria.getCategoriaId()));
+    }
 
     query.where(cb.and(predicates.toArray(new Predicate[0])));
     query.select(
-        cb.construct(MgProductoResumenDTO.class, product.get("id"), product.get("nombreProducto")));
+        cb.construct(
+            MgProductoResumenDTO.class,
+            product.get("id"),
+            product.get("nombreProducto"),
+            product.get("precio")));
     query.orderBy(cb.asc(product.get("nombreProducto")));
     return entityManager.createQuery(query).getResultList();
   }
@@ -328,7 +335,11 @@ public class MgProductoServiceImpl implements MgProductoService {
 
     query.where(cb.and(predicates.toArray(new Predicate[0])));
     query.select(
-        cb.construct(MgProductoResumenDTO.class, product.get("id"), product.get("nombreProducto")));
+        cb.construct(
+            MgProductoResumenDTO.class,
+            product.get("id"),
+            product.get("nombreProducto"),
+            product.get("precioVenta")));
     query.orderBy(cb.asc(product.get("nombreProducto")));
     return entityManager.createQuery(query).getResultList();
   }

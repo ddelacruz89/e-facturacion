@@ -78,7 +78,7 @@ public class MfFacturaSuplidor extends BaseDgII implements Serializable {
   private String concepto;
 
   @Column(name = "subtotal")
-  private BigDecimal subtotal;
+  private BigDecimal subTotal;
 
   @Column(name = "itbis")
   private BigDecimal itbis;

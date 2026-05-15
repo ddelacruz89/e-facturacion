@@ -93,7 +93,7 @@ function makeInitialForm(): MfFacturaSuplidorRequest {
         estadoId:            "ACT",
         descuento:           0,
         itbis:               0,
-        subtotal:            0,
+        subTotal:            0,
         total:               0,
         montoAnulado:        0,
         montoRetencionIsr:   0,
@@ -127,7 +127,7 @@ const makeInitialDetalle = (isrPct: number, itbisPct: number): DetalleLocal => (
     retencion:              0,
     retencionIsrPorciento:  isrPct,
     retencionItbisPorciento: itbisPct,
-    subtotal:               0,
+    subTotal:               0,
     total:                  0,
     indicadorBienServicio:  undefined, // usuario debe elegir explícitamente
     montoDescuento:         0,
@@ -248,16 +248,16 @@ const FacturaSuplidorView: React.FC = () => {
         const esServicio         = d.indicadorBienServicio === 2;
         const montoItem          = (d.cantidad || 0) * (d.precioUnitario || 0);
         const itbisAmt           = montoItem * ((d.itbisPorciento || 0) / 100);
-        const subtotal           = montoItem - (d.montoDescuento || 0) + (d.montoRecargo || 0);
-        const retencion          = esServicio ? subtotal * (usedIsrPct   / 100) : 0; // bienes: sin ISR
+        const subTotal           = montoItem - (d.montoDescuento || 0) + (d.montoRecargo || 0);
+        const retencion          = esServicio ? subTotal * (usedIsrPct   / 100) : 0; // bienes: sin ISR
         const montoItbisRetenido = itbisAmt  * (usedItbisPct / 100);
-        const total              = subtotal  + itbisAmt;
+        const total              = subTotal  + itbisAmt;
 
         return {
             ...d,
             montoItem,
             itbis: itbisAmt,
-            subtotal,
+            subTotal,
             retencion,
             montoItbisRetenido,
             total,
@@ -330,7 +330,7 @@ const FacturaSuplidorView: React.FC = () => {
             tipoIngreso:         completa.tipoIngreso,
             concepto:            completa.concepto,
             estadoId:            completa.estadoId,
-            subtotal:            completa.subtotal,
+            subTotal:            completa.subTotal,
             itbis:               completa.itbis,
             descuento:           completa.descuento,
             total:               completa.total,
@@ -394,15 +394,15 @@ const FacturaSuplidorView: React.FC = () => {
     };
 
     const recalcTotals = (rows: any[]) => {
-        let subtotal = 0, itbis = 0, total = 0, isrRet = 0, itbisRet = 0;
+        let subTotal = 0, itbis = 0, total = 0, isrRet = 0, itbisRet = 0;
         rows.forEach((r) => {
-            subtotal  += Number(r.subtotal)           || 0;
+            subTotal  += Number(r.subTotal)           || 0;
             itbis     += Number(r.itbis)              || 0;
             total     += Number(r.total)              || 0;
             isrRet    += Number(r.retencion)          || 0;
             itbisRet  += Number(r.montoItbisRetenido) || 0;
         });
-        setValue("subtotal",            subtotal);
+        setValue("subTotal",            subTotal);
         setValue("itbis",               itbis);
         setValue("total",               total);
         setValue("montoRetencionIsr",   isrRet);
@@ -443,14 +443,14 @@ const FacturaSuplidorView: React.FC = () => {
     const esCreditoVal       = watch("esCredito");
     const esCredito2         = String(esCreditoVal) === "2"; // solo Crédito muestra fecha límite
 
-    const subtotalH          = watch("subtotal")           ?? 0;
+    const subtotalH          = watch("subTotal")            ?? 0;
     const itbisH             = watch("itbis")              ?? 0;
     const descuentoH         = watch("descuento")          ?? 0;
     const montoRetIsrH       = watch("montoRetencionIsr")  ?? 0;
     const montoRetItbisH     = watch("montoRetencionItbis") ?? 0;
     const totalFinal         = subtotalH + itbisH - descuentoH - montoRetIsrH - montoRetItbisH;
 
-    const tablaSubtotal  = detalles.reduce((s,d) => s + (Number((d as any).subtotal)      ||0), 0);
+    const tablaSubtotal  = detalles.reduce((s,d) => s + (Number((d as any).subTotal)      ||0), 0);
     const tablaDescuento = detalles.reduce((s,d) => s + (Number((d as any).montoDescuento) ||0), 0);
     const tablaItbis     = detalles.reduce((s,d) => s + (Number((d as any).itbis)          ||0), 0);
     const tablaIsrRet    = detalles.reduce((s,d) => s + (Number((d as any).retencion)       ||0), 0);
@@ -800,7 +800,7 @@ const FacturaSuplidorView: React.FC = () => {
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 2 }}>
                                     <FieldLabel>SubTotal</FieldLabel>
-                                    <TextField fullWidth size="small" value={`RD$ ${fmt(detalleForm.subtotal)}`} disabled />
+                                    <TextField fullWidth size="small" value={`RD$ ${fmt(detalleForm.subTotal)}`} disabled />
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 2 }}>
                                     <FieldLabel>&nbsp;</FieldLabel>
@@ -854,7 +854,7 @@ const FacturaSuplidorView: React.FC = () => {
                                                 <TableCell sx={{ fontSize:"0.82rem" }}>{d?.centroCostosId||"—"}</TableCell>
                                                 <TableCell align="right" sx={{ fontSize:"0.82rem" }}>{d?.cantidad}</TableCell>
                                                 <TableCell align="right" sx={{ fontSize:"0.82rem" }}>RD$ {fmt(d?.precioUnitario)}</TableCell>
-                                                <TableCell align="right" sx={{ fontSize:"0.82rem" }}>RD$ {fmt(d?.subtotal)}</TableCell>
+                                                <TableCell align="right" sx={{ fontSize:"0.82rem" }}>RD$ {fmt(d?.subTotal)}</TableCell>
                                                 <TableCell align="right" sx={{ fontSize:"0.82rem" }}>RD$ {fmt(d?.montoDescuento)}</TableCell>
                                                 <TableCell align="right" sx={{ fontSize:"0.82rem" }}>RD$ {fmt(d?.itbis)}</TableCell>
                                                 <TableCell align="right" sx={{ fontSize:"0.82rem", color: isrPct > 0 ? "#e67e22" : "inherit" }}>

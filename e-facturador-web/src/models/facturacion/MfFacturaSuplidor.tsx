@@ -35,7 +35,7 @@ export interface MfFacturaSuplidorDetalleRequest {
     precioUnitario: number;
     montoItem?: number;
     concepto?: string;
-    subtotal?: number;
+    subTotal?: number;
     retencion?: number;            // ISR retenido calculado
     retencionIsrPorciento?: number;   // % ISR viene del header
     retencionItbisPorciento?: number; // % ITBIS viene del header
@@ -73,7 +73,7 @@ export interface MfFacturaSuplidorRequest {
     // Montos
     tipoPago?: number;
     concepto?: string;
-    subtotal?: number;
+    subTotal?: number;
     itbis?: number;
     descuento?: number;
     total?: number;

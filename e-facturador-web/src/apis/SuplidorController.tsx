@@ -4,6 +4,20 @@ import { DataNotFound } from "../models/ServerErros";
 
 const api = "/api/v1/inventario/suplidores";
 
+// DTO para los productos de un suplidor
+export interface InSuplidorProductoResumenDTO {
+    id: number;
+    productoId: number;
+    productoNombre: string;
+    precio: number;
+    estadoId: string;
+}
+
+export interface InSuplidorProductoRequestDTO {
+    productoId: number;
+    precio: number;
+}
+
 interface ApiResponse<T> {
     status: string;
     content: T;
@@ -91,6 +105,61 @@ export function deleteSuplidor(id: number): Promise<void> {
         .catch((error) => {
             const response: DataNotFound = error.response.data.error;
             console.error("Mensaje:", response.message);
+            throw error;
+        });
+}
+
+// -------------------------------------------------------------------------
+// Productos del suplidor
+// -------------------------------------------------------------------------
+
+export function getProductosBySuplidor(suplidorId: number): Promise<InSuplidorProductoResumenDTO[]> {
+    return apiClient
+        .get(`${api}/${suplidorId}/productos`)
+        .then((x: { data: ApiResponse<InSuplidorProductoResumenDTO[]> }) => x.data.content)
+        .catch((error) => {
+            const response: DataNotFound = error.response?.data?.error;
+            console.error("getProductosBySuplidor error:", response?.message);
+            return [];
+        });
+}
+
+export function addProductoToSuplidor(
+    suplidorId: number,
+    request: InSuplidorProductoRequestDTO,
+): Promise<string> {
+    return apiClient
+        .post(`${api}/${suplidorId}/productos`, request)
+        .then((x: { data: ApiResponse<string> }) => x.data.content)
+        .catch((error) => {
+            const response: DataNotFound = error.response?.data?.error;
+            console.error("addProductoToSuplidor error:", response?.message);
+            throw error;
+        });
+}
+
+export function updateProductoPrecio(
+    suplidorId: number,
+    id: number,
+    request: InSuplidorProductoRequestDTO,
+): Promise<string> {
+    return apiClient
+        .put(`${api}/${suplidorId}/productos/${id}`, request)
+        .then((x: { data: ApiResponse<string> }) => x.data.content)
+        .catch((error) => {
+            const response: DataNotFound = error.response?.data?.error;
+            console.error("updateProductoPrecio error:", response?.message);
+            throw error;
+        });
+}
+
+export function removeProductoFromSuplidor(suplidorId: number, id: number): Promise<string> {
+    return apiClient
+        .delete(`${api}/${suplidorId}/productos/${id}`)
+        .then((x: { data: ApiResponse<string> }) => x.data.content)
+        .catch((error) => {
+            const response: DataNotFound = error.response?.data?.error;
+            console.error("removeProductoFromSuplidor error:", response?.message);
             throw error;
         });
 }

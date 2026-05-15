@@ -25,6 +25,13 @@ public class InStockProductoNodoDTO {
     this.totalCantidad = 0;
   }
 
+  /** Constructor usado por la proyección JPQL con GROUP BY (SUM devuelve Long). */
+  public InStockProductoNodoDTO(Integer productoId, String productoNombre, Long totalCantidad) {
+    this.productoId = productoId;
+    this.productoNombre = productoNombre;
+    this.totalCantidad = totalCantidad == null ? 0 : totalCantidad.intValue();
+  }
+
   public void agregarCantidad(Integer cantidad) {
     totalCantidad += (cantidad != null ? cantidad : 0);
   }

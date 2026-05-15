@@ -32,8 +32,7 @@ import {
     InAlmacenResumenDTO,
     InAlmacenSearchCriteria,
 } from "../../apis/AlmacenController";
-import { getSucursales } from "../../apis/SucursalController";
-import { SgSucursal } from "../../models/seguridad/SgSucursal";
+import { useSharedSucursalesAll } from "../../apis/SucursalController";
 
 // -- helpers ------------------------------------------------------------------
 
@@ -57,13 +56,10 @@ const AlmacenBuscarModal: React.FC<Props> = ({ open, onClose, onSelect }) => {
     const [nombre, setNombre] = useState("");
     const [estadoId, setEstadoId] = useState("");
     const [sucursalId, setSucursalId] = useState<number>(0); // 0 = todas
-    const [sucursales, setSucursales] = useState<SgSucursal[]>([]);
+    const { data: sucursales } = useSharedSucursalesAll();
     const [resultados, setResultados] = useState<InAlmacenResumenDTO[]>([]);
     const [cargando, setCargando] = useState(false);
 
-    useEffect(() => {
-        getSucursales().then(setSucursales).catch(() => {});
-    }, []);
 
     const buscar = useCallback(async () => {
         setCargando(true);

@@ -118,7 +118,7 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
     // Montos
     e.setTipoPago(dto.getTipoPago());
     e.setConcepto(dto.getConcepto());
-    e.setSubtotal(dto.getSubtotal());
+    e.setSubTotal(dto.getSubTotal());
     e.setItbis(dto.getItbis());
     e.setDescuento(dto.getDescuento());
     e.setTotal(dto.getTotal());
@@ -192,7 +192,7 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
       detalle.setPrecioUnitario(d.getPrecioUnitario());
       detalle.setMontoItem(d.getMontoItem());
       detalle.setConcepto(d.getConcepto());
-      detalle.setSubtotal(d.getSubtotal());
+      detalle.setSubTotal(d.getSubTotal());
       detalle.setRetencion(d.getRetencion());
       detalle.setRetencionPorciento(d.getRetencionPorciento());
       detalle.setMontoDescuento(d.getMontoDescuento());

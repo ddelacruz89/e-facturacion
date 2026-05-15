@@ -15,4 +15,10 @@ public class InStockLoteNodoDTO {
 
   /** Cantidad disponible de este lote en el almacén padre. */
   private Integer cantidad;
+
+  /** Constructor usado por la proyección JPQL con GROUP BY (SUM devuelve Long). */
+  public InStockLoteNodoDTO(String lote, Long cantidad) {
+    this.lote = lote;
+    this.cantidad = cantidad == null ? 0 : cantidad.intValue();
+  }
 }

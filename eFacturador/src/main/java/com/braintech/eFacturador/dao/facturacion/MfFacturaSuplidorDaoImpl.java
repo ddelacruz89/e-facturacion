@@ -7,6 +7,7 @@ import jakarta.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -63,7 +64,8 @@ public class MfFacturaSuplidorDaoImpl implements MfFacturaSuplidorDao {
       query.setParameter("suplidorId", criteria.getSuplidorId());
     }
     if (criteria.getNumeroFactura() != null && !criteria.getNumeroFactura().isBlank()) {
-      query.setParameter("numeroFactura", "%" + criteria.getNumeroFactura().toLowerCase() + "%");
+      query.setParameter(
+          "numeroFactura", "%" + criteria.getNumeroFactura().toLowerCase(Locale.ROOT) + "%");
     }
     if (criteria.getEstadoId() != null && !criteria.getEstadoId().isBlank()) {
       query.setParameter("estadoId", criteria.getEstadoId());

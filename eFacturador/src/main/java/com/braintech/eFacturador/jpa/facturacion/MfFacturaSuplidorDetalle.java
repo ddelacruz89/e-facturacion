@@ -47,7 +47,7 @@ public class MfFacturaSuplidorDetalle implements Serializable {
   private String concepto;
 
   @Column(name = "subtotal")
-  private BigDecimal subtotal;
+  private BigDecimal subTotal;
 
   @Column(name = "retencion")
   private BigDecimal retencion;

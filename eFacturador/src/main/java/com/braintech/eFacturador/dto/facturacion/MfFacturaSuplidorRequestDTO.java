@@ -43,7 +43,7 @@ public class MfFacturaSuplidorRequestDTO {
   // ── Montos ────────────────────────────────────────────────────────────────
   private Integer tipoPago;
   private String concepto;
-  private BigDecimal subtotal;
+  private BigDecimal subTotal;
   private BigDecimal itbis;
   private BigDecimal descuento;
   private BigDecimal total;

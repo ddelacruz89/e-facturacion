@@ -39,8 +39,7 @@ import {
     updateAlmacen,
     InAlmacenResumenDTO,
 } from "../../apis/AlmacenController";
-import { getSucursales } from "../../apis/SucursalController";
-import { SgSucursal } from "../../models/seguridad/SgSucursal";
+import { useSharedSucursalesAll } from "../../apis/SucursalController";
 import AlmacenBuscarModal from "./AlmacenBuscarModal";
 
 // -- tipos locales -------------------------------------------------------------
@@ -62,7 +61,7 @@ const AlmacenView: React.FC = () => {
     const [guardando, setGuardando] = useState(false);
 
     // catalogos
-    const [sucursales, setSucursales] = useState<SgSucursal[]>([]);
+    const { data: sucursales } = useSharedSucursalesAll();
 
     // lista (todos los almacenes de la empresa)
     const [lista, setLista] = useState<InAlmacenResumenDTO[]>([]);
@@ -84,7 +83,6 @@ const AlmacenView: React.FC = () => {
 
     // -- carga inicial --
     useEffect(() => {
-        getSucursales().then(setSucursales).catch(() => {});
         cargarLista();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
