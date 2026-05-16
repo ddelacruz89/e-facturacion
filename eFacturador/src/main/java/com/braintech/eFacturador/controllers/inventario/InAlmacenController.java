@@ -5,6 +5,8 @@ import com.braintech.eFacturador.dto.inventario.InAlmacenResumenDTO;
 import com.braintech.eFacturador.dto.inventario.InAlmacenSearchCriteria;
 import com.braintech.eFacturador.interfaces.inventario.InAlmacenService;
 import com.braintech.eFacturador.jpa.inventario.InAlmacen;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,12 +36,14 @@ public class InAlmacenController {
   }
 
   /** POST / — Crear almacén. La sucursalId viene en el body; empresa del TenantContext. */
+  @RequierePermiso(menuUrl = "/inventario/almacenes", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<InAlmacen> create(@RequestBody InAlmacenRequestDTO request) {
     return ResponseEntity.ok(inAlmacenService.create(request));
   }
 
   /** PUT /{id} — Actualizar almacén. La sucursalId puede cambiar según el body. */
+  @RequierePermiso(menuUrl = "/inventario/almacenes", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<InAlmacen> update(
       @PathVariable Integer id, @RequestBody InAlmacenRequestDTO request) {
@@ -47,6 +51,7 @@ public class InAlmacenController {
   }
 
   /** DELETE /{id} — Desactivar (soft delete → estadoId = 'INA'). */
+  @RequierePermiso(menuUrl = "/inventario/almacenes", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> disable(@PathVariable Integer id) {
     inAlmacenService.disable(id);
@@ -54,6 +59,7 @@ public class InAlmacenController {
   }
 
   /** PATCH /{id}/activar — Reactivar almacén (estadoId = 'ACT'). */
+  @RequierePermiso(menuUrl = "/inventario/almacenes", accion = Accion.ESCRIBIR)
   @PatchMapping("/{id}/activar")
   public ResponseEntity<Void> enable(@PathVariable Integer id) {
     inAlmacenService.enable(id);

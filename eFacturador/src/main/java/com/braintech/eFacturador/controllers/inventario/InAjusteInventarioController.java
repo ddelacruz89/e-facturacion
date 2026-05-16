@@ -6,6 +6,8 @@ import com.braintech.eFacturador.dto.inventario.InAjusteInventarioSearchCriteria
 import com.braintech.eFacturador.dto.inventario.InStockActualDTO;
 import com.braintech.eFacturador.interfaces.inventario.InAjusteInventarioService;
 import com.braintech.eFacturador.jpa.inventario.InAjusteInventario;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,6 +25,7 @@ public class InAjusteInventarioController {
    * POST /aplicar — Aplica un ajuste de inventario. Body: { almacenId, observacion, detalles: [{
    * productoId, lote, cantidadActual, cantidadNueva }] }
    */
+  @RequierePermiso(menuUrl = "/inventario/ajustes", accion = Accion.ESCRIBIR)
   @PostMapping("/aplicar")
   public ResponseEntity<InAjusteInventario> aplicar(
       @RequestBody InAjusteInventarioRequestDTO request) {

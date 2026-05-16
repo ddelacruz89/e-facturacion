@@ -6,6 +6,8 @@ import com.braintech.eFacturador.dto.inventario.InLoteStockResponseDTO;
 import com.braintech.eFacturador.dto.inventario.InLoteUpdateDTO;
 import com.braintech.eFacturador.interfaces.inventario.InLoteService;
 import com.braintech.eFacturador.jpa.inventario.InLote;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -40,12 +42,14 @@ public class InLoteController {
   }
 
   /** Actualiza solo los campos editables (PK y tenant son inmutables). */
+  @RequierePermiso(menuUrl = "/inventario/lotes", accion = Accion.ESCRIBIR)
   @PutMapping("/{lote}/{productoId}")
   public ResponseEntity<InLote> update(
       @PathVariable String lote, @PathVariable Long productoId, @RequestBody InLoteUpdateDTO dto) {
     return ResponseEntity.ok(inLoteService.update(lote, productoId, dto));
   }
 
+  @RequierePermiso(menuUrl = "/inventario/lotes", accion = Accion.ELIMINAR)
   @DeleteMapping("/{lote}/{productoId}")
   public ResponseEntity<Void> disable(@PathVariable String lote, @PathVariable Long productoId) {
     InLote existing = inLoteService.findById(lote, productoId);
