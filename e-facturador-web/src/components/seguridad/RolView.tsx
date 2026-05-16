@@ -658,7 +658,7 @@ const RolView: React.FC = () => {
                                                             </Typography>
                                                         </TableCell>
                                                         <TableCell>{ur.usuario?.nombre}</TableCell>
-                                                        <TableCell>{ur.sucursalId?.sucursal}</TableCell>
+                                                        <TableCell>{ur.sucursalId?.nombre}</TableCell>
                                                         <TableCell>
                                                             <Chip
                                                                 label={ur.activo ? "Activo" : "Inactivo"}

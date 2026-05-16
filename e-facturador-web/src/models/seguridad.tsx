@@ -87,7 +87,7 @@ export interface SgUsuarioRol {
     fechaReg?: string;
     usuarioReg?: string;
     usuario: { username: string; nombre: string };
-    sucursalId: { id: number; sucursal: string };
+    sucursalId: { id: number; nombre: string };
 }
 
 export interface MenuDto {
