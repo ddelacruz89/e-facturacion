@@ -73,6 +73,7 @@ const OrdenEntradaView: React.FC = () => {
     const [loteCantidad, setLoteCantidad] = useState<number>(0);
     const [loteFechaVencimiento, setLoteFechaVencimiento] = useState("");
     const [loteItems, setLoteItems] = useState<LoteDraft[]>([]);
+    const [isReadOnly, setIsReadOnly] = useState(false);
 
     // ── Estado del dialog de servicio ────────────────────────────────────────
     const [servicioDialogOpen, setServicioDialogOpen] = useState(false);
@@ -145,7 +146,8 @@ const OrdenEntradaView: React.FC = () => {
             const oe = await getOrdenEntrada(orden.id);
             setLastOrdenEntrada(oe);
             setSelectedOrdenCompra(null);
-            showSnackbar(`Orden de entrada #${oe.id} cargada`, "success");
+            setIsReadOnly(true);
+            showSnackbar(`Orden de entrada #${oe.id} cargada (solo lectura)`, "info");
         } catch (error: any) {
             showSnackbar(error?.message || "Error al cargar la orden de entrada", "error");
         }
@@ -230,6 +232,7 @@ const OrdenEntradaView: React.FC = () => {
         reset(initialValues);
         setSelectedOrdenCompra(null);
         setLastOrdenEntrada(null);
+        setIsReadOnly(false);
     };
 
     const handleGuardar = async () => {
@@ -257,9 +260,13 @@ const OrdenEntradaView: React.FC = () => {
             return;
         }
 
+        // Inyectar siempre ordenCompraId desde selectedOrdenCompra para garantizar
+        // que llegue al backend aunque el round-trip del preview lo haya perdido.
+        const ordenCompraIdExplicito = selectedOrdenCompra?.id ?? lastOrdenEntrada.ordenCompraId ?? undefined;
+
         const ordenAGuardar = lastOrdenEntrada.id
-            ? lastOrdenEntrada
-            : { ...lastOrdenEntrada, almacenId };
+            ? { ...lastOrdenEntrada, ordenCompraId: ordenCompraIdExplicito }
+            : { ...lastOrdenEntrada, almacenId, ordenCompraId: ordenCompraIdExplicito };
 
         try {
             const saved = lastOrdenEntrada.id
@@ -411,7 +418,7 @@ const OrdenEntradaView: React.FC = () => {
             <div>
                 <ActionBar title="Órdenes de Entrada">
                     {lastOrdenEntrada && (
-                        <Button type="button" variant="contained" color="success" onClick={handleGuardar}>
+                        <Button type="button" variant="contained" color="success" onClick={handleGuardar} disabled={isReadOnly}>
                             Guardar
                         </Button>
                     )}
@@ -599,6 +606,7 @@ const OrdenEntradaView: React.FC = () => {
                                                                     type="button"
                                                                     size="small"
                                                                     variant="outlined"
+                                                                    disabled={isReadOnly}
                                                                     onClick={() => openLoteModal(idx)}>
                                                                     {detalle?.inOrdenDetalleLotes?.length
                                                                         ? `Editar (${detalle.inOrdenDetalleLotes.length})`

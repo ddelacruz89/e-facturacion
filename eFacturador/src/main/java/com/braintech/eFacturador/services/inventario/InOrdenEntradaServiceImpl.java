@@ -2,6 +2,7 @@ package com.braintech.eFacturador.services.inventario;
 
 import com.braintech.eFacturador.dao.inventario.InLoteDao;
 import com.braintech.eFacturador.dao.inventario.InOrdenEntradaDao;
+import com.braintech.eFacturador.dao.inventario.InOrdenesComprasRepository;
 import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.dto.inventario.InOrdenEntradaResumenDTO;
 import com.braintech.eFacturador.dto.inventario.InOrdenEntradaSearchCriteria;
@@ -35,6 +36,7 @@ public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
   private final SgSucursalRepository sgSucursalRepository;
   private final TenantContext tenantContext;
   private final InMovimientoService movimientoService;
+  private final InOrdenesComprasRepository inOrdenesComprasRepository;
 
   @Override
   @Transactional
@@ -57,6 +59,11 @@ public class InOrdenEntradaServiceImpl implements InOrdenEntradaService {
     InOrdenEntrada saved = inOrdenEntradaDao.save(ordenEntrada);
 
     generarMovimientos(saved);
+
+    // Si la OE proviene de una OC, marcarla como completada directamente
+    if (saved.getOrdenCompraId() != null) {
+      inOrdenesComprasRepository.updateEstadoId(saved.getOrdenCompraId(), "COM");
+    }
 
     return saved;
   }

@@ -11,6 +11,8 @@ export interface InOrdenEntrada {
     descuentoPorciento?: number;
     inOrdenDetalleList?: InOrdenEntradaDetalle[];
     almacenId?: number;
+    /** ID de la orden de compra que originó esta OE. Null si fue creada manualmente. */
+    ordenCompraId?: number;
 }
 
 export interface InOrdenEntradaDetalle {

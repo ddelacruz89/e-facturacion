@@ -160,6 +160,9 @@ public class InAjusteInventarioServiceImpl implements InAjusteInventarioService 
     // Guardar cabecera + detalles (cascade ALL)
     InAjusteInventario saved = ajusteDao.save(ajuste);
 
+    // Enlazar cada movimiento al ajuste que los originó
+    movimientos.forEach(m -> m.setNumeroReferencia(saved.getId()));
+
     // Registrar movimientos en bloque (estampa tenant internamente)
     movimientoService.registrarTodos(movimientos);
 

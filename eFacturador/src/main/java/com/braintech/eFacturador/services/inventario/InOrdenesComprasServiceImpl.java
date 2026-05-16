@@ -273,6 +273,7 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
     ordenEntrada.setTotal(ordenCompra.getTotal());
     ordenEntrada.setDescuento(ordenCompra.getDescuento());
     ordenEntrada.setAlmacenId(almacenId);
+    ordenEntrada.setOrdenCompraId(ordenCompraId);
     ordenEntrada.setEmpresaId(ordenCompra.getEmpresaId());
     ordenEntrada.setSucursalId(ordenCompra.getSucursalId());
     ordenEntrada.setUsuarioReg(username);

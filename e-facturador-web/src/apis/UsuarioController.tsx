@@ -1,11 +1,20 @@
 import apiClient from "../services/apiClient";
-import { SgUsuario } from "../models/seguridad";
+import { SgUsuario, SgUsuarioResumenDTO, SgUsuarioSearchCriteria } from "../models/seguridad";
 
-var api = "api/seguridad/usuario";
-export function getUsuario(): Promise<SgUsuario> {
-    return apiClient.get(api).then((x: { data: { content: SgUsuario } }) => x.data.content);
+const BASE = "api/v1/seguridad/usuario";
+
+export function buscarUsuarios(criteria: SgUsuarioSearchCriteria): Promise<SgUsuarioResumenDTO[]> {
+    return apiClient.post(`${BASE}/buscar`, criteria).then((r) => r.data);
 }
+
+export function getUsuario(username: string): Promise<SgUsuario> {
+    return apiClient.get(`${BASE}/${username}`).then((r) => r.data);
+}
+
 export function saveUsuario(usuario: SgUsuario): Promise<SgUsuario> {
-    console.log("saveUsuario", usuario);
-    return apiClient.post(api, usuario).then((x: { data: { content: SgUsuario } }) => x.data.content);
+    return apiClient.post(BASE, usuario).then((r) => r.data);
+}
+
+export function updateUsuario(username: string, usuario: SgUsuario): Promise<SgUsuario> {
+    return apiClient.put(`${BASE}/${username}`, usuario).then((r) => r.data);
 }
