@@ -4,6 +4,8 @@ import com.braintech.eFacturador.dto.producto.MgProductoCompraDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.producto.MgProductoService;
 import com.braintech.eFacturador.views.Views;
 import com.fasterxml.jackson.annotation.JsonView;
@@ -64,6 +66,7 @@ public class MgProductoController {
     return productoService.getAllWorkerProducts();
   }
 
+  @RequierePermiso(menuUrl = "/productos", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MgProducto> create(@RequestBody MgProducto producto) {
     MgProducto saved = productoService.create(producto);

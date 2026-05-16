@@ -15,4 +15,27 @@ public interface SgPermisoRepository extends JpaRepository<SgPermiso, Integer> {
   @Query("DELETE FROM SgPermiso p WHERE p.rol.id = :rolId AND p.empresaId = :empresaId")
   void deleteByRolIdAndEmpresaId(
       @Param("rolId") Integer rolId, @Param("empresaId") Integer empresaId);
+
+  /**
+   * Retorna los permisos que el usuario tiene sobre un menú específico (identificado por su URL),
+   * considerando todos sus roles activos en la empresa y sucursal del token JWT.
+   *
+   * <p>El llamador elige qué flag revisar (puedeLeer, puedeEscribir, etc.) según la acción.
+   */
+  @Query(
+      """
+      SELECT p FROM SgPermiso p
+      JOIN SgUsuarioRol ur ON ur.rol.id = p.rol.id
+      WHERE ur.usuario.username = :username
+        AND ur.empresaId        = :empresaId
+        AND ur.sucursalId.id    = :sucursalId
+        AND ur.activo           = true
+        AND p.empresaId         = :empresaId
+        AND p.menu.url          = :menuUrl
+      """)
+  List<SgPermiso> findPermisosForMenu(
+      @Param("username") String username,
+      @Param("empresaId") Integer empresaId,
+      @Param("sucursalId") Integer sucursalId,
+      @Param("menuUrl") String menuUrl);
 }
