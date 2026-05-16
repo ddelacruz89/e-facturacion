@@ -2,6 +2,8 @@ package com.braintech.eFacturador.controllers.producto;
 
 import com.braintech.eFacturador.dto.producto.MgUnidadSimpleDTO;
 import com.braintech.eFacturador.jpa.producto.MgUnidad;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.producto.MgUnidadService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -33,12 +35,14 @@ public class MgUnidadController {
     return ResponseEntity.ok(unidad);
   }
 
+  @RequierePermiso(menuUrl = "/producto/unidad", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MgUnidad> create(@RequestBody MgUnidad unidad) {
     MgUnidad saved = unidadService.create(unidad);
     return ResponseEntity.ok(saved);
   }
 
+  @RequierePermiso(menuUrl = "/producto/unidad", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MgUnidad> update(@PathVariable Integer id, @RequestBody MgUnidad unidad) {
     MgUnidad updated = unidadService.update(id, unidad);
@@ -46,6 +50,7 @@ public class MgUnidadController {
   }
 
   // Soft delete - changes activo to false
+  @RequierePermiso(menuUrl = "/producto/unidad", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable Integer id) {
     unidadService.delete(id);

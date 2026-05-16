@@ -41,7 +41,7 @@ import ModalSearch from "../search/ModalSearch";
 import SearchButton from "../search/SearchButton";
 import useModalSearch from "../../hooks/useModalSearch";
 import { SEARCH_CONFIGS, SearchResultItem } from "../../types/modalSearchTypes";
-import { getModulos } from "../../apis/ModulosController";
+import { getTodosModulos } from "../../apis/ModulosController";
 import {
     getRol,
     saveRol,
@@ -138,7 +138,7 @@ const RolView: React.FC = () => {
 
     // Cargar módulos y sucursales al montar
     useEffect(() => {
-        getModulos()
+        getTodosModulos()
             .then(setModulos)
             .catch(() => showSnackbar("Error al cargar módulos", "error"));
         getSucursalesActivas()

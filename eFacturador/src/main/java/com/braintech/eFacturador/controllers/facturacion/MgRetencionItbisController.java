@@ -3,6 +3,8 @@ package com.braintech.eFacturador.controllers.facturacion;
 import com.braintech.eFacturador.dto.facturacion.MgRetencionItbisRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MgRetencionItbisResumenDTO;
 import com.braintech.eFacturador.jpa.general.MgRetencionItbis;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.facturacion.MgRetencionItbisService;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -38,12 +40,14 @@ public class MgRetencionItbisController {
   }
 
   /** Crear nuevo registro. */
+  @RequierePermiso(menuUrl = "/facturacion/retenciones-itbis", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MgRetencionItbis> save(@RequestBody MgRetencionItbisRequestDTO dto) {
     return ResponseEntity.ok(service.save(dto));
   }
 
   /** Actualizar registro existente. */
+  @RequierePermiso(menuUrl = "/facturacion/retenciones-itbis", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MgRetencionItbis> update(
       @PathVariable Integer id, @RequestBody MgRetencionItbisRequestDTO dto) {
@@ -51,6 +55,7 @@ public class MgRetencionItbisController {
   }
 
   /** Eliminar registro. */
+  @RequierePermiso(menuUrl = "/facturacion/retenciones-itbis", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable Integer id) {
     service.delete(id);

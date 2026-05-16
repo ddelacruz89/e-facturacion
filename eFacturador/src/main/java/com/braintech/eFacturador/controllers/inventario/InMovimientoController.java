@@ -4,6 +4,8 @@ import com.braintech.eFacturador.dto.inventario.InMovimientoResumenDTO;
 import com.braintech.eFacturador.dto.inventario.InMovimientoSearchCriteria;
 import com.braintech.eFacturador.interfaces.inventario.InMovimientoService;
 import com.braintech.eFacturador.jpa.inventario.InMovimiento;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -48,6 +50,7 @@ public class InMovimientoController {
    * generados por órdenes de entrada, ventas o transferencias se registran internamente desde sus
    * propios services.
    */
+  @RequierePermiso(menuUrl = "/inventario/movimientos", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<InMovimiento> registrar(@RequestBody InMovimiento movimiento) {
     return ResponseEntity.ok(movimientoService.registrar(movimiento));

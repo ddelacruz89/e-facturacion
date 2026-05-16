@@ -4,6 +4,8 @@ import com.braintech.eFacturador.dto.inventario.InProductoLotesStockDTO;
 import com.braintech.eFacturador.dto.inventario.InTransferenciaRequestDTO;
 import com.braintech.eFacturador.interfaces.inventario.InTransferenciaService;
 import com.braintech.eFacturador.models.Response;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,17 +32,20 @@ public class InTransferenciaController {
     return ResponseEntity.ok(inTransferenciaService.getById(id));
   }
 
+  @RequierePermiso(menuUrl = "/inventario/transferencias", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<Response<?>> create(@RequestBody InTransferenciaRequestDTO requestDTO) {
     return ResponseEntity.ok(inTransferenciaService.create(requestDTO));
   }
 
+  @RequierePermiso(menuUrl = "/inventario/transferencias", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<Response<?>> update(
       @PathVariable Integer id, @RequestBody InTransferenciaRequestDTO requestDTO) {
     return ResponseEntity.ok(inTransferenciaService.update(id, requestDTO));
   }
 
+  @RequierePermiso(menuUrl = "/inventario/transferencias", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Response<?>> disable(@PathVariable Integer id) {
     return ResponseEntity.ok(inTransferenciaService.disable(id));

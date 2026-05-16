@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.services.seguridad.impl;
 
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
+import com.braintech.eFacturador.dao.seguridad.SgPermisoRepository;
 import com.braintech.eFacturador.dao.seguridad.SgRolRepository;
 import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRepository;
@@ -29,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SgRolServiceImpl implements SgRolService {
 
   private final SgRolRepository rolRepository;
+  private final SgPermisoRepository permisoRepository;
   private final SgUsuarioRolRepository usuarioRolRepository;
   private final SgUsuarioRepository usuarioRepository;
   private final SgSucursalRepository sucursalRepository;
@@ -92,10 +94,28 @@ public class SgRolServiceImpl implements SgRolService {
       for (SgPermiso permiso : rol.getPermisos()) {
         permiso.setRol(rol);
         if (permiso.getId() == null || permiso.getId() == 0) {
-          permiso.setEmpresaId(empresaId);
-          permiso.setUsuarioReg(username);
-          permiso.setFechaReg(LocalDateTime.now());
-          if (permiso.getActivo() == null) permiso.setActivo(true);
+          // Upsert: si ya existe un permiso para este rol+menu+empresa, reutilizar su ID
+          // y preservar los campos de auditoría del registro existente
+          Integer menuId = permiso.getMenu() != null ? permiso.getMenu().getId() : null;
+          if (menuId != null) {
+            permisoRepository
+                .findByRolIdAndMenuIdAndEmpresaId(rol.getId(), menuId, empresaId)
+                .ifPresent(
+                    existing -> {
+                      permiso.setId(existing.getId());
+                      permiso.setEmpresaId(existing.getEmpresaId());
+                      permiso.setUsuarioReg(existing.getUsuarioReg());
+                      permiso.setFechaReg(existing.getFechaReg());
+                      if (permiso.getActivo() == null) permiso.setActivo(existing.getActivo());
+                    });
+          }
+          // Solo para permisos verdaderamente nuevos (no encontrados en BD)
+          if (permiso.getId() == null || permiso.getId() == 0) {
+            permiso.setEmpresaId(empresaId);
+            permiso.setUsuarioReg(username);
+            permiso.setFechaReg(LocalDateTime.now());
+            if (permiso.getActivo() == null) permiso.setActivo(true);
+          }
         }
         // Garantizar defaults en flags
         if (permiso.getPuedeLeer() == null) permiso.setPuedeLeer(false);

@@ -4,6 +4,8 @@ import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorResumenDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorSearchCriteria;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidor;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.facturacion.MfFacturaSuplidorService;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -37,12 +39,14 @@ public class MfFacturaSuplidorController {
   }
 
   /** Crear nueva factura suplidor. POST /api/v1/facturacion/facturas-suplidor */
+  @RequierePermiso(menuUrl = "/facturacion/facturas-suplidor", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MfFacturaSuplidor> save(@RequestBody MfFacturaSuplidorRequestDTO dto) {
     return ResponseEntity.ok(service.save(dto));
   }
 
   /** Actualizar factura suplidor existente. PUT /api/v1/facturacion/facturas-suplidor/{id} */
+  @RequierePermiso(menuUrl = "/facturacion/facturas-suplidor", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MfFacturaSuplidor> update(
       @PathVariable Integer id, @RequestBody MfFacturaSuplidorRequestDTO dto) {

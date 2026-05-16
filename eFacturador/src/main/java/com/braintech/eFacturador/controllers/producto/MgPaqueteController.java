@@ -3,6 +3,8 @@ package com.braintech.eFacturador.controllers.producto;
 import com.braintech.eFacturador.dto.producto.MgPaqueteResumenDTO;
 import com.braintech.eFacturador.dto.producto.MgPaqueteSearchCriteria;
 import com.braintech.eFacturador.jpa.producto.MgPaquete;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.producto.MgPaqueteService;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -30,11 +32,13 @@ public class MgPaqueteController {
   }
 
   /** Crear o actualizar paquete. */
+  @RequierePermiso(menuUrl = "/producto/paquete", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MgPaquete> save(@RequestBody MgPaquete paquete) {
     return ResponseEntity.ok(paqueteService.save(paquete));
   }
 
+  @RequierePermiso(menuUrl = "/producto/paquete", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MgPaquete> update(
       @PathVariable Integer id, @RequestBody MgPaquete paquete) {
