@@ -1,0 +1,67 @@
+package com.braintech.eFacturador.jpa.facturacion;
+
+import jakarta.persistence.*;
+import java.io.Serial;
+import java.math.BigDecimal;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Table(name = "mf_nota_detalle", schema = "facturacion")
+@Getter
+@Setter
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor
+public class MfNotaDetalle {
+
+  @Serial private static final long serialVersionUID = 1L;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "id")
+  private Integer id;
+
+  @ManyToOne(optional = false)
+  @JoinColumn(name = "nota_id")
+  private MfNota notaId;
+
+  @Column(name = "linea")
+  private Integer linea;
+
+  @Column(name = "producto_id")
+  private Integer productoId;
+
+  private String producto;
+
+  @Column(name = "precio_venta_und")
+  private BigDecimal precioVentaUnd;
+
+  @Column(name = "precio_venta")
+  private BigDecimal precioVenta;
+
+  @Column(name = "monto_descuento")
+  private BigDecimal montoDescueto;
+
+  @Column(name = "cantidad")
+  private BigDecimal cantidad;
+
+  @Column(name = "monto_venta")
+  private BigDecimal montoVenta;
+
+  @Column(name = "itbis_id")
+  private Integer itbisId;
+
+  @Column(name = "monto_itbis")
+  private BigDecimal montoItbis;
+
+  @Column(name = "retencion_itbis")
+  private BigDecimal retencionItbis;
+
+  @Column(name = "retencion_isr")
+  private BigDecimal retencionIsr;
+
+  @Column(name = "monto_total")
+  private BigDecimal montoTotal;
+}

@@ -20,6 +20,14 @@ export interface MgItbis {
     activo: boolean;
 }
 
+export interface MgRetencion {
+    id?: number;
+    nombre: string;
+    valor: number;
+    tipoRetencion: number;
+    activo: boolean;
+}
+
 // Simple DTO for itbis resumen endpoint
 export interface MgItbisSimpleDTO {
     id: number;
@@ -62,10 +70,12 @@ export interface Factura {
     monto: number;
     descuento: number;
     itbis: number;
+    retencionId: number;
     retencionItbis?: number;
     retencionIsr?: number;
     total: number;
     detalles: FacturaDetalle[];
+    recibo?: Recibo;
 }
 
 export interface FacturaDetalle {
@@ -91,21 +101,21 @@ export interface FacturaDetalle {
 }
 
 export interface Recibo {
-    id: number;
-    empresaId: number;
-    secuencia: number | null;
-    cheque: string | null;           // numeric(38,2) -> string para evitar pérdida de precisión
-    comentario: string | null;
-    efectivo: string | null;         // numeric(38,2)
-    facturaId: number | null;
-    notaCredito: string | null;      // numeric(38,2)
-    otros: string | null;            // numeric(38,2)
-    tarjeta: string | null;          // numeric(38,2)
-    total: string | null;            // numeric(38,2)
-    transferencia: string | null;    // numeric(38,2)
-    activo: boolean | null;
-    fechaReg: Date | null;
-    usuarioReg: string | null;
+    id?: number;
+    facturaId?: number;
+    secuencia?: number;
+    cheque?: number;           // numeric(38,2) -> string para evitar pérdida de precisión
+    comentario?: string;
+    efectivo?: number;         // numeric(38,2)
+    notaCredito?: number;      // numeric(38,2)
+    otros?: number;            // numeric(38,2)
+    tarjeta?: number;          // numeric(38,2)
+    total?: number;            // numeric(38,2)
+    transferencia?: number;    // numeric(38,2)
+    cambio?: number;    // numeric(38,2)
+    activo?: boolean;
+    fechaReg?: Date;
+    usuarioReg?: string;
 }
 
 export interface IFacturaResumen {

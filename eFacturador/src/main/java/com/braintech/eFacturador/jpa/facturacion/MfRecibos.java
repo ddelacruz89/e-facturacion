@@ -24,6 +24,7 @@ public class MfRecibos extends BaseEntityPk {
   private BigDecimal notaCredito;
   private BigDecimal otros;
   private BigDecimal total;
+  private BigDecimal cambio;
   private String comentario;
   private String usuarioReg;
   private LocalDate fechaReg;

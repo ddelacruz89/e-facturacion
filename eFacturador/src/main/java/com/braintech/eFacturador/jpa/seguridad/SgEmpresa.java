@@ -29,6 +29,12 @@ public class SgEmpresa implements Serializable {
   @Column(name = "rnc")
   private String rnc;
 
+  @Column(name = "apikey")
+  private String apikey;
+
+  @Column(name = "api_key_activo")
+  private Boolean apiKeyActivo;
+
   @Column(name = "razon_social")
   private String razonSocial;
 
@@ -56,4 +62,9 @@ public class SgEmpresa implements Serializable {
 
   @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
   private java.util.List<SgSucursal> sucursales = new java.util.ArrayList<>();
+
+  @Transient
+  public String getClienteId() {
+    return this.getRnc().replace("-", "");
+  }
 }

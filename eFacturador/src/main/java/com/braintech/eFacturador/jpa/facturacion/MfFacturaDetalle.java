@@ -44,7 +44,7 @@ public class MfFacturaDetalle implements Serializable {
   private BigDecimal precioVenta;
 
   @Column(name = "monto_descuento")
-  private BigDecimal montoDescueto;
+  private BigDecimal montoDescuento;
 
   @Column(name = "cantidad")
   private BigDecimal cantidad;
@@ -63,6 +63,9 @@ public class MfFacturaDetalle implements Serializable {
 
   @Column(name = "retencion_isr")
   private BigDecimal retencionIsr;
+
+  @Column(name = "monto_total")
+  private BigDecimal montoTotal;
 
   @Column(name = "almacen_id")
   private Integer almacenId;

@@ -1,34 +1,29 @@
 import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
-import { Factura, FacturaDetalle, IFacturaResumen, TipoFactura } from "../../models/facturacion";
+import { Factura, FacturaDetalle, IFacturaResumen, MgRetencion, TipoFactura } from "../../models/facturacion";
 import { Button, Divider } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { TextInput, TextInputPk, TableComponent, GridRow, TableComponentFacturacion } from "../../customers/CustomComponents";
+import { TextInput, GridRow, TableComponentFacturacion } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
-import { TipoComprobanteSelect, TipoFacturaSelect } from "../../customers/ComboBox";
+import { RetencionesSelect, TipoComprobanteSelect, TipoFacturaSelect } from "../../customers/ComboBox";
 import { saveFactura, getFacturaById } from "../../apis/FacturaController";
 import ListaProductoVenta from "./ListaProductoVenta";
 import { ProductoVenta } from "../../models/producto/productoVenta";
 import { detalleItbis, formatCurrency } from "../../utils/FacturaUtils";
 import { toast } from "react-toastify";
-import { getValue } from "@testing-library/user-event/dist/utils";
-// import { saveFactura, getFacturas } from "../../apis/FacturaController";
 import SaveIcon from "@mui/icons-material/Save";
 import ArticleIcon from "@mui/icons-material/Article";
 import ModalSearchClientes from "../../customers/search/ModalSearchClientes";
 import { Cliente } from "../../models/cliente/Cliente";
 import ModalSearchFacturas from "../../customers/search/ModalSearchFacturas";
+import ModalReciboPago from "./modals/ModalReciboPago";
+import { AccountBalanceWallet } from "@mui/icons-material";
 
 export default function FacturacionView() {
 
     const [save, setSave] = useState<boolean>(false)
-    const {
-        control,
-        handleSubmit,
-        setValue,
-        watch,
-        formState: { errors },
-    } = useForm<Factura>({
+    const [openModalReciboPago, setOpenModalReciboPago] = useState<boolean>(true)
+    const facturaForm = useForm<Factura>({
         defaultValues: {
             usuarioReg: "",
             fechaReg: undefined,
@@ -40,17 +35,26 @@ export default function FacturacionView() {
             ncf: "",
             id: 0,
             numeroFactura: 0,
-            tipoFacturaId: 2,
+            tipoFacturaId: 1,
             clienteId: 0,
             monto: 0,
             descuento: 0,
             itbis: 0,
+            retencionId: 0,
             retencionItbis: 0,
             retencionIsr: 0,
             total: 0,
             detalles: [],
         },
     });
+
+    const {
+        control,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors },
+    } = facturaForm
 
     // const [factura, setFactura] = useState<Factura>({
     //     activo: true,
@@ -77,8 +81,9 @@ export default function FacturacionView() {
 
     useEffect(() => { }, []);
 
+    const [retencionValue, setRetencionValue] = useState<number>(0);
+
     const onSubmit: SubmitHandler<Factura> = (data) => {
-        debugger;
         saveFactura(data)
             .then((response) => {
                 setValue("id", response.id);
@@ -106,7 +111,6 @@ export default function FacturacionView() {
     };
 
     const onError = (errors: FieldErrors<Factura>) => {
-        debugger;
         toast.error("Errores de validación");
         console.log("Errores de validación:", errors);
     };
@@ -116,7 +120,7 @@ export default function FacturacionView() {
         setValue("secuencia", undefined);
         setValue("numeroFactura", 0);
         setValue("clienteId", 0);
-        setValue("tipoFacturaId", 2);
+        setValue("tipoFacturaId", 1);
         setValue("razonSocial", "");
         setValue("rnc", "");
         setValue("monto", 0);
@@ -149,7 +153,7 @@ export default function FacturacionView() {
     };
 
     const handleSelectTipoFactura = (item: TipoFactura) => {
-        console.log("TipoFactura", item);
+        setValue("tipoFacturaId", item?.id || 2);
     };
 
     const handleSelectProducto = (producto: ProductoVenta) => {
@@ -178,8 +182,7 @@ export default function FacturacionView() {
         };
         let detalles = watch("detalles");
         detalles.push(detalleFactura);
-
-        detalleFactura = detalleItbis(producto, detalleFactura);
+        detalleFactura = detalleItbis(producto, detalleFactura, retencionValue);
         detalleFactura.linea = detalles.length;
         toast.success("Producto agregado a la factura");
 
@@ -192,7 +195,7 @@ export default function FacturacionView() {
         let detalles = watch("detalles");
         let detalle = detalles[row.linea - 1];
         detalle.cantidad = Number(value);
-        detalle = detalleItbis(detalle.producto!, detalle);
+        detalle = detalleItbis(detalle.producto!, detalle, retencionValue);
         detalles[row.linea - 1] = detalle;
         setValue("detalles", detalles);
     }
@@ -200,7 +203,7 @@ export default function FacturacionView() {
     function handleSelectCliente(cliente: Cliente): void {
         setValue("clienteId", cliente.secuencia);
         setValue("razonSocial", cliente.razonSocial);
-        setValue("rnc", cliente.numeroIdentificacion);
+        setValue("rnc", cliente.numeroIdentificacion.replaceAll("-", ""));
         setValue("tipoComprobanteId", cliente.tipoComprobanteId.toString())
     }
     function handleSelectFactura(factura: IFacturaResumen): void {
@@ -221,8 +224,22 @@ export default function FacturacionView() {
         });
     }
 
+    function handleSelectRetenciones(retencion: MgRetencion): void {
+        let detalles = watch("detalles");
+        setRetencionValue(retencion?.valor || 0);
+        detalles = detalles.map((detalle) => detalleItbis(detalle.producto!, detalle, retencion?.valor || 0));
+        setValue("retencionId", retencion?.id || 0);
+        setValue("detalles", detalles);
+    }
+
+    function handleSelectTipoComprobante(selected: any): void {
+        setValue("tipoComprobanteId", selected.tipoComprobante)
+    }
+
     return (
+
         <main style={{ display: "flex", flexDirection: "row", gap: 20, padding: 10 }}>
+            <ModalReciboPago facturaForm={facturaForm} isOpen={openModalReciboPago} onClose={() => { setOpenModalReciboPago(true) }} onConfirm={() => { setOpenModalReciboPago(false) }} />
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
             <form style={{ flexGrow: 1 }} onSubmit={handleSubmit(onSubmit, onError)}>
                 <ActionBar title="Factura">
@@ -236,6 +253,9 @@ export default function FacturacionView() {
                     </Button>
                     <Button variant="contained" color="primary" onClick={handleClean}>
                         <ArticleIcon /> Nuevo
+                    </Button>
+                    <Button variant="contained" color="primary" onClick={() => setOpenModalReciboPago(true)}>
+                        <AccountBalanceWallet /> Recibo de Pago
                     </Button>
                 </ActionBar>
                 <fieldset disabled={save}>
@@ -251,7 +271,7 @@ export default function FacturacionView() {
                                 error={errors.tipoFacturaId}
                                 rules={{
                                     required: "Debe seleccionar un tipo de factura",
-                                    validate: (value: any) => (value !== 0 && value !== "0") || "Debe seleccionar un tipo de factura",
+                                    validate: (value: any) => [1, 2, 3].includes(Number(value)) || "Debe seleccionar un tipo de factura entre 1 y 3",
                                 }}
                                 size={2}
                                 handleGetItem={handleSelectTipoFactura}
@@ -268,7 +288,22 @@ export default function FacturacionView() {
                                 }}
                                 error={errors.tipoComprobanteId}
                                 size={5}
-                                handleGetItem={handleSelectTipoFactura}
+                                handleGetItem={handleSelectTipoComprobante}
+                            />
+
+                            <RetencionesSelect
+                                disabled={save}
+                                control={control}
+                                name="retencion"
+                                label="retencion"
+                                rules={{
+                                    required: "Debe seleccionar retenciones",
+                                    validate: (value: any) =>
+                                        (value !== 0 && value !== "0") || "Debe seleccionar retenciones",
+                                }}
+                                // error={errors.retencion}
+                                size={5}
+                                handleGetItem={handleSelectRetenciones}
                             />
                             <TextInput readOnly control={control} name="ncf" label="NCF" error={errors.ncf} size={3} />
                         </GridRow>
@@ -348,6 +383,7 @@ export default function FacturacionView() {
                             { id: "productoId", label: "Producto ID" },
                             { id: "productoDesc", label: "Producto" },
                             { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
+                            { id: "montoDescuento", label: "Monto Descuento", format: (value: number) => formatCurrency(value) },
                             {
                                 id: "cantidad",
                                 label: "Cantidad",
@@ -355,6 +391,8 @@ export default function FacturacionView() {
                             },
                             { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
                             { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },
+                            { id: "retencionIsr", label: "Retencion ISR", format: (value: number) => formatCurrency(value) },
+                            { id: "retencionItbis", label: "Retencion Itbis", format: (value: number) => formatCurrency(value) },
                             { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) },
                         ]}
                     />

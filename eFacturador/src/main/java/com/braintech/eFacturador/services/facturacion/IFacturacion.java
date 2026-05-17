@@ -22,4 +22,7 @@ public interface IFacturacion {
   void disable(Integer id);
 
   List<IProductoVenta> getProductoVenta();
+
+  void updateEfcSenderId(
+      Integer id, String fechaFirma, String secuityCode, String qrUrl, String trackId);
 }

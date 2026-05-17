@@ -8,8 +8,10 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
   // MfFactura extends BaseDgII -> BaseSucursal - filter by empresaId AND sucursalId
@@ -52,4 +54,18 @@ public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
 
   @Query("SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId order by f.fechaReg desc")
   Page<IFacturaResumen> findAllByEmpresaPage(Pageable pageable, Integer empresaId);
+
+  @Transactional
+  @Modifying(clearAutomatically = true)
+  @Query(
+      """
+            update MfFactura f set f.fechaFirma = :fechaFirma,f.secuityCode= :secuityCode, f.qrUrl = :qrUrl , f.trackId = :trackId where f.id = :id and f.empresaId = :empresaId
+            """)
+  void updateFirmaAndQr(
+      @Param("id") Integer id,
+      @Param("empresaId") Integer empresaId,
+      @Param("fechaFirma") String fechaFirma,
+      @Param("secuityCode") String secuityCode,
+      @Param("qrUrl") String qrUrl,
+      @Param("trackId") String trackId);
 }

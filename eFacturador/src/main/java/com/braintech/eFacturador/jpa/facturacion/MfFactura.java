@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.*;
 
@@ -25,8 +26,14 @@ public class MfFactura extends BaseDgII implements Serializable {
   @Column(name = "tipo_factura_id")
   private Integer tipoFacturaId;
 
+  @Column(name = "retencion_id")
+  private String retenciionId;
+
   @Column(name = "cliente_id")
   private Integer clienteId;
+
+  @Column(name = "fecha_limite_pago")
+  private LocalDate fechaLimitePago;
 
   @Column(name = "razon_social")
   private String razonSocial;
@@ -58,6 +65,8 @@ public class MfFactura extends BaseDgII implements Serializable {
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "facturaId", fetch = FetchType.LAZY)
   @OrderBy("id asc")
   private List<MfFacturaDetalle> detalles;
+
+  @Transient private MfRecibos recibos;
 
   public MfFactura(int i) {
     super(i);

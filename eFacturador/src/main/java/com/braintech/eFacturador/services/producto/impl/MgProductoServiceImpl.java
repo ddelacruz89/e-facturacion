@@ -12,6 +12,7 @@ import com.braintech.eFacturador.exceptions.ApplicationException;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.jpa.producto.MgProductoUnidadSuplidor;
+import com.braintech.eFacturador.jpa.producto.ProductoResumen;
 import com.braintech.eFacturador.services.producto.MgProductoService;
 import com.braintech.eFacturador.util.TenantContext;
 import jakarta.persistence.EntityManager;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -415,5 +417,11 @@ public class MgProductoServiceImpl implements MgProductoService {
     String nombreParam = (nombre != null && !nombre.trim().isEmpty()) ? nombre.trim() : null;
     return inventarioRepository.findProductosActivosByAlmacen(
         almacenId, empresaId, sucursalId, nombreParam);
+  }
+
+  @Override
+  public Optional<ProductoResumen> getProductoResumenById(Integer id) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return productoRepository.getResumenProducto(id, empresaId);
   }
 }

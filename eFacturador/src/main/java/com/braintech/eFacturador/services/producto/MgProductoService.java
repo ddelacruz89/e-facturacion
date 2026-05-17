@@ -4,7 +4,9 @@ import com.braintech.eFacturador.dto.producto.MgProductoCompraDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoSearchCriteria;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
+import com.braintech.eFacturador.jpa.producto.ProductoResumen;
 import java.util.List;
+import java.util.Optional;
 
 public interface MgProductoService {
   List<MgProducto> getAll();
@@ -38,4 +40,5 @@ public interface MgProductoService {
 
   /** Productos activos con inventario en el almacén dado, filtrados opcionalmente por nombre. */
   List<MgProductoResumenDTO> searchByAlmacen(Integer almacenId, String nombre);
+  Optional<ProductoResumen> getProductoResumenById(Integer id);
 }
