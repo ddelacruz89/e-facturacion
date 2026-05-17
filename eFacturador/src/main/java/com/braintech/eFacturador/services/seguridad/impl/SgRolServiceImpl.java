@@ -74,26 +74,54 @@ public class SgRolServiceImpl implements SgRolService {
     boolean isUpdate = rol.getId() != null && rol.getId() > 0;
 
     if (isUpdate) {
+      // ── UPDATE: trabajar siempre sobre la entidad GESTIONADA (managed) ──────
+      // Si se trabajara sobre el objeto detached del request, Hibernate intentaría
+      // INSERT los permisos nuevos antes de borrar los viejos → unique constraint.
       SgRol existing =
           rolRepository
               .findByIdAndEmpresaId(rol.getId(), empresaId)
               .orElseThrow(() -> new RecordNotFoundException("Rol no encontrado"));
-      rol.setEmpresaId(existing.getEmpresaId());
-      rol.setUsuarioReg(existing.getUsuarioReg());
-      rol.setFechaReg(existing.getFechaReg());
-      rol.setSecuencia(existing.getSecuencia());
+
+      // Actualizar campos escalares del rol
+      existing.setNombre(rol.getNombre());
+      existing.setDescripcion(rol.getDescripcion());
+      if (rol.getActivo() != null) existing.setActivo(rol.getActivo());
+
+      // Paso 1: vaciar la colección y hacer flush INMEDIATO para que Hibernate
+      // ejecute los DELETE en la BD ANTES de cualquier INSERT.
+      // Sin este flush, Hibernate ordena INSERT primero → unique constraint.
+      existing.getPermisos().clear();
+      rolRepository.saveAndFlush(existing); // ← fuerza DELETE de orphans ahora
+
+      // Paso 2: agregar los nuevos permisos sobre la entidad ya limpia
+      if (rol.getPermisos() != null) {
+        for (SgPermiso permiso : rol.getPermisos()) {
+          permiso.setId(null); // transient → INSERT
+          permiso.setRol(existing);
+          permiso.setEmpresaId(empresaId);
+          permiso.setUsuarioReg(username);
+          permiso.setFechaReg(LocalDateTime.now());
+          if (permiso.getActivo() == null) permiso.setActivo(true);
+          if (permiso.getPuedeLeer() == null) permiso.setPuedeLeer(false);
+          if (permiso.getPuedeEscribir() == null) permiso.setPuedeEscribir(false);
+          if (permiso.getPuedeEliminar() == null) permiso.setPuedeEliminar(false);
+          if (permiso.getPuedeImprimir() == null) permiso.setPuedeImprimir(false);
+          existing.getPermisos().add(permiso);
+        }
+      }
+
+      return rolRepository.save(existing);
+
     } else {
+      // ── INSERT: nuevo rol ────────────────────────────────────────────────────
       rol.setEmpresaId(empresaId);
       rol.setUsuarioReg(username);
       rol.setFechaReg(LocalDateTime.now());
       if (rol.getActivo() == null) rol.setActivo(true);
-    }
 
-    // Corregir back-references y auditoría de cada permiso
-    if (rol.getPermisos() != null) {
-      for (SgPermiso permiso : rol.getPermisos()) {
-        permiso.setRol(rol);
-        if (permiso.getId() == null || permiso.getId() == 0) {
+      if (rol.getPermisos() != null) {
+        for (SgPermiso permiso : rol.getPermisos()) {
+          permiso.setRol(rol);
           // Upsert: si ya existe un permiso para este rol+menu+empresa, reutilizar su ID
           // y preservar los campos de auditoría del registro existente
           Integer menuId = permiso.getMenu() != null ? permiso.getMenu().getId() : null;
@@ -116,27 +144,26 @@ public class SgRolServiceImpl implements SgRolService {
             permiso.setFechaReg(LocalDateTime.now());
             if (permiso.getActivo() == null) permiso.setActivo(true);
           }
+          if (permiso.getPuedeLeer() == null) permiso.setPuedeLeer(false);
+          if (permiso.getPuedeEscribir() == null) permiso.setPuedeEscribir(false);
+          if (permiso.getPuedeEliminar() == null) permiso.setPuedeEliminar(false);
+          if (permiso.getPuedeImprimir() == null) permiso.setPuedeImprimir(false);
         }
-        // Garantizar defaults en flags
-        if (permiso.getPuedeLeer() == null) permiso.setPuedeLeer(false);
-        if (permiso.getPuedeEscribir() == null) permiso.setPuedeEscribir(false);
-        if (permiso.getPuedeEliminar() == null) permiso.setPuedeEliminar(false);
-        if (permiso.getPuedeImprimir() == null) permiso.setPuedeImprimir(false);
       }
+
+      SgRol saved = rolRepository.save(rol);
+
+      // Generar secuencia en creación nueva
+      if (saved.getSecuencia() == null || saved.getSecuencia() == 0) {
+        int seq =
+            secuenciasDao.getNextSecuencia(
+                empresaId, SgRol.class.getSimpleName().toUpperCase(Locale.ROOT));
+        saved.setSecuencia(seq);
+        rolRepository.save(saved);
+      }
+
+      return saved;
     }
-
-    SgRol saved = rolRepository.save(rol);
-
-    // Generar secuencia en creación nueva
-    if (!isUpdate && (saved.getSecuencia() == null || saved.getSecuencia() == 0)) {
-      int seq =
-          secuenciasDao.getNextSecuencia(
-              empresaId, SgRol.class.getSimpleName().toUpperCase(Locale.ROOT));
-      saved.setSecuencia(seq);
-      rolRepository.save(saved);
-    }
-
-    return saved;
   }
 
   @Override

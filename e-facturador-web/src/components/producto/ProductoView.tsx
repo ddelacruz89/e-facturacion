@@ -393,7 +393,7 @@ const ProductoViewExample = () => {
             })
             .catch((error) => {
                 console.error("Error al guardar el producto:", error);
-                showSnackbar("Error al guardar el producto", "error");
+                showSnackbar(error?.message || "Error al guardar el producto", "error");
             });
     };
 
