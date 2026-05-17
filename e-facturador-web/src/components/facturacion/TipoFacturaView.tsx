@@ -9,6 +9,8 @@ import { useEffect, useState } from "react";
 const TipoFacturaView = () => {
     const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<TipoFactura>({
         defaultValues: {
+            id: 0,
+            secuencia: 0,
             nombre: '',
             activo: true
         }

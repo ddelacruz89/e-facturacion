@@ -56,8 +56,8 @@ export function TipoFacturaSelect({
                                 <MenuItem
                                     onClick={() => handleGetItem && handleGetItem(option)}
                                     key={option.id}
-                                    value={option.id}>
-                                    {option.id} - {option.nombre}
+                                    value={option.id || 0}>
+                                    {option.id || 0} - {option.nombre}
                                 </MenuItem>
                             ))}
                         </Select>

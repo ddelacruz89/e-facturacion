@@ -66,23 +66,28 @@ export default function ModalReciboPago({ isOpen, onClose, onConfirm, facturaFor
         const fieldName = name.split('.')[1];
 
         let rule = {
-            required: `No puede superar el monto a pagar restante: ${montoPagar - totalPagado}`,
-            validate: (value: any) =>
-                (Number(totalPagado) + Number(value)) <= Number(montoPagar) || `No puede superar el monto a pagar restante: ${montoPagar - totalPagado}`,
+            required: `No puede superar el monto a pagar restante`,
+            validate: (value: any) => {
+                if (Number(value) > 0) {
+                    const remaining = Number(montoPagar - (totalPagado - (Number(watch(name)) || 0)))
+                    return Number(value) <= remaining
+                        || `No puede superar el monto a pagar restante`;
+                }
+                return true;
+
+            }
+
         }
 
         return (
             <Grid size={{ xs: 12, sm: 6, md: 6 }} display="flex" alignItems="flex-start" gap={1}>
-                <Box flex={1}>
-                    <MoneyInput
-                        name={name}
-                        control={control}
-                        label={label}
-                        error={(errors.recibo as any)?.[fieldName]}
-                        rules={fieldName === "efectivo" ? undefined : rule}
-                        size={12}
-                    />
-                </Box>
+
+                <MoneyInput
+                    name={name}
+                    control={control}
+                    label={label}
+                    size={12}
+                />
                 <Tooltip title="Agregar restante a este campo">
                     <span>
                         <IconButton
@@ -153,8 +158,6 @@ export default function ModalReciboPago({ isOpen, onClose, onConfirm, facturaFor
                                             name="recibo.comentario"
                                             control={control}
                                             label="Comentario"
-                                            error={errors.recibo?.comentario}
-                                            rules={{ required: "Comentario es requerido" }}
                                         />
                                     </Box>
                                 </Grid>

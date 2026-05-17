@@ -106,12 +106,12 @@ export interface Recibo {
     secuencia?: number;
     cheque?: number;           // numeric(38,2) -> string para evitar pérdida de precisión
     comentario?: string;
-    efectivo?: number;         // numeric(38,2)
-    notaCredito?: number;      // numeric(38,2)
-    otros?: number;            // numeric(38,2)
-    tarjeta?: number;          // numeric(38,2)
-    total?: number;            // numeric(38,2)
-    transferencia?: number;    // numeric(38,2)
+    efectivo?: number | null;         // numeric(38,2)
+    notaCredito?: number | null;      // numeric(38,2)
+    otros?: number | null;            // numeric(38,2)
+    tarjeta?: number | null;          // numeric(38,2)
+    total?: number | null;            // numeric(38,2)
+    transferencia?: number | null;    // numeric(38,2)
     cambio?: number;    // numeric(38,2)
     activo?: boolean;
     fechaReg?: Date;

@@ -84,6 +84,8 @@ export default function FacturacionView() {
     const [retencionValue, setRetencionValue] = useState<number>(0);
 
     const onSubmit: SubmitHandler<Factura> = (data) => {
+        setOpenModalReciboPago(false);
+
         saveFactura(data)
             .then((response) => {
                 setValue("id", response.id);
@@ -137,6 +139,7 @@ export default function FacturacionView() {
         setValue("trackId", "");
         setValue("usuarioReg", "");
         setValue("fechaReg", undefined);
+        // setValue("recibo", { efectivo: 0, tarjeta: null, cheque: 0, transferencia: 0, otros: 0, notaCredito: 0, total: 0, cambio: 0 });
         setValue("activo", true);
         setValue("detalles", []);
         setSave(false)
@@ -239,23 +242,33 @@ export default function FacturacionView() {
     return (
 
         <main style={{ display: "flex", flexDirection: "row", gap: 20, padding: 10 }}>
-            <ModalReciboPago facturaForm={facturaForm} isOpen={openModalReciboPago} onClose={() => { setOpenModalReciboPago(true) }} onConfirm={() => { setOpenModalReciboPago(false) }} />
+
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
             <form style={{ flexGrow: 1 }} onSubmit={handleSubmit(onSubmit, onError)}>
+                <ModalReciboPago facturaForm={facturaForm} isOpen={openModalReciboPago} onClose={() => { setOpenModalReciboPago(false) }} onConfirm={() => {
+                    handleSubmit(onSubmit, onError)();
+                    setOpenModalReciboPago(false)
+                }} />
                 <ActionBar title="Factura">
-                    <Button
+                    {watch("tipoFacturaId") === 2 ? <Button
                         variant="contained"
                         color="success"
                         type="submit"
                         disabled={save}>
                         {" "}
                         <SaveIcon /> Guardar
-                    </Button>
+                    </Button> :
+                        <Button
+                            variant="contained"
+                            color="warning"
+                            onClick={() => setOpenModalReciboPago(true)}
+                            disabled={save}>
+                            {" "}
+                            <SaveIcon /> Guardar
+                        </Button>
+                    }
                     <Button variant="contained" color="primary" onClick={handleClean}>
                         <ArticleIcon /> Nuevo
-                    </Button>
-                    <Button variant="contained" color="primary" onClick={() => setOpenModalReciboPago(true)}>
-                        <AccountBalanceWallet /> Recibo de Pago
                     </Button>
                 </ActionBar>
                 <fieldset disabled={save}>

@@ -38,21 +38,27 @@ public class TipoFacturaService implements ITipoEntity<MgTipoFactura> {
   @Override
   @Transactional
   public Response<MgTipoFactura> save(MgTipoFactura entity) {
+    if (entity.getId() == 0 || entity.getSecuencia() == 0) {
+      entity.setId(null);
+      entity.setSecuencia(null);
+    }
+
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     // Do not set id manually; let JPA generate it
     entity.setEmpresaId(empresaId);
     String userName = tenantContext.getCurrentUsername();
     entity.setFechaReg(LocalDateTime.now());
     entity.setUsuarioReg(userName);
-    MgTipoFactura saved = tipoFacturaDao.save(entity);
+    entity = tipoFacturaDao.save(entity);
 
     if (entity.getId() > 0 && entity.getSecuencia() == null) {
       String sequenceName = entity.getClass().getSimpleName();
       Integer sequence = secuenciasDao.getNextSecuencia(empresaId, sequenceName);
-      saved.setSecuencia(sequence);
-      MgTipoFactura updated = tipoFacturaDao.save(saved);
+      entity.setSecuencia(sequence);
+      MgTipoFactura updated = tipoFacturaDao.save(entity);
       return Response.<MgTipoFactura>builder().status(HttpStatus.OK).content(updated).build();
     }
+    MgTipoFactura saved = tipoFacturaDao.save(entity);
 
     return Response.<MgTipoFactura>builder()
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
