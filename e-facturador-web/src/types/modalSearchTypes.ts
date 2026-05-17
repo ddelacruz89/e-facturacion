@@ -233,6 +233,35 @@ export const SEARCH_CONFIGS = {
         ]
     } as SearchConfig,
 
+    /** Búsqueda de productos de categoría Producto (categoriaId = 5) */
+    PRODUCTO_VENTA: {
+        title: "Buscar Producto",
+        endpoint: "/api/producto/search/advanced",
+        keyField: "id",
+        searchOnLoad: true,
+        defaultParams: { categoriaId: 5 },
+        fields: [
+            {
+                key: "id",
+                label: "ID",
+                type: "number" as const,
+                placeholder: "Ingrese ID del producto"
+            },
+            {
+                key: "nombreProducto",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Ingrese nombre del producto"
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "10%" },
+            { key: "nombreProducto", label: "Nombre", width: "30%" },
+            { key: "codigoBarra", label: "Código", width: "20%" },
+            { key: "descripcion", label: "Descripción", width: "40%" }
+        ]
+    } as SearchConfig,
+
     /** Búsqueda de productos de categoría Servicio (categoriaId = 1) — para Orden de Entrada */
     PRODUCTO_SERVICIO: {
         title: "Buscar Servicio",

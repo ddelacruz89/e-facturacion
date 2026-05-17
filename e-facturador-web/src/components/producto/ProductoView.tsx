@@ -19,6 +19,8 @@ import {
     Chip,
     Autocomplete,
     TextField,
+    Select,
+    MenuItem,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -133,6 +135,8 @@ const ProductoViewExample = () => {
 
     // Modal search hook
     const modalSearch = useModalSearch();
+
+    const [tipoBusqueda, setTipoBusqueda] = useState<"producto" | "servicio">("producto");
 
     const handleCloseSnackbar = () => {
         setSnackbar({ ...snackbar, open: false });
@@ -350,19 +354,11 @@ const ProductoViewExample = () => {
         const transformedData: MgProducto = {
             ...data,
             categoriaId:
-                typeof data.categoriaId === "object" && data.categoriaId !== null
-                    ? (data.categoriaId as any)
-                    : data.categoriaId,
-            itbisId:
-                typeof data.itbisId === "object" && data.itbisId !== null
-                    ? (data.itbisId as any)
-                    : data.itbisId,
+                typeof data.categoriaId === "object" && data.categoriaId !== null ? (data.categoriaId as any) : data.categoriaId,
+            itbisId: typeof data.itbisId === "object" && data.itbisId !== null ? (data.itbisId as any) : data.itbisId,
             unidadProductorSuplidor: data.unidadProductorSuplidor?.map((item) => ({
                 ...item,
-                unidadId:
-                    typeof item.unidadId === "object" && item.unidadId !== null
-                        ? (item.unidadId as any)
-                        : item.unidadId,
+                unidadId: typeof item.unidadId === "object" && item.unidadId !== null ? (item.unidadId as any) : item.unidadId,
                 unidadFraccionId:
                     typeof item.unidadFraccionId === "object" && item.unidadFraccionId !== null
                         ? (item.unidadFraccionId as any)
@@ -485,25 +481,69 @@ const ProductoViewExample = () => {
                                 Información Básica
                             </Typography>
                             <Grid container spacing={2}>
-                                <Box sx={{ width: `${(3 / 12) * 100}%`, mb: 2 }}>
-                                    <SearchButton
-                                        config={SEARCH_CONFIGS.PRODUCTO}
-                                        onOpenSearch={modalSearch.openModal}
-                                        variant="input"
-                                        size="small"
-                                        label="Buscar Producto"
-                                        displayValue={selectedProduct?.id || ""}
-                                        placeholder="Seleccione un producto..."
-                                        initialValues={{ estado: "activo" }}
-                                    />
+                                {/* Buscar + Código de Barra alineados al mismo nivel */}
+                                <Box sx={{ width: "50%", display: "flex", alignItems: "flex-end", gap: 2, mb: 2 }}>
+                                    <Box sx={{ flex: 1 }}>
+                                        <Box sx={{ display: "flex" }}>
+                                            <Select
+                                                value={tipoBusqueda}
+                                                onChange={(e) => setTipoBusqueda(e.target.value as "producto" | "servicio")}
+                                                size="small"
+                                                sx={{
+                                                    minWidth: 110,
+                                                    fontSize: "0.8rem",
+                                                    "& .MuiOutlinedInput-notchedOutline": { borderRight: "none" },
+                                                    borderRadius: "4px 0 0 4px",
+                                                    "& .MuiSelect-select": { py: "8.5px" },
+                                                }}>
+                                                <MenuItem value="producto">Productos</MenuItem>
+                                                <MenuItem value="servicio">Servicios</MenuItem>
+                                            </Select>
+                                            <Box
+                                                sx={{
+                                                    minWidth: 260,
+
+                                                    flex: 1,
+                                                    "& .MuiOutlinedInput-root": { borderRadius: "0 4px 4px 0" },
+                                                }}>
+                                                <SearchButton
+                                                    config={
+                                                        tipoBusqueda === "producto"
+                                                            ? SEARCH_CONFIGS.PRODUCTO_VENTA
+                                                            : SEARCH_CONFIGS.PRODUCTO_SERVICIO
+                                                    }
+                                                    onOpenSearch={modalSearch.openModal}
+                                                    variant="input"
+                                                    size="small"
+                                                    label={tipoBusqueda === "producto" ? "Buscar Producto" : "Buscar Servicio"}
+                                                    displayValue={selectedProduct?.id || ""}
+                                                    placeholder={
+                                                        tipoBusqueda === "producto"
+                                                            ? "Seleccione un producto..."
+                                                            : "Seleccione un servicio..."
+                                                    }
+                                                    initialValues={{ estado: "activo" }}
+                                                />
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ minWidth: 260, flex: 1 }}>
+                                        <Controller
+                                            name="codigoBarra"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <TextField
+                                                    {...field}
+                                                    label="Código de Barra"
+                                                    size="small"
+                                                    fullWidth
+                                                    error={!!errors.codigoBarra}
+                                                    helperText={errors.codigoBarra?.message}
+                                                />
+                                            )}
+                                        />
+                                    </Box>
                                 </Box>
-                                <AlphanumericInput
-                                    label="Código de Barra"
-                                    size={3}
-                                    name="codigoBarra"
-                                    control={control}
-                                    error={errors.codigoBarra}
-                                />
 
                                 <AlphanumericInput
                                     label={esServicio ? "Nombre del Servicio" : "Nombre del Producto"}
@@ -807,16 +847,21 @@ const ProductoViewExample = () => {
                                                         name={`unidadProductorSuplidor.${index}.cantidad`}
                                                         control={control}
                                                         size={12}
-                                                        disabled={
-                                                            !watch(`unidadProductorSuplidor.${index}.activo`) || esServicio
-                                                        }
+                                                        disabled={!watch(`unidadProductorSuplidor.${index}.activo`) || esServicio}
                                                         onBlur={(value: any) => {
                                                             if (!esServicio) {
-                                                                const unidadId = watch(`unidadProductorSuplidor.${index}.unidadId`);
+                                                                const unidadId = watch(
+                                                                    `unidadProductorSuplidor.${index}.unidadId`,
+                                                                );
                                                                 const unidadFraccionId = watch(
                                                                     `unidadProductorSuplidor.${index}.unidadFraccionId`,
                                                                 );
-                                                                validateUnidadCombination(index, unidadId, value, unidadFraccionId);
+                                                                validateUnidadCombination(
+                                                                    index,
+                                                                    unidadId,
+                                                                    value,
+                                                                    unidadFraccionId,
+                                                                );
                                                             }
                                                         }}
                                                     />
@@ -934,7 +979,11 @@ const ProductoViewExample = () => {
                                                                     }
                                                                 />
                                                             }
-                                                            label={esServicio ? "Disponible en venta (siempre)" : "Disponible en venta"}
+                                                            label={
+                                                                esServicio
+                                                                    ? "Disponible en venta (siempre)"
+                                                                    : "Disponible en venta"
+                                                            }
                                                         />
                                                     </Box>
 
@@ -953,22 +1002,19 @@ const ProductoViewExample = () => {
                                                                     watch(
                                                                         `unidadProductorSuplidor.${index}.productosSuplidores`,
                                                                     ) || [];
-                                                                setValue(
-                                                                    `unidadProductorSuplidor.${index}.productosSuplidores`,
-                                                                    [
-                                                                        ...currentSuplidores,
-                                                                        {
-                                                                            empresaId: 0,
-                                                                            secuencia: 0,
-                                                                            usuarioReg: "",
-                                                                            fechaReg: new Date(),
-                                                                            activo: true,
-                                                                            precio: 0,
-                                                                            itbisDefault: false,
-                                                                            suplidorId: 0,
-                                                                        },
-                                                                    ],
-                                                                );
+                                                                setValue(`unidadProductorSuplidor.${index}.productosSuplidores`, [
+                                                                    ...currentSuplidores,
+                                                                    {
+                                                                        empresaId: 0,
+                                                                        secuencia: 0,
+                                                                        usuarioReg: "",
+                                                                        fechaReg: new Date(),
+                                                                        activo: true,
+                                                                        precio: 0,
+                                                                        itbisDefault: false,
+                                                                        suplidorId: 0,
+                                                                    },
+                                                                ]);
                                                             }}>
                                                             Agregar Proveedor
                                                         </Button>
@@ -976,9 +1022,7 @@ const ProductoViewExample = () => {
 
                                                     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                                                         {(
-                                                            watch(
-                                                                `unidadProductorSuplidor.${index}.productosSuplidores`,
-                                                            ) || []
+                                                            watch(`unidadProductorSuplidor.${index}.productosSuplidores`) || []
                                                         ).map((suplidor, suplidorIndex) => (
                                                             <Card key={suplidorIndex} variant="outlined" sx={{ p: 1 }}>
                                                                 <CardContent sx={{ p: 1, "&:last-child": { pb: 1 } }}>
@@ -1028,12 +1072,9 @@ const ProductoViewExample = () => {
                                                             </Card>
                                                         ))}
 
-                                                        {(!watch(
-                                                            `unidadProductorSuplidor.${index}.productosSuplidores`,
-                                                        ) ||
-                                                            watch(
-                                                                `unidadProductorSuplidor.${index}.productosSuplidores`,
-                                                            )?.length === 0) && (
+                                                        {(!watch(`unidadProductorSuplidor.${index}.productosSuplidores`) ||
+                                                            watch(`unidadProductorSuplidor.${index}.productosSuplidores`)
+                                                                ?.length === 0) && (
                                                             <Typography
                                                                 variant="body2"
                                                                 color="text.secondary"
