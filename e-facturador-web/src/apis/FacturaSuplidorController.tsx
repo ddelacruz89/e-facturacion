@@ -8,6 +8,21 @@ import {
 
 const api = "/api/v1/facturacion/facturas-suplidor";
 
+const extractNumericId = (value: any): number | undefined => {
+    if (value === null || value === undefined) return undefined;
+    if (typeof value === "object") {
+        const n = Number(value.id);
+        return isNaN(n) ? undefined : n;
+    }
+    const n = Number(value);
+    return isNaN(n) ? undefined : n;
+};
+
+const normalizePayload = (dto: MfFacturaSuplidorRequest): MfFacturaSuplidorRequest => ({
+    ...dto,
+    suplidorId: extractNumericId((dto as any).suplidorId) ?? dto.suplidorId,
+});
+
 export function buscarFacturasSuplidor(
     criteria: MfFacturaSuplidorSearchCriteria,
 ): Promise<MfFacturaSuplidorResumen[]> {
@@ -33,12 +48,12 @@ export function getFacturaSuplidorById(id: number): Promise<MfFacturaSuplidor | 
 export function saveFacturaSuplidor(
     dto: MfFacturaSuplidorRequest,
 ): Promise<MfFacturaSuplidor> {
-    return apiClient.post(api, dto).then((r) => r.data as MfFacturaSuplidor);
+    return apiClient.post(api, normalizePayload(dto)).then((r) => r.data as MfFacturaSuplidor);
 }
 
 export function updateFacturaSuplidor(
     id: number,
     dto: MfFacturaSuplidorRequest,
 ): Promise<MfFacturaSuplidor> {
-    return apiClient.put(`${api}/${id}`, dto).then((r) => r.data as MfFacturaSuplidor);
+    return apiClient.put(`${api}/${id}`, normalizePayload(dto)).then((r) => r.data as MfFacturaSuplidor);
 }

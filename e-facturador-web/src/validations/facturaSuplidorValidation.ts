@@ -6,19 +6,33 @@ import { MfFacturaSuplidorRequest } from "../models/facturacion/MfFacturaSuplido
 // 43 = Comprobante para Gastos Menores      → suplidor NO debe especificarse
 // 47 = Comprobante para Pagos al Exterior   → suplidor OPCIONAL
 
+// SuplidorComboBox stores the selected value as { id, nombre } instead of a plain number.
+// This helper extracts a numeric ID from either form.
+const resolveSuplidorId = (value: any): number | null => {
+    if (value === null || value === undefined) return null;
+    if (typeof value === "object") {
+        const n = Number(value.id);
+        return isNaN(n) || n === 0 ? null : n;
+    }
+    const n = Number(value);
+    return isNaN(n) || n === 0 ? null : n;
+};
+
 const facturaSuplidorSchema = Yup.object().shape({
 
     tipoCfId: Yup.string()
         .required("El tipo de comprobante es requerido"),
 
-    suplidorId: Yup.number()
+    suplidorId: Yup.mixed()
         .nullable()
         .when("tipoCfId", {
             is: "41",
             then: (schema) =>
-                schema
-                    .required("El suplidor es obligatorio para el tipo de comprobante 41")
-                    .typeError("El suplidor es obligatorio para el tipo de comprobante 41"),
+                schema.test(
+                    "suplidor-required",
+                    "El suplidor es obligatorio para el tipo de comprobante 41",
+                    (value) => resolveSuplidorId(value) !== null,
+                ),
             otherwise: (schema) => schema.nullable(),
         }),
 
