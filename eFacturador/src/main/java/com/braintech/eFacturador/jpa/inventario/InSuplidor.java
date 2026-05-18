@@ -25,6 +25,10 @@ public class InSuplidor extends BaseEntity implements Serializable {
   @Basic(optional = false)
   private String nombre;
 
+  //  @Basic(optional = false)
+  @Column(name = "razon_social")
+  private String razonSocial;
+
   private String rnc;
 
   private String direccion;

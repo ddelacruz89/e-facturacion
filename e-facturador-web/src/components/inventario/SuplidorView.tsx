@@ -12,11 +12,13 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
+    Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import SearchIcon from "@mui/icons-material/Search";
 import InventoryIcon from "@mui/icons-material/Inventory";
-import { useForm, SubmitHandler } from "react-hook-form";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { TextInput, TextInputPk, EmailInput, ConfirmationModal } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
 import { InSuplidor } from "../../models/inventario";
@@ -37,6 +39,7 @@ const initialSuplidor: InSuplidor = {
     fechaReg: new Date(),
     activo: true,
     nombre: "",
+    razonSocial: "",
     tipoIdentificacion: "R",
     rnc: "",
     direccion: "",
@@ -337,6 +340,34 @@ export const SuplidorView: React.FC = () => {
                     error={errors.nombre}
                     size={3}
                 />
+                <Grid size={{ xs: 12, sm: 3 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                            Razón Social&nbsp;<span style={{ color: "#d32f2f" }}>*</span>
+                        </Typography>
+                        <Tooltip
+                            title="Si el nombre y la razón social son las mismas, colóquelo."
+                            placement="top"
+                            arrow>
+                            <InfoOutlinedIcon sx={{ fontSize: 13, ml: 0.5, color: "info.main", cursor: "help" }} />
+                        </Tooltip>
+                    </Box>
+                    <Controller
+                        name="razonSocial"
+                        control={control}
+                        rules={{ required: "La razón social es requerida" }}
+                        render={({ field }) => (
+                            <TextField
+                                {...field}
+                                size="small"
+                                fullWidth
+                                placeholder="Razón Social"
+                                error={!!errors.razonSocial}
+                                helperText={errors.razonSocial?.message}
+                            />
+                        )}
+                    />
+                </Grid>
                 {/* Tipo de identificación + campo formateado (Cédula o RNC) */}
                 {selectedTipoComprobante?.id !== "43" && (
                     <>

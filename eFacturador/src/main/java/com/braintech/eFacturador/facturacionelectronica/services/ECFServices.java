@@ -1,5 +1,7 @@
 package com.braintech.eFacturador.facturacionelectronica.services;
 
+import static com.braintech.eFacturador.util.AppConstants.*;
+
 import com.braintech.eFacturador.dao.facturacion.FacturaDao;
 import com.braintech.eFacturador.exceptions.AuthenticationException;
 import com.braintech.eFacturador.facturacionelectronica.models.*;
@@ -27,8 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 
 @Service
 @Slf4j
@@ -443,7 +443,8 @@ public class ECFServices implements IECF {
 
     // empresa.getItbisIncluido();
     Integer indicadorMontoGravado = 0;
-    if (factura.getTipoComprobanteId().equals(44) || factura.getTipoComprobanteId().equals(46)) {
+    if (factura.getTipoComprobanteId().equals("44")
+        || factura.getTipoComprobanteId().equals("46")) {
       indicadorMontoGravado = null;
     }
 
@@ -545,8 +546,6 @@ public class ECFServices implements IECF {
                       .build();
                 })
             .toList();
-    DescuentosORecargos descuentosORecargos = null;
-
     //            Map<Integer, DoubleSummaryStatistics> descuentos =
     //                    detalles.stream()
     //                            .filter(detalle -> detalle.getDescuento().doubleValue() > 0)
@@ -644,7 +643,7 @@ public class ECFServices implements IECF {
         ECF.builder()
             .encabezado(encabezado)
             .detallesItems(DetallesItems.builder().item(items).build())
-            .descuentosORecargos(descuentosORecargos)
+            .descuentosORecargos(null)
             .build();
 
     ObjectMapper objectMapper = new ObjectMapper();
@@ -671,52 +670,53 @@ public class ECFServices implements IECF {
     }
   }
 
-  //    @Override
-  //    public ECF senderEcfTerceros(TblFacturaSuplidorInformal facturaSuplidor, Boolean override) {
-  //        TenantConfigurationProperties.DgiiConfig dgiiConfig = getCurrentTenantDgiiConfig();
-  //        if (dgiiConfig == null || dgiiConfig.getStatus() == null || !dgiiConfig.getStatus()) {
-  //            log.warn(NO_ENVIAR_FACTURA_ELECTRONICA_DGII_CONFIG_MISSING_OR_STATUS_FALSE);
-  //            return ECF.builder().build();
-  //        }
-  //        InformacionSistema oEmpresa =
-  //                empresaDao
-  //                        .findById(1)
-  //                        .orElseThrow(() -> new NotFoundException("No se encontro la empresa"));
+  //      @Override
+  //      public ECF senderEcfTerceros(MfFacturaSuplidor facturaSuplidor, Boolean override) {
+  //          TenantConfigurationProperties.DgiiConfig dgiiConfig = getCurrentTenantDgiiConfig();
+  //          if (dgiiConfig == null || dgiiConfig.getStatus() == null || !dgiiConfig.getStatus()) {
+  //              log.warn(NO_ENVIAR_FACTURA_ELECTRONICA_DGII_CONFIG_MISSING_OR_STATUS_FALSE);
+  //              return ECF.builder().build();
+  //          }
+  //          InformacionSistema oEmpresa =
+  //                  empresaDao
+  //                          .findById(1)
+  //                          .orElseThrow(() -> new ChangeSetPersister.NotFoundException("No se
+  // encontro la empresa"));
   //
-  //        ECF factura =
-  //                switch (facturaSuplidor.getTipoCfId().getNumeroComprobante()) {
-  //                    case COMPROBANTE_PAGOS_EXTERIOR ->
-  // convertFacturaMapper.mapFactura47(facturaSuplidor, oEmpresa);
-  //                    case GASTOS_MENORES_ELECTRONICOS ->
-  // convertFacturaMapper.mapFactura43(facturaSuplidor, oEmpresa);
+  //          ECF factura =
+  //                  switch (facturaSuplidor.getTipoCfId().getNumeroComprobante()) {
+  //                      case COMPROBANTE_PAGOS_EXTERIOR ->
+  //   convertFacturaMapper.mapFactura47(facturaSuplidor, oEmpresa);
+  //                      case GASTOS_MENORES_ELECTRONICOS ->
+  //   convertFacturaMapper.mapFactura43(facturaSuplidor, oEmpresa);
   //
   //
-  //                    case COMPRAS_ELECTRONICOS ->
-  // convertFacturaMapper.mapFactura41(facturaSuplidor, oEmpresa);
-  //                    default -> throw new IllegalArgumentException(
-  //                            "Unsupported factura type: " + facturaSuplidor.getId());
-  //                };
-  //        ObjectMapper objectMapper = new ObjectMapper();
-  //        try {
-  //            String josnObject = objectMapper.writeValueAsString(factura);
-  //            FacturaValidateResponse facturaValidateResponse =
-  //                    this.sendJson(factura.encabezado().idDoc().tipoeCF(),
-  // factura.encabezado().idDoc().encf(), josnObject, override);
-  //            facturaSuplidor.setTrackId(facturaValidateResponse.trackingNumber());
-  //            facturaSuplidor.setFechaFirma(facturaValidateResponse.fechaFirma());
-  //            facturaSuplidor.setSecurityCode(facturaValidateResponse.securityCode());
-  //            facturaSuplidor.setQrUrl(facturaValidateResponse.qrUrl());
-  //            facturaSuplidor.setFechaFirma(facturaValidateResponse.fechaFirma());
+  //                      case COMPRAS_ELECTRONICOS ->
+  //   convertFacturaMapper.mapFactura41(facturaSuplidor, oEmpresa);
+  //                      default -> throw new IllegalArgumentException(
+  //                              "Unsupported factura type: " + facturaSuplidor.getId());
+  //                  };
+  //          ObjectMapper objectMapper = new ObjectMapper();
+  //          try {
+  //              String josnObject = objectMapper.writeValueAsString(factura);
+  //              FacturaValidateResponse facturaValidateResponse =
+  //                      this.sendJson(factura.encabezado().idDoc().tipoeCF(),
+  //   factura.encabezado().idDoc().encf(), josnObject, override);
+  //              facturaSuplidor.setTrackId(facturaValidateResponse.trackingNumber());
+  //              facturaSuplidor.setFechaFirma(facturaValidateResponse.fechaFirma());
+  //              facturaSuplidor.setSecurityCode(facturaValidateResponse.securityCode());
+  //              facturaSuplidor.setQrUrl(facturaValidateResponse.qrUrl());
+  //              facturaSuplidor.setFechaFirma(facturaValidateResponse.fechaFirma());
   //
-  //            repository.save(facturaSuplidor);
+  //              repository.save(facturaSuplidor);
   //
-  //        } catch (JsonProcessingException e) {
-  //            throw new RuntimeException(e);
-  //        }
+  //          } catch (JsonProcessingException e) {
+  //              throw new RuntimeException(e);
+  //          }
   //
-  //        return factura;
-  //    }
-  //
+  //          return factura;
+  //      }
+
   public Boolean validarMontoGravado(BigDecimal value) {
     return value != null && value.doubleValue() > 0;
   }
@@ -790,16 +790,7 @@ public class ECFServices implements IECF {
     }
   }
 
-  // Helper method to get the value of a tag from the XML Document
-  private static String getTagValue(Document doc, String tag) {
-    NodeList nodes = doc.getElementsByTagName(tag);
-    if (nodes.getLength() > 0 && nodes.item(0).getTextContent() != null) {
-      return nodes.item(0).getTextContent();
-    }
-    return null;
-  }
-
-  public ValidationResponse ValidateFactJson(String trackId) {
+  public ValidationResponse validateFactJson(String trackId) {
     SgEmpresa empresa = empresaServices.getCurrent().content();
 
     String url = String.join("/", DGII_URL, "api/facturacion/electronica/track", trackId);
@@ -849,7 +840,10 @@ public class ECFServices implements IECF {
         return false;
       }
 
-    } catch (Exception e) {
+    } catch (java.net.URISyntaxException e) {
+      log.error("URL inválida: {}", url, e);
+      return false;
+    } catch (org.springframework.web.client.RestClientException e) {
       log.error("Error al llamar a la URL: {}", url, e);
       return false;
     }

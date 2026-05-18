@@ -14,6 +14,11 @@ const suplidorSchema = Yup.object().shape({
         .min(2, "El nombre debe tener al menos 2 caracteres")
         .max(200, "El nombre no puede exceder 200 caracteres"),
 
+    razonSocial: Yup.string()
+        .required("La razón social es requerida")
+        .min(2, "La razón social debe tener al menos 2 caracteres")
+        .max(255, "La razón social no puede exceder 255 caracteres"),
+
     tipoIdentificacion: Yup.string().nullable(),
 
     /**

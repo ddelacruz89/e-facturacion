@@ -40,9 +40,6 @@ public class MfFacturaSuplidor extends BaseDgII implements Serializable {
   @Column(name = "fecha_limite_pago")
   private LocalDate fechaLimitePago;
 
-  @Column(name = "fecha_vencimiento")
-  private LocalDate fechaVencimiento;
-
   @Column(name = "fecha_pago")
   private LocalDateTime fechaPago;
 
@@ -51,6 +48,9 @@ public class MfFacturaSuplidor extends BaseDgII implements Serializable {
 
   @Column(name = "fecha_creacion")
   private LocalDateTime fechaCreacion;
+
+  @Column(name = "fecha_valido")
+  private LocalDateTime fechaValido;
 
   /** Fecha de firma del e-CF (string tal como devuelve la DGII, ej. "2024-01-15T10:30:00"). */
   @Column(name = "fecha_firma")

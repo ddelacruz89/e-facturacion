@@ -1,11 +1,9 @@
 package com.braintech.eFacturador.services.general;
 
 import com.braintech.eFacturador.dao.facturacion.MgRetencionDao;
-import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.jpa.general.MgRetencion;
 import com.braintech.eFacturador.models.Response;
-import com.braintech.eFacturador.util.TenantContext;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,9 +12,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Service
 public class RetencionService implements ITipoRetenciones {
-  final MgRetencionDao mgRetencionDao;
-  private final TenantContext tenantContext;
-  private final SecuenciasDao secuenciasDao;
+  private final MgRetencionDao mgRetencionDao;
 
   @Override
   public Response<List<MgRetencion>> getAllActive() {

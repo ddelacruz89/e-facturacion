@@ -7,6 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import lombok.EqualsAndHashCode;
@@ -23,6 +24,8 @@ import lombok.Setter;
     property = "id")
 @EqualsAndHashCode(callSuper = false)
 public class MfNota extends BaseDgII implements Serializable {
+
+  @Serial private static final long serialVersionUID = 1L;
 
   @Column(name = "razon_social")
   private String razonSocial;

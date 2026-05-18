@@ -40,5 +40,6 @@ public interface MgProductoService {
 
   /** Productos activos con inventario en el almacén dado, filtrados opcionalmente por nombre. */
   List<MgProductoResumenDTO> searchByAlmacen(Integer almacenId, String nombre);
+
   Optional<ProductoResumen> getProductoResumenById(Integer id);
 }
