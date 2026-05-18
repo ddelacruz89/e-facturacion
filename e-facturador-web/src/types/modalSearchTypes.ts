@@ -728,6 +728,82 @@ export const SEARCH_CONFIGS = {
         ]
     } as SearchConfig,
 
+    PAGOS_SUPLIDOR: {
+        title: "Buscar Pagos de Suplidor",
+        endpoint: "/api/v1/facturacion/pagos-suplidor/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10
+        },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace30Dias = new Date();
+            hace30Dias.setDate(hoy.getDate() - 30);
+            return {
+                fechaInicio: hace30Dias.toISOString().split('T')[0],
+                fechaFin: hoy.toISOString().split('T')[0],
+            };
+        })(),
+        fields: [
+            {
+                key: "fechaInicio",
+                label: "Fecha Inicio",
+                type: "date" as const,
+                placeholder: "Seleccione fecha inicio",
+            },
+            {
+                key: "fechaFin",
+                label: "Fecha Fin",
+                type: "date" as const,
+                placeholder: "Seleccione fecha fin",
+            },
+            {
+                key: "facturaSuplidorId",
+                label: "Factura Suplidor ID",
+                type: "number" as const,
+                placeholder: "ID de la factura",
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "ACT", label: "Activo" },
+                    { value: "ANU", label: "Anulado" },
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "7%" },
+            {
+                key: "fechaPago",
+                label: "Fecha Pago",
+                width: "18%",
+                render: (value: any) => formatDateTimeForUi(value),
+            },
+            { key: "facturaSuplidorId", label: "Factura ID", width: "10%" },
+            { key: "suplidorNombre", label: "Suplidor", width: "25%" },
+            {
+                key: "monto",
+                label: "Monto",
+                width: "13%",
+                render: (value: any) => formatTotal16_2(value),
+            },
+            {
+                key: "pagado",
+                label: "Pagado",
+                width: "13%",
+                render: (value: any) => formatTotal16_2(value),
+            },
+            { key: "estadoId", label: "Estado", width: "8%" },
+            { key: "usuarioReg", label: "Usuario", width: "6%" },
+        ]
+    } as SearchConfig,
+
     MOVIMIENTO_TIPO: {
         title: "Buscar Tipo de Movimiento",
         endpoint: "/api/v1/inventario/movimientos-tipos/buscar",

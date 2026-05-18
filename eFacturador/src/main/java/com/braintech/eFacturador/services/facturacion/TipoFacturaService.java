@@ -58,11 +58,6 @@ public class TipoFacturaService implements ITipoEntity<MgTipoFactura> {
       MgTipoFactura updated = tipoFacturaDao.save(entity);
       return Response.<MgTipoFactura>builder().status(HttpStatus.OK).content(updated).build();
     }
-    MgTipoFactura saved = tipoFacturaDao.save(entity);
-
-    return Response.<MgTipoFactura>builder()
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .error(new DataNotFoundDTO("No se pudo guardar Tipo Factura"))
-        .build();
+    return Response.<MgTipoFactura>builder().status(HttpStatus.OK).content(entity).build();
   }
 }

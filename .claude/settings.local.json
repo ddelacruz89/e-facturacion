@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep -l \"SgPermiso\")",
+      "Bash(grep -E \"\\\\.\\(vue|ts|js|tsx\\)$\")",
+      "Bash(xargs grep -l \"SgRol\\\\|SgPermiso\")",
+      "Bash(xargs grep -l \"findPermisosForMenu\")",
+      "Bash(xargs grep -l \"facturas-suplidor\")",
+      "Bash(xargs grep -n \"factura.*suplidor\\\\|facturacion.*facturas\")",
+      "Bash(Get-ChildItem -Path \"D:\\\\Work\\\\sigme\\\\e-facturacion\" -Directory)",
+      "Bash(Select-Object Name)"
+    ]
+  }
+}
