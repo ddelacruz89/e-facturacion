@@ -26,8 +26,6 @@ public class InOrdenEntradaDetalle implements Serializable {
 
   private String lote;
 
-  // @Max(value=?)  @Min(value=?)//if you know range of your decimal fields consider using these
-  // annotations to enforce field validation
   @Basic(optional = false)
   @Column(name = "precio_unitario")
   private BigDecimal precioUnitario;
@@ -53,6 +51,13 @@ public class InOrdenEntradaDetalle implements Serializable {
 
   @JoinColumn(name = "producto_id")
   @ManyToOne(optional = false)
+  @JsonIgnoreProperties({
+    "productosModulos",
+    "inventarios",
+    "tags",
+    "productosAlmacenesLimites",
+    "unidadProductorSuplidor"
+  })
   private MgProducto productoId;
 
   @Column(name = "unidad_entrada_nombre")
@@ -60,6 +65,15 @@ public class InOrdenEntradaDetalle implements Serializable {
 
   @Column(name = "unidad_entrada_fraccion_cantidad")
   private Integer unidadCantidad;
+
+  /**
+   * Cantidad expresada en la unidad de fraccion (unidad de inventario). Para productos
+   * fraccionarios: {@code cantidad x unidadCantidad}. Para productos enteros (unidadCantidad = null
+   * o 1): igual a {@code cantidad}. Es la cantidad que se usa al generar el movimiento de
+   * inventario.
+   */
+  @Column(name = "cantidad_fraccionaria")
+  private Integer cantidadFraccionaria;
 
   @Column(name = "itbis_al_sub_total")
   private Boolean itbisAlSubTotal;

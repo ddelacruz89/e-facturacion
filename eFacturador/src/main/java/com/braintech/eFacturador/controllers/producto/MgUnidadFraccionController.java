@@ -1,6 +1,8 @@
 package com.braintech.eFacturador.controllers.producto;
 
 import com.braintech.eFacturador.jpa.producto.MgUnidadFraccion;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.producto.MgUnidadFraccionService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -32,12 +34,14 @@ public class MgUnidadFraccionController {
     return ResponseEntity.ok(unidadFraccion);
   }
 
+  @RequierePermiso(menuUrl = "/producto/unidad-fraccion", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MgUnidadFraccion> create(@RequestBody MgUnidadFraccion unidadFraccion) {
     MgUnidadFraccion saved = unidadFraccionService.create(unidadFraccion);
     return ResponseEntity.ok(saved);
   }
 
+  @RequierePermiso(menuUrl = "/producto/unidad-fraccion", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MgUnidadFraccion> update(
       @PathVariable Integer id, @RequestBody MgUnidadFraccion unidadFraccion) {
@@ -46,6 +50,7 @@ public class MgUnidadFraccionController {
   }
 
   // Soft delete - changes activo to false
+  @RequierePermiso(menuUrl = "/producto/unidad-fraccion", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable Integer id) {
     unidadFraccionService.delete(id);

@@ -12,6 +12,10 @@ const ordenCompraDetalleSchema = Yup.object().shape({
             return value !== 0 && value !== undefined;
         }),
 
+    unidadNombre: Yup.string()
+        .required("La unidad es requerida")
+        .min(1, "La unidad es requerida"),
+
     cantidad: Yup.number()
         .required("La cantidad es requerida")
         .positive("La cantidad debe ser mayor a cero")

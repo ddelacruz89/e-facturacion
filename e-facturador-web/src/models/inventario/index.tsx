@@ -35,3 +35,38 @@ export type {
     InOrdenCompraSimpleDTO,
 } from "./ordenCompra";
 export type { InOrdenEntrada, InOrdenEntradaDetalle, InOrdenEntradaDetalleLote } from "./ordenEntrada";
+
+export interface InLote {
+  lote: string;
+  productoId?: {
+    id: number;
+    nombreProducto?: string;
+  };
+  serie?: boolean;
+  fechaVencimiento?: string | null;
+  fechaAlertaVencimiento?: string | null;
+  alertasDias?: number | null;
+  estadoId?: string;
+  empresaId?: number;
+  sucursalId?: { id: number };
+  usuarioReg?: string;
+  fechaReg?: string;
+}
+
+export interface InLoteResumenDTO {
+  lote: string;
+  productoId: number;
+  productoNombre: string;
+  fechaVencimiento?: string | null;
+  estadoId?: string;
+  usuarioReg?: string;
+  fechaReg?: string;
+}
+
+export interface InLoteUpdateDTO {
+  serie?: boolean;
+  fechaVencimiento?: string | null;
+  fechaAlertaVencimiento?: string | null;
+  alertasDias?: number | null;
+  estadoId?: string;
+}

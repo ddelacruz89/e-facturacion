@@ -1,13 +1,19 @@
 package com.braintech.eFacturador.services.seguridad;
 
 import com.braintech.eFacturador.dao.seguridad.ModuloDao;
+import com.braintech.eFacturador.dao.seguridad.SgPermisoRepository;
 import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.interfaces.IBaseString;
 import com.braintech.eFacturador.jpa.seguridad.SgModulo;
+import com.braintech.eFacturador.jpa.seguridad.dto.MenuDtoImpl;
 import com.braintech.eFacturador.jpa.seguridad.dto.ModuloDto;
+import com.braintech.eFacturador.jpa.seguridad.dto.ModuloDtoImpl;
+import com.braintech.eFacturador.jpa.seguridad.dto.menuDto;
 import com.braintech.eFacturador.models.Response;
+import com.braintech.eFacturador.util.TenantContext;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,7 +21,10 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ModuloServices implements IBaseString<SgModulo> {
+
   final ModuloDao moduloDao;
+  final SgPermisoRepository permisoRepository;
+  final TenantContext tenantContext;
 
   @Override
   public Response<SgModulo> getFindById(String id) {
@@ -32,21 +41,67 @@ public class ModuloServices implements IBaseString<SgModulo> {
 
   @Override
   public Response<List<ModuloDto>> getFindByAll() {
-    //    List<SgModulo> entities = moduloDao.findAll();
-    //    if (!entities.isEmpty()) {
-    //      return
-    // Response.<List<SgModulo>>builder().content(entities).status(HttpStatus.OK).build();
-    //    } else {
-    //      return Response.<List<SgModulo>>builder()
-    //          .status(HttpStatus.NOT_FOUND)
-    //          .error(new DataNotFoundDTO("Modulos no encontrado"))
-    //          .build();
-    //    }
+    String username = tenantContext.getCurrentUsername();
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Integer sucursalId = tenantContext.getCurrentSucursalId();
 
-    List<ModuloDto> entities = moduloDao.getModulos();
+    Set<Integer> menuIdsPermitidos =
+        permisoRepository.findMenuIdsPermitidos(username, empresaId, sucursalId);
 
-    if (!entities.isEmpty()) {
-      return Response.<List<ModuloDto>>builder().content(entities).status(HttpStatus.OK).build();
+    List<ModuloDto> result =
+        moduloDao.findAll().stream()
+            .map(
+                modulo -> {
+                  List<menuDto> menusPermitidos =
+                      modulo.getMenus().stream()
+                          .filter(
+                              m ->
+                                  Boolean.TRUE.equals(m.getActivo())
+                                      && menuIdsPermitidos.contains(m.getId()))
+                          .map(
+                              m ->
+                                  (menuDto)
+                                      new MenuDtoImpl(
+                                          m.getId(), m.getMenu(), m.getUrl(), m.getUrlSql()))
+                          .toList();
+                  return (ModuloDto)
+                      new ModuloDtoImpl(modulo.getId(), modulo.getModulo(), menusPermitidos);
+                })
+            .filter(m -> !m.getMenus().isEmpty())
+            .toList();
+
+    if (!result.isEmpty()) {
+      return Response.<List<ModuloDto>>builder().content(result).status(HttpStatus.OK).build();
+    } else {
+      return Response.<List<ModuloDto>>builder()
+          .status(HttpStatus.NOT_FOUND)
+          .error(new DataNotFoundDTO("Modulos no encontrado"))
+          .build();
+    }
+  }
+
+  /** Todos los módulos y menús sin filtrar — para la pantalla de gestión de roles. */
+  public Response<List<ModuloDto>> getTodos() {
+    List<ModuloDto> result =
+        moduloDao.findAll().stream()
+            .map(
+                modulo -> {
+                  List<menuDto> menus =
+                      modulo.getMenus().stream()
+                          .filter(m -> Boolean.TRUE.equals(m.getActivo()))
+                          .map(
+                              m ->
+                                  (menuDto)
+                                      new MenuDtoImpl(
+                                          m.getId(), m.getMenu(), m.getUrl(), m.getUrlSql()))
+                          .toList();
+                  return (ModuloDto) new ModuloDtoImpl(modulo.getId(), modulo.getModulo(), menus);
+                })
+            .filter(m -> !m.getMenus().isEmpty())
+            .toList();
+
+    if (!result.isEmpty()) {
+      return Response.<List<ModuloDto>>builder().content(result).status(HttpStatus.OK).build();
     } else {
       return Response.<List<ModuloDto>>builder()
           .status(HttpStatus.NOT_FOUND)

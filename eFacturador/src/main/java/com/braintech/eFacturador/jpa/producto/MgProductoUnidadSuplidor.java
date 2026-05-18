@@ -47,7 +47,7 @@ public class MgProductoUnidadSuplidor extends BaseEntity {
   @JsonBackReference
   private MgProducto productoId;
 
-  @OneToMany(cascade = CascadeType.ALL)
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JoinColumn(name = "producto_suplidor_id", referencedColumnName = "id")
   private List<MgProductoSuplidor> productosSuplidores;
 }

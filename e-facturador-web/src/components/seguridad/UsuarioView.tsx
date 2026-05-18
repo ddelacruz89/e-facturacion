@@ -1,140 +1,148 @@
-import React, { useEffect } from "react";
-import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
-import { Box, Grid, Button } from "@mui/material";
-import { NumericInput, AlphanumericInput, SelectInput } from "../../customers/CustomMUIComponents";
+import React, { useState } from "react";
+import { useForm, SubmitHandler } from "react-hook-form";
+import { Box, Grid, Button, Chip } from "@mui/material";
+import { AlphanumericInput } from "../../customers/CustomMUIComponents";
 import ActionBar from "../../customers/ActionBar";
-import { getUsuario, saveUsuario } from "../../apis/UsuarioController";
+import { getUsuario, saveUsuario, updateUsuario } from "../../apis/UsuarioController";
 import { SgUsuario } from "../../models/seguridad";
+import { ModalSearch } from "../search/ModalSearch";
+import { SEARCH_CONFIGS, SearchResultItem } from "../../types/modalSearchTypes";
+
+const defaultValues: SgUsuario = {
+    username: "",
+    nombre: "",
+    loginEmail: "",
+    password: "",
+    cambioPassword: true,
+};
 
 const UsuarioView = () => {
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [isNew, setIsNew] = useState(true);
+
     const {
         control,
         handleSubmit,
+        reset,
         watch,
-        setValue,
         formState: { errors },
-    } = useForm<SgUsuario>({
-        defaultValues: {
-            username: "",
-            empresaId: 1,
-            password: "",
-            cambioPassword: true,
-            nombre: "",
-        },
-    });
+    } = useForm<SgUsuario>({ defaultValues });
 
-    const onSubmit: SubmitHandler<SgUsuario> = (data) => {
-        saveUsuario(data)
-            .then((response) => {
-                setValue("username", response.username);
-                setValue("empresaId", response.empresaId);
-                setValue("password", response.password);
-                setValue("cambioPassword", response.cambioPassword);
-                setValue("nombre", response.nombre);
-                alert("Usuario guardado correctamente");
-            })
-            .catch((error) => {
-                console.error("Error al guardar el usuario:", error);
-                alert("Error al guardar el usuario");
-            });
+    const usernameActual = watch("username");
+
+    // ── Selección desde modal ─────────────────────────────────────────────────
+    const handleSelect = async (resumen: SearchResultItem) => {
+        const completo = await getUsuario(resumen.username as string);
+        reset({ ...completo, password: "" }); // no cargar hash de password
+        setIsNew(false);
+        setSearchOpen(false);
     };
 
-    const onError = (errors: FieldErrors<SgUsuario>) => {
-        console.log("Errores de validación:", errors);
+    // ── Guardar ──────────────────────────────────────────────────────────────
+    const onSubmit: SubmitHandler<SgUsuario> = async (data) => {
+        try {
+            const saved = isNew
+                ? await saveUsuario(data)
+                : await updateUsuario(data.username, data);
+            reset({ ...saved, password: "" });
+            setIsNew(false);
+            alert("Usuario guardado correctamente");
+        } catch (error) {
+            console.error("Error al guardar usuario:", error);
+            alert("Error al guardar el usuario");
+        }
+    };
+
+    const handleNuevo = () => {
+        reset(defaultValues);
+        setIsNew(true);
     };
 
     return (
         <main>
-            <Box component="form" onSubmit={handleSubmit(onSubmit, onError)}>
-                <ActionBar title="Usuario">
-                    <Button size="small" color="primary" type="submit">
-                        Guardar
+            <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+                <ActionBar title="Usuarios">
+                    <Button size="small" variant="outlined" onClick={() => setSearchOpen(true)}>
+                        Buscar
                     </Button>
-                    <Button size="small" type="button">
+                    <Button size="small" onClick={handleNuevo}>
                         Nuevo
                     </Button>
+                    <Button size="small" color="primary" variant="contained" type="submit">
+                        Guardar
+                    </Button>
                 </ActionBar>
-                <section>
-                    <Grid container spacing={2}>
-                        <SelectInput
-                            label="Empresa"
-                            name="empresaId"
-                            control={control}
-                            error={errors.empresaId}
-                            options={[
-                                { value: "1", label: "Cédula" },
-                                { value: "2", label: "Pasaporte" },
-                                // Agrega más opciones según tus datos
-                            ]}
-                            rules={{
-                                required: "Campo requerido",
-                            }}
-                            size={6}
+
+                {usernameActual && (
+                    <Box sx={{ px: 2, pb: 1 }}>
+                        <Chip
+                            label={isNew ? "Nuevo usuario" : `Editando: ${usernameActual}`}
+                            color={isNew ? "default" : "primary"}
+                            size="small"
                         />
-                    </Grid>
-                    <Grid container spacing={2}>
+                    </Box>
+                )}
+
+                <section>
+                    <Grid container spacing={2} sx={{ p: 2 }}>
                         <AlphanumericInput
                             label="Username"
-                            size={6}
+                            size={4}
                             name="username"
                             control={control}
                             error={errors.username}
+                            disabled={!isNew}
                             rules={{
                                 required: "Campo requerido",
                                 minLength: { value: 3, message: "Mínimo 3 caracteres" },
-                                maxLength: { value: 50, message: "Máximo 50 caracteres" },
-                            }}
-                        />
-                        {/* <NumericInput
-                            label='Empresa ID'
-                            size={6}
-                            name="empresaId"
-                            control={control}
-                            error={errors.empresaId}
-                            rules={{
-                                min: { value: 1, message: "Debe ser mayor que 0" },
-                            }}
-                        /> */}
-                    </Grid>
-
-                    <Grid container spacing={2}>
-                        <AlphanumericInput
-                            label="Password"
-                            size={6}
-                            name="password"
-                            type="password"
-                            control={control}
-                            error={errors.password}
-                            rules={{
-                                required: "Campo requerido",
-                                minLength: { value: 6, message: "Mínimo 6 caracteres" },
+                                maxLength: { value: 20, message: "Máximo 20 caracteres" },
                             }}
                         />
                         <AlphanumericInput
-                            label="Cambio de Password"
-                            size={6}
-                            name="cambioPassword"
-                            control={control}
-                            error={errors.cambioPassword}
-                        />
-                    </Grid>
-
-                    <Grid container spacing={2}>
-                        <AlphanumericInput
-                            label="Nombre"
-                            size={12}
+                            label="Nombre completo"
+                            size={8}
                             name="nombre"
                             control={control}
                             error={errors.nombre}
                             rules={{
                                 required: "Campo requerido",
                                 minLength: { value: 3, message: "Mínimo 3 caracteres" },
-                                maxLength: { value: 200, message: "Máximo 200 caracteres" },
                             }}
+                        />
+                    </Grid>
+
+                    <Grid container spacing={2} sx={{ px: 2 }}>
+                        <AlphanumericInput
+                            label="Email de login"
+                            size={6}
+                            name="loginEmail"
+                            control={control}
+                            error={errors.loginEmail}
+                        />
+                        <AlphanumericInput
+                            label={isNew ? "Contraseña" : "Nueva contraseña (dejar vacío para no cambiar)"}
+                            size={6}
+                            name="password"
+                            type="password"
+                            control={control}
+                            error={errors.password}
+                            rules={
+                                isNew
+                                    ? { required: "Campo requerido", minLength: { value: 6, message: "Mínimo 6 caracteres" } }
+                                    : {}
+                            }
                         />
                     </Grid>
                 </section>
             </Box>
+
+            {/* Modal de búsqueda */}
+            <ModalSearch
+                open={searchOpen}
+                onClose={() => setSearchOpen(false)}
+                onSelect={handleSelect}
+                config={SEARCH_CONFIGS.USUARIO}
+            />
         </main>
     );
 };

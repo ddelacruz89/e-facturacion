@@ -1,6 +1,17 @@
 import * as Yup from "yup";
 import { MgProducto } from "../models/producto";
 
+// ---------------------------------------------------------------------------
+// Contexto de validación
+// ---------------------------------------------------------------------------
+interface ProductoValidationContext {
+    /** true cuando la categoría seleccionada es un Servicio (inventario = false) */
+    esServicio: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Schema principal
+// ---------------------------------------------------------------------------
 const productoSchema = Yup.object().shape({
     nombreProducto: Yup.string()
         .required("El nombre del producto es requerido")
@@ -27,83 +38,140 @@ const productoSchema = Yup.object().shape({
 
     activo: Yup.boolean().required(),
 
-    // Validaciones condicionales cuando el producto está activo
+    // -----------------------------------------------------------------------
+    // Precio de venta — requerido siempre que esté activo
+    // -----------------------------------------------------------------------
     precioVenta: Yup.number().when("activo", {
         is: true,
-        then: (schema) => schema
-            .required("El precio de venta es requerido para productos activos")
-            .positive("El precio de venta debe ser mayor a cero")
-            .min(0.01, "El precio de venta debe ser mayor a cero")
-            .test(
-                "precio-venta-mayor-o-igual-minimo",
-                "El precio de venta no puede ser menor que el precio minimo",
-                function (value) {
-                    const precioMinimo = this.parent.precioMinimo;
-
-                    if (value === undefined || value === null || precioMinimo === undefined || precioMinimo === null) {
-                        return true;
-                    }
-
-                    return Number(value) >= Number(precioMinimo);
-                },
-            ),
+        then: (schema) =>
+            schema
+                .required("El precio de venta es requerido para productos activos")
+                .positive("El precio de venta debe ser mayor a cero")
+                .min(0.01, "El precio de venta debe ser mayor a cero")
+                .test(
+                    "precio-venta-mayor-o-igual-minimo",
+                    "El precio de venta no puede ser menor que el precio mínimo",
+                    function (value) {
+                        const precioMinimo = this.parent.precioMinimo;
+                        if (
+                            value === undefined ||
+                            value === null ||
+                            precioMinimo === undefined ||
+                            precioMinimo === null
+                        ) {
+                            return true;
+                        }
+                        return Number(value) >= Number(precioMinimo);
+                    },
+                ),
         otherwise: (schema) => schema.nullable(),
     }),
 
+    // -----------------------------------------------------------------------
+    // Precio mínimo — requerido siempre que esté activo
+    // -----------------------------------------------------------------------
     precioMinimo: Yup.number().when("activo", {
         is: true,
-        then: (schema) => schema
-            .required("El precio mínimo es requerido para productos activos")
-            .positive("El precio mínimo debe ser mayor a cero")
-            .min(0.01, "El precio mínimo debe ser mayor a cero")
-            .test(
-                "precio-minimo-menor-o-igual-venta",
-                "El precio minimo no puede ser mayor que el precio de venta",
-                function (value) {
-                    const precioVenta = this.parent.precioVenta;
-
-                    if (value === undefined || value === null || precioVenta === undefined || precioVenta === null) {
-                        return true;
-                    }
-
-                    return Number(value) <= Number(precioVenta);
-                },
-            ),
+        then: (schema) =>
+            schema
+                .required("El precio mínimo es requerido para productos activos")
+                .positive("El precio mínimo debe ser mayor a cero")
+                .min(0.01, "El precio mínimo debe ser mayor a cero")
+                .test(
+                    "precio-minimo-menor-o-igual-venta",
+                    "El precio mínimo no puede ser mayor que el precio de venta",
+                    function (value) {
+                        const precioVenta = this.parent.precioVenta;
+                        if (
+                            value === undefined ||
+                            value === null ||
+                            precioVenta === undefined ||
+                            precioVenta === null
+                        ) {
+                            return true;
+                        }
+                        return Number(value) <= Number(precioVenta);
+                    },
+                ),
         otherwise: (schema) => schema.nullable(),
     }),
 
+    // -----------------------------------------------------------------------
+    // Existencia — solo aplica a Productos (no Servicios)
+    // -----------------------------------------------------------------------
+    existencia: Yup.number()
+        .nullable()
+        .test(
+            "existencia-solo-producto",
+            "La existencia no puede ser negativa",
+            function (value) {
+                const ctx = this.options.context as ProductoValidationContext | undefined;
+                // Servicios no tienen existencia → siempre válido
+                if (ctx?.esServicio) return true;
+                if (value === undefined || value === null) return true;
+                return Number(value) >= 0;
+            },
+        ),
+
+    // -----------------------------------------------------------------------
+    // Unidades y proveedores
+    //   - Producto:  al menos 1 unidad activa con al menos 1 proveedor obligatorio
+    //   - Servicio:  al menos 1 unidad activa; proveedores opcionales (para registrar costo)
+    // -----------------------------------------------------------------------
     unidadProductorSuplidor: Yup.array().when("activo", {
         is: true,
-        then: (schema) => schema
-            .min(1, "Debe agregar al menos una unidad para productos activos")
-            .test(
-                "has-suppliers",
-                "Cada unidad debe tener al menos un proveedor asignado",
-                function (unidades) {
-                    if (!unidades || unidades.length === 0) return false;
-                    
-                    // Verificar que todas las unidades activas tengan al menos un proveedor
-                    return unidades.every((unidad: any) => {
-                        // Si la unidad está inactiva, no validar proveedores
-                        if (unidad.activo === false) return true;
-                        
-                        return (
-                            unidad.productosSuplidores &&
-                            unidad.productosSuplidores.length > 0
-                        );
-                    });
-                }
-            ),
+        then: (schema) =>
+            schema
+                .min(1, "Debe agregar al menos una unidad")
+                .test(
+                    "validar-unidades-segun-categoria",
+                    "Validación de unidades fallida",
+                    function (unidades) {
+                        if (!unidades || unidades.length === 0) return false;
+
+                        const ctx = this.options.context as ProductoValidationContext | undefined;
+                        const esServicio = ctx?.esServicio ?? false;
+
+                        for (let idx = 0; idx < unidades.length; idx++) {
+                            const unidad = unidades[idx];
+
+                            // Ignorar unidades inactivas
+                            if (unidad.activo === false) continue;
+
+                            if (!esServicio) {
+                                // PRODUCTO: debe tener al menos un proveedor
+                                const tieneProveedor =
+                                    unidad.productosSuplidores && unidad.productosSuplidores.length > 0;
+                                if (!tieneProveedor) {
+                                    return this.createError({
+                                        message: `La unidad #${idx + 1} debe tener al menos un proveedor asignado`,
+                                    });
+                                }
+                            }
+
+                            // SERVICIO: cantidad debe ser 1
+                            if (esServicio && unidad.cantidad !== undefined && Number(unidad.cantidad) !== 1) {
+                                return this.createError({
+                                    message: `La cantidad en servicios debe ser 1 (unidad #${idx + 1})`,
+                                });
+                            }
+                        }
+
+                        return true;
+                    },
+                ),
         otherwise: (schema) => schema.nullable(),
     }),
 
-    // Validaciones opcionales
-    codigoBarra: Yup.string().max(50, "El código de barra no puede exceder 50 caracteres").nullable(),
+    // -----------------------------------------------------------------------
+    // Opcional: código de barra, descripción, precios de costo
+    // -----------------------------------------------------------------------
+    codigoBarra: Yup.string()
+        .max(50, "El código de barra no puede exceder 50 caracteres")
+        .nullable(),
 
-    descripcion: Yup.string().max(500, "La descripción no puede exceder 500 caracteres").nullable(),
-
-    existencia: Yup.number()
-        .min(0, "La existencia no puede ser negativa")
+    descripcion: Yup.string()
+        .max(500, "La descripción no puede exceder 500 caracteres")
         .nullable(),
 
     precio: Yup.number()
@@ -114,20 +182,30 @@ const productoSchema = Yup.object().shape({
         .min(0, "El precio de costo promedio no puede ser negativo")
         .nullable(),
 
+    // -----------------------------------------------------------------------
+    // Comisión — solo cuando trabajador = true
+    // -----------------------------------------------------------------------
     comision: Yup.number().when("trabajador", {
         is: true,
-        then: (schema) => schema
-            .required("La comisión es requerida cuando el producto es para trabajador")
-            .min(0, "La comisión no puede ser negativa"),
+        then: (schema) =>
+            schema
+                .required("La comisión es requerida cuando el producto es para trabajador")
+                .min(0, "La comisión no puede ser negativa"),
         otherwise: (schema) => schema.nullable(),
     }),
 });
 
+// ---------------------------------------------------------------------------
+// Función pública de validación
+// ---------------------------------------------------------------------------
 export const validateProducto = async (
-    data: MgProducto
+    data: MgProducto,
+    esServicio: boolean = false,
 ): Promise<{ isValid: boolean; errors: Record<string, string> }> => {
+    const context: ProductoValidationContext = { esServicio };
+
     try {
-        await productoSchema.validate(data, { abortEarly: false });
+        await productoSchema.validate(data, { abortEarly: false, context });
         return { isValid: true, errors: {} };
     } catch (error) {
         if (error instanceof Yup.ValidationError) {

@@ -1,8 +1,11 @@
 package com.braintech.eFacturador.dao.inventario;
 
+import com.braintech.eFacturador.dto.inventario.InOrdenEntradaResumenDTO;
+import com.braintech.eFacturador.dto.inventario.InOrdenEntradaSearchCriteria;
 import com.braintech.eFacturador.jpa.inventario.InOrdenEntrada;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 
 public interface InOrdenEntradaDao {
   // InOrdenEntrada extends BaseSucursal - filter by empresaId AND sucursalId
@@ -20,4 +23,7 @@ public interface InOrdenEntradaDao {
   void disableById(Integer id, Integer empresaId);
 
   void disableById(Integer id, Integer empresaId, Integer sucursalId);
+
+  Page<InOrdenEntradaResumenDTO> searchByCriteria(
+      InOrdenEntradaSearchCriteria criteria, Integer empresaId);
 }

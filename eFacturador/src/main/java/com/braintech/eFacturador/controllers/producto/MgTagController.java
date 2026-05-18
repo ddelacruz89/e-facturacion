@@ -2,6 +2,8 @@ package com.braintech.eFacturador.controllers.producto;
 
 import com.braintech.eFacturador.dto.TagResumeDto;
 import com.braintech.eFacturador.jpa.producto.MgTag;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.producto.MgTagService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -39,12 +41,14 @@ public class MgTagController {
     return ResponseEntity.ok(tag);
   }
 
+  @RequierePermiso(menuUrl = "/producto/tag", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MgTag> create(@RequestBody MgTag tag) {
     MgTag saved = tagService.create(tag);
     return ResponseEntity.ok(saved);
   }
 
+  @RequierePermiso(menuUrl = "/producto/tag", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MgTag> update(@PathVariable Integer id, @RequestBody MgTag tag) {
     MgTag updated = tagService.update(id, tag);
@@ -52,6 +56,7 @@ public class MgTagController {
   }
 
   // Soft delete - changes activo to false
+  @RequierePermiso(menuUrl = "/producto/tag", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable Integer id) {
     tagService.delete(id);
@@ -61,6 +66,7 @@ public class MgTagController {
   // === Product-Tag Association Endpoints ===
 
   // Add a tag to a product
+  @RequierePermiso(menuUrl = "/producto/tag", accion = Accion.ESCRIBIR)
   @PostMapping("/producto/{productoId}/tag/{tagId}")
   public ResponseEntity<Void> addTagToProduct(
       @PathVariable Integer productoId, @PathVariable Integer tagId) {
@@ -69,6 +75,7 @@ public class MgTagController {
   }
 
   // Remove a tag from a product
+  @RequierePermiso(menuUrl = "/producto/tag", accion = Accion.ELIMINAR)
   @DeleteMapping("/producto/{productoId}/tag/{tagId}")
   public ResponseEntity<Void> removeTagFromProduct(
       @PathVariable Integer productoId, @PathVariable Integer tagId) {

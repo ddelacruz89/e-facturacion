@@ -4,13 +4,19 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "sg_sucursal", schema = "seguridad")
 @Getter
 @Setter
+@NoArgsConstructor
 public class SgSucursal implements Serializable {
+
+  public SgSucursal(Integer id) {
+    this.id = id;
+  }
 
   private static final long serialVersionUID = 1L;
 

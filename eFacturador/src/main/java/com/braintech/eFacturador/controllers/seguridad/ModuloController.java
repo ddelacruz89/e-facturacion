@@ -21,4 +21,11 @@ public class ModuloController {
     Response<List<ModuloDto>> entity = moduloServices.getFindByAll();
     return new ResponseEntity<>(entity, entity.status());
   }
+
+  /** Todos los módulos y menús sin filtrar por permisos — para gestión de roles. */
+  @GetMapping("todos")
+  public ResponseEntity<?> todos() {
+    Response<List<ModuloDto>> entity = moduloServices.getTodos();
+    return new ResponseEntity<>(entity, entity.status());
+  }
 }

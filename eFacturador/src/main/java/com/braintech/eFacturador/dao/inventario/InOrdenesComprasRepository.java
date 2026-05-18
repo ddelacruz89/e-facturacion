@@ -5,6 +5,7 @@ import com.braintech.eFacturador.jpa.inventario.InOrdenesCompras;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,4 +29,8 @@ public interface InOrdenesComprasRepository extends JpaRepository<InOrdenesCompr
           + "FROM InOrdenesCompras o WHERE o.suplidorId.empresaId = :empresaId AND o.estadoId <> 'INA'")
   List<InOrdenesComprasSimpleDTO> findAllActiveSimpleByEmpresaId(
       @Param("empresaId") Integer empresaId);
+
+  @Modifying
+  @Query("UPDATE InOrdenesCompras o SET o.estadoId = :estadoId WHERE o.id = :id")
+  int updateEstadoId(@Param("id") Integer id, @Param("estadoId") String estadoId);
 }

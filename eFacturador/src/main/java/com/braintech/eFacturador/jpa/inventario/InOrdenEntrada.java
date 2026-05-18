@@ -44,4 +44,8 @@ public class InOrdenEntrada extends BaseSucursal implements Serializable {
   @Column(name = "in_almacen_id")
   @NotNull(message = "Almacen no debe estar vacio no debe estar vacio")
   private Integer almacenId;
+
+  /** ID de la orden de compra que originó esta orden de entrada. Null si fue creada manualmente. */
+  @Column(name = "orden_compra_id")
+  private Integer ordenCompraId;
 }

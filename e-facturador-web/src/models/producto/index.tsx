@@ -42,6 +42,8 @@ export interface MgCategoria {
 export interface MgCategoriaSimpleDTO {
     id: number;
     categoria: string;
+    /** true = Producto (maneja inventario), false = Servicio (sin inventario) */
+    inventario?: boolean;
 }
 
 export interface MgProductoUnidadSuplidor {

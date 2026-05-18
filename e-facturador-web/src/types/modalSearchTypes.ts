@@ -127,6 +127,86 @@ const formatEstadoOrdenCompra = (value: any): string => {
 
 // Pre-defined search configurations for common entities
 export const SEARCH_CONFIGS = {
+    ROL: {
+        title: "Buscar Rol",
+        endpoint: "/api/v1/seguridad/rol/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        defaultParams: {
+            fechaInicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            fechaFin: new Date().toISOString().split("T")[0],
+        },
+        fields: [
+            { key: "nombre", label: "Nombre", type: "text" as const, placeholder: "Nombre del rol" },
+            { key: "fechaInicio", label: "Fecha inicio", type: "date" as const },
+            { key: "fechaFin", label: "Fecha fin", type: "date" as const },
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "7%" },
+            { key: "nombre", label: "Nombre", width: "25%" },
+            { key: "descripcion", label: "Descripción", width: "30%" },
+            { key: "cantidadPermisos", label: "Permisos", width: "12%" },
+            { key: "cantidadUsuarios", label: "Usuarios", width: "12%" },
+            { key: "usuarioReg", label: "Creado por", width: "10%" },
+            { key: "activo", label: "Estado", width: "8%", render: (v: any) => (v ? "Activo" : "Inactivo") },
+        ],
+    } as SearchConfig,
+
+    PAQUETE: {
+        title: "Buscar Paquete",
+        endpoint: "/api/v1/producto/paquete/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        defaultParams: {
+            fechaInicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            fechaFin: new Date().toISOString().split("T")[0],
+        },
+        fields: [
+            {
+                key: "nombre",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Nombre del paquete",
+            },
+            {
+                key: "fechaInicio",
+                label: "Fecha inicio",
+                type: "date" as const,
+            },
+            {
+                key: "fechaFin",
+                label: "Fecha fin",
+                type: "date" as const,
+            },
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "8%" },
+            {
+                key: "fechaReg",
+                label: "Fecha",
+                width: "20%",
+                render: (v: any) => formatDateTimeForUi(v),
+            },
+            { key: "nombre", label: "Nombre", width: "32%" },
+            {
+                key: "precioVenta",
+                label: "Precio",
+                width: "14%",
+                render: (v: any) => formatTotal16_2(v),
+            },
+            { key: "cantidadItems", label: "Ítems", width: "10%" },
+            { key: "usuarioReg", label: "Usuario", width: "10%" },
+            {
+                key: "activo",
+                label: "Estado",
+                width: "6%",
+                render: (v: any) => (v ? "Activo" : "Inactivo"),
+            },
+        ],
+    } as SearchConfig,
+
     PRODUCTO: {
         title: "Buscar Producto",
         endpoint: "/api/producto/search/advanced",
@@ -153,47 +233,130 @@ export const SEARCH_CONFIGS = {
         ]
     } as SearchConfig,
 
-    SUPLIDOR: {
-        title: "Buscar Suplidor",
-        endpoint: "/api/suplidor/search/advanced",
+    /** Búsqueda de productos de categoría Producto (categoriaId = 5) */
+    PRODUCTO_VENTA: {
+        title: "Buscar Producto",
+        endpoint: "/api/producto/search/advanced",
         keyField: "id",
+        searchOnLoad: true,
+        defaultParams: { categoriaId: 5 },
         fields: [
             {
                 key: "id",
                 label: "ID",
                 type: "number" as const,
-                placeholder: "Ingrese ID del suplidor"
+                placeholder: "Ingrese ID del producto"
             },
             {
-                key: "q",
+                key: "nombreProducto",
                 label: "Nombre",
                 type: "text" as const,
-                placeholder: "Ingrese nombre del suplidor"
+                placeholder: "Ingrese nombre del producto"
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "10%" },
+            { key: "nombreProducto", label: "Nombre", width: "30%" },
+            { key: "codigoBarra", label: "Código", width: "20%" },
+            { key: "descripcion", label: "Descripción", width: "40%" }
+        ]
+    } as SearchConfig,
+
+    /** Búsqueda de productos de categoría Servicio (categoriaId = 1) — para Orden de Entrada */
+    PRODUCTO_SERVICIO: {
+        title: "Buscar Servicio",
+        endpoint: "/api/producto/search/advanced",
+        keyField: "id",
+        searchOnLoad: true,
+        defaultParams: { categoriaId: 1 },
+        fields: [
+            {
+                key: "id",
+                label: "ID",
+                type: "number" as const,
+                placeholder: "Ingrese ID"
+            },
+            {
+                key: "nombreProducto",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Ingrese nombre del servicio"
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "10%" },
+            { key: "nombreProducto", label: "Nombre", width: "90%" }
+        ]
+    } as SearchConfig,
+
+    /** Búsqueda de productos disponibles en compra — para Orden de Compra y Cotización */
+    PRODUCTO_COMPRA: {
+        title: "Buscar Producto (Compra)",
+        endpoint: "/api/producto/search/advanced/compra",
+        keyField: "id",
+        searchOnLoad: true,
+        fields: [
+            {
+                key: "id",
+                label: "ID",
+                type: "number" as const,
+                placeholder: "Ingrese ID del producto"
+            },
+            {
+                key: "nombreProducto",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Ingrese nombre del producto"
+            },
+            {
+                key: "codigoBarra",
+                label: "Código de Barra",
+                type: "text" as const,
+                placeholder: "Ingrese código de barra"
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "10%" },
+            { key: "nombreProducto", label: "Nombre", width: "90%" }
+        ]
+    } as SearchConfig,
+
+    SUPLIDOR: {
+        title: "Buscar Suplidor",
+        endpoint: "/api/v1/inventario/suplidores/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10,
+        },
+        fields: [
+            {
+                key: "nombre",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Nombre del suplidor",
             },
             {
                 key: "rnc",
                 label: "RNC",
                 type: "text" as const,
-                placeholder: "Ingrese RNC"
+                placeholder: "RNC",
             },
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "7%" },
+            { key: "nombre", label: "Nombre", width: "38%" },
+            { key: "rnc", label: "RNC", width: "20%" },
+            { key: "telefono1", label: "Teléfono", width: "20%" },
             {
                 key: "activo",
                 label: "Estado",
-                type: "select" as const,
-                options: [
-                    { value: "", label: "Todos" },
-                    { value: "true", label: "Activo" },
-                    { value: "false", label: "Inactivo" }
-                ]
-            }
+                width: "15%",
+                render: (v: any) => (v ? "Activo" : "Inactivo"),
+            },
         ],
-        displayColumns: [
-            { key: "id", label: "ID", width: "10%" },
-            { key: "nombre", label: "Nombre", width: "30%" },
-            { key: "rnc", label: "RNC", width: "20%" },
-            { key: "telefono", label: "Teléfono", width: "20%" },
-            { key: "email", label: "Email", width: "20%" }
-        ]
     } as SearchConfig,
 
     CATEGORIA: {
@@ -223,44 +386,149 @@ export const SEARCH_CONFIGS = {
 
     USUARIO: {
         title: "Buscar Usuario",
-        endpoint: "/api/usuario/search/advanced",
-        keyField: "id",
+        endpoint: "/api/v1/seguridad/usuario/buscar",
+        method: "POST" as const,
+        keyField: "username",
+        searchOnLoad: true,
+        defaultParams: { q: "" },
         fields: [
+            {
+                key: "q",
+                label: "Usuario / Nombre",
+                type: "text" as const,
+                placeholder: "Buscar por username o nombre",
+            },
+        ],
+        displayColumns: [
+            { key: "username", label: "Username", width: "20%" },
+            { key: "nombre", label: "Nombre", width: "35%" },
+            { key: "loginEmail", label: "Email", width: "25%" },
+            {
+                key: "fechaReg",
+                label: "Fecha Reg.",
+                width: "12%",
+                render: (v: any) => v ? new Date(v).toLocaleString("es-DO", { dateStyle: "short", timeStyle: "short" }) : "",
+            },
+            { key: "estadoId", label: "Estado", width: "8%" },
+        ],
+    } as SearchConfig,
+
+    ORDEN_ENTRADA: {
+        title: "Buscar Orden de Entrada",
+        endpoint: "/api/v1/inventario/orden-entrada/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10
+        },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace30Dias = new Date();
+            hace30Dias.setDate(hoy.getDate() - 30);
+            return {
+                fechaInicio: hace30Dias.toISOString().split('T')[0],
+                fechaFin: hoy.toISOString().split('T')[0],
+            };
+        })(),
+        fields: [
+            {
+                key: "fechaInicio",
+                label: "Fecha Inicio",
+                type: "date" as const,
+                placeholder: "Seleccione fecha inicio",
+            },
+            {
+                key: "fechaFin",
+                label: "Fecha Fin",
+                type: "date" as const,
+                placeholder: "Seleccione fecha fin",
+            },
             {
                 key: "id",
                 label: "ID",
                 type: "number" as const,
-                placeholder: "Ingrese ID del usuario"
+                placeholder: "Ingrese ID de la orden"
             },
             {
-                key: "q",
-                label: "Nombre",
-                type: "text" as const,
-                placeholder: "Ingrese nombre del usuario"
-            },
-            {
-                key: "email",
-                label: "Email",
-                type: "text" as const,
-                placeholder: "Ingrese email"
-            },
-            {
-                key: "activo",
+                key: "estadoId",
                 label: "Estado",
                 type: "select" as const,
                 options: [
                     { value: "", label: "Todos" },
-                    { value: "true", label: "Activo" },
-                    { value: "false", label: "Inactivo" }
+                    { value: "PEN", label: "Pendiente" },
+                    { value: "COM", label: "Completado" },
+                    { value: "INA", label: "Anulado" }
                 ]
             }
         ],
         displayColumns: [
-            { key: "id", label: "ID", width: "10%" },
-            { key: "nombre", label: "Nombre", width: "25%" },
-            { key: "email", label: "Email", width: "30%" },
-            { key: "role", label: "Rol", width: "20%" },
-            { key: "activo", label: "Estado", width: "15%" }
+            { key: "id", label: "ID", width: "8%" },
+            {
+                key: "fechaReg",
+                label: "Fecha",
+                width: "22%",
+                render: (value: any) => formatDateTimeForUi(value),
+            },
+            { key: "almacenNombre", label: "Almacén", width: "25%" },
+            {
+                key: "total",
+                label: "Total",
+                width: "18%",
+                render: (value: any) => formatTotal16_2(value),
+            },
+            { key: "usuarioReg", label: "Usuario", width: "15%" },
+            { key: "estadoId", label: "Estado", width: "12%" },
+        ]
+    } as SearchConfig,
+
+    LOTE: {
+        title: "Buscar Lote",
+        endpoint: "/api/v1/inventario/lotes/buscar",
+        method: "POST" as const,
+        keyField: "lote",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10
+        },
+        defaultParams: { estadoId: "ACT" },
+        fields: [
+            {
+                key: "lote",
+                label: "Lote",
+                type: "text" as const,
+                placeholder: "Código de lote"
+            },
+            {
+                key: "productoId",
+                label: "ID Producto",
+                type: "number" as const,
+                placeholder: "ID del producto"
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "ACT", label: "Activo" },
+                    { value: "INA", label: "Inactivo" }
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "lote", label: "Lote", width: "20%" },
+            { key: "productoNombre", label: "Producto", width: "35%" },
+            {
+                key: "fechaVencimiento",
+                label: "Vencimiento",
+                width: "20%",
+                render: (v: any) => v ? new Date(v).toLocaleDateString("es-DO") : "-"
+            },
+            { key: "usuarioReg", label: "Usuario", width: "15%" },
+            { key: "estadoId", label: "Estado", width: "10%" }
         ]
     } as SearchConfig,
 
@@ -325,26 +593,175 @@ export const SEARCH_CONFIGS = {
             }
         ],
         displayColumns: [
-            { key: "id", label: "ID", width: "10%" },
+            { key: "id", label: "ID", width: "8%" },
             {
                 key: "fechaReg",
                 label: "Fecha",
-                width: "20%",
+                width: "22%",
                 render: (value: any) => formatDateTimeForUi(value),
             },
             { key: "suplidorNombre", label: "Suplidor", width: "30%" },
             {
                 key: "total",
                 label: "Total",
-                width: "20%",
+                width: "18%",
                 render: (value: any) => formatTotal16_2(value),
             },
             {
                 key: "estadoId",
                 label: "Estado",
-                width: "20%",
+                width: "12%",
                 render: (value: any) => formatEstadoOrdenCompra(value),
             }
+        ]
+    } as SearchConfig,
+
+    FACTURA_SUPLIDOR: {
+        title: "Buscar Factura Suplidor",
+        endpoint: "/api/v1/facturacion/facturas-suplidor/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10
+        },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace30Dias = new Date();
+            hace30Dias.setDate(hoy.getDate() - 30);
+            return {
+                fechaInicio: hace30Dias.toISOString().split('T')[0],
+                fechaFin: hoy.toISOString().split('T')[0],
+            };
+        })(),
+        fields: [
+            {
+                key: "fechaInicio",
+                label: "Fecha Inicio",
+                type: "date" as const,
+                placeholder: "Seleccione fecha inicio",
+            },
+            {
+                key: "fechaFin",
+                label: "Fecha Fin",
+                type: "date" as const,
+                placeholder: "Seleccione fecha fin",
+            },
+            {
+                key: "numeroFactura",
+                label: "No. Factura",
+                type: "text" as const,
+                placeholder: "Número de factura"
+            },
+            {
+                key: "suplidorId",
+                label: "Suplidor ID",
+                type: "number" as const,
+                placeholder: "ID del suplidor"
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "ACT", label: "Activo" },
+                    { value: "PEN", label: "Pendiente" },
+                    { value: "PAG", label: "Pagada" },
+                    { value: "ANU", label: "Anulada" },
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "7%" },
+            {
+                key: "fechaReg",
+                label: "Fecha",
+                width: "18%",
+                render: (value: any) => formatDateTimeForUi(value),
+            },
+            { key: "suplidorNombre", label: "Suplidor", width: "22%" },
+            { key: "numeroFactura", label: "No. Factura", width: "13%" },
+            { key: "ncf", label: "NCF", width: "13%" },
+            {
+                key: "total",
+                label: "Total",
+                width: "13%",
+                render: (value: any) => formatTotal16_2(value),
+            },
+            { key: "estadoId", label: "Estado", width: "8%" },
+            { key: "usuarioReg", label: "Usuario", width: "6%" },
+        ]
+    } as SearchConfig,
+
+    ALMACEN: {
+        title: "Buscar Almacén",
+        endpoint: "/api/v1/inventario/almacenes/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        defaultParams: { estadoId: "ACT" },
+        fields: [
+            {
+                key: "nombre",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Nombre del almacén"
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "ACT", label: "Activo" },
+                    { value: "INA", label: "Inactivo" }
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "8%" },
+            { key: "nombre", label: "Nombre", width: "42%" },
+            { key: "sucursalNombre", label: "Sucursal", width: "35%" },
+            { key: "estadoId", label: "Estado", width: "15%" }
+        ]
+    } as SearchConfig,
+
+    MOVIMIENTO_TIPO: {
+        title: "Buscar Tipo de Movimiento",
+        endpoint: "/api/v1/inventario/movimientos-tipos/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        fields: [
+            {
+                key: "q",
+                label: "Nombre",
+                type: "text" as const,
+                placeholder: "Nombre del tipo"
+            },
+            {
+                key: "cr",
+                label: "Efecto",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "true", label: "Entrada (crédito)" },
+                    { value: "false", label: "Salida (débito)" }
+                ]
+            }
+        ],
+        displayColumns: [
+            { key: "id", label: "ID", width: "8%" },
+            { key: "tipoMovimiento", label: "Tipo", width: "45%" },
+            {
+                key: "cr",
+                label: "Efecto",
+                width: "22%",
+                render: (v: any) => (v ? "⬆ Entrada" : "⬇ Salida")
+            },
+            { key: "modulo", label: "Módulo", width: "25%" }
         ]
     } as SearchConfig
 };

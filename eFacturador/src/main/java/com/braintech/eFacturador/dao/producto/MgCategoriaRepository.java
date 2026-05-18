@@ -22,6 +22,6 @@ public interface MgCategoriaRepository extends JpaRepository<MgCategoria, Intege
       @Param("id") String id, @Param("empresaId") Integer empresaId);
 
   @Query(
-      "SELECT new com.braintech.eFacturador.dto.producto.MgCategoriaSimpleDTO(c.id, c.categoria) FROM MgCategoria c WHERE c.empresaId = :empresaId")
+      "SELECT new com.braintech.eFacturador.dto.producto.MgCategoriaSimpleDTO(c.id, c.categoria, c.inventario) FROM MgCategoria c WHERE c.empresaId = :empresaId")
   List<MgCategoriaSimpleDTO> findAllSimpleByEmpresaId(@Param("empresaId") Integer empresaId);
 }

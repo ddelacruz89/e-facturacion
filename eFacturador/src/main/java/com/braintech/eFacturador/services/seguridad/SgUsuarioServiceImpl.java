@@ -1,22 +1,88 @@
 package com.braintech.eFacturador.services.seguridad;
 
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRepository;
+import com.braintech.eFacturador.dto.seguridad.SgUsuarioResumenDTO;
+import com.braintech.eFacturador.dto.seguridad.SgUsuarioSearchCriteria;
+import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.seguridad.SgUsuarioService;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
+import com.braintech.eFacturador.util.TenantContext;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SgUsuarioServiceImpl implements SgUsuarioService {
+
   @Autowired private SgUsuarioRepository usuarioRepository;
   @Autowired private PasswordEncoder passwordEncoder;
+  @Autowired private TenantContext tenantContext;
+
+  @Override
+  public List<SgUsuarioResumenDTO> buscar(SgUsuarioSearchCriteria criteria) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+
+    LocalDate inicio =
+        criteria.getFechaInicio() != null
+            ? criteria.getFechaInicio()
+            : LocalDate.now().minusDays(365);
+    LocalDate fin = criteria.getFechaFin() != null ? criteria.getFechaFin() : LocalDate.now();
+
+    LocalDateTime desde = inicio.atStartOfDay();
+    LocalDateTime hasta = fin.atTime(LocalTime.MAX);
+
+    String q =
+        (criteria.getQ() != null && !criteria.getQ().isBlank()) ? criteria.getQ().trim() : null;
+
+    return usuarioRepository.buscar(empresaId, desde, hasta, q);
+  }
+
+  @Override
+  public SgUsuario getById(String username) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return usuarioRepository
+        .findByIdAndEmpresaId(username, empresaId)
+        .orElseThrow(() -> new RecordNotFoundException("Usuario no encontrado: " + username));
+  }
 
   @Override
   public SgUsuario save(SgUsuario usuario) {
-    if (usuario.getPassword() != null) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    usuario.setEmpresaId(empresaId);
+    if (usuario.getFechaReg() == null) {
+      usuario.setFechaReg(LocalDateTime.now());
+    }
+    if (usuario.getUsuarioReg() == null) {
+      usuario.setUsuarioReg(tenantContext.getCurrentUsername());
+    }
+    if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
       usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
     }
     return usuarioRepository.save(usuario);
+  }
+
+  @Override
+  public SgUsuario update(String username, SgUsuario usuario) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    SgUsuario existing =
+        usuarioRepository
+            .findByIdAndEmpresaId(username, empresaId)
+            .orElseThrow(() -> new RecordNotFoundException("Usuario no encontrado: " + username));
+
+    existing.setNombre(usuario.getNombre());
+    existing.setLoginEmail(usuario.getLoginEmail());
+    existing.setCambioPassword(usuario.getCambioPassword());
+    if (usuario.getEstadoId() != null) existing.setEstadoId(usuario.getEstadoId());
+
+    // Solo re-hashear si envían un nuevo password
+    if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
+      existing.setPassword(passwordEncoder.encode(usuario.getPassword()));
+    }
+
+    return usuarioRepository.save(existing);
   }
 }

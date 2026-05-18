@@ -21,10 +21,10 @@ export class AuthService {
       };
       
       // Store token and user data
-      TokenService.setToken(response.token);
+      TokenService.setToken(response.token!);
       TokenService.setUser({
         username: response.username,
-        empresaId: response.empresaId,
+        empresaId: response.empresaId!,
         sucursalId: response.sucursalId,
         isAuthenticated: true,
       });

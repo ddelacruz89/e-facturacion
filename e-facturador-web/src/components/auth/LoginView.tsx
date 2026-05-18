@@ -11,19 +11,29 @@ import {
     IconButton,
     Container,
     CircularProgress,
+    List,
+    ListItemButton,
+    ListItemText,
+    Divider,
 } from "@mui/material";
-import { Visibility, VisibilityOff, AccountCircle, Lock } from "@mui/icons-material";
+import {
+    Visibility,
+    VisibilityOff,
+    AccountCircle,
+    Lock,
+    Business,
+    ArrowBack,
+} from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { LoginRequest } from "../../models/auth";
 
 interface LoginFormData {
     username: string;
     password: string;
-    rememberMe?: boolean;
 }
 
 const LoginView: React.FC = () => {
-    const { login, isLoading, error } = useAuth();
+    const { login, selectSucursal, pendingAuth, isLoading, error } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -32,29 +42,90 @@ const LoginView: React.FC = () => {
         handleSubmit,
         formState: { errors, isSubmitting },
     } = useForm<LoginFormData>({
-        defaultValues: {
-            username: "",
-            password: "",
-        },
+        defaultValues: { username: "", password: "" },
     });
 
     const onSubmit = async (data: LoginFormData) => {
         try {
             setLoginError(null);
-            await login({
-                username: data.username,
-                password: data.password,
-            });
-            // Redirect will be handled by the router/auth context
+            await login({ username: data.username, password: data.password });
         } catch (error: any) {
             setLoginError(error.message || "Error durante el login");
         }
     };
 
-    const togglePasswordVisibility = () => {
-        setShowPassword(!showPassword);
+    const handleSelectSucursal = async (sucursalId: number) => {
+        try {
+            setLoginError(null);
+            await selectSucursal(sucursalId);
+        } catch (error: any) {
+            setLoginError(error.message || "Error al seleccionar sucursal");
+        }
     };
 
+    // ── Paso 2: selector de sucursal ──────────────────────────────────────────
+    if (pendingAuth) {
+        return (
+            <Container component="main" maxWidth="sm">
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        minHeight: "100vh",
+                        py: 4,
+                    }}>
+                    <Paper elevation={8} sx={{ padding: 4, width: "100%", maxWidth: 440, borderRadius: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                            <Business sx={{ fontSize: 32, color: "primary.main", mr: 1 }} />
+                            <Typography component="h1" variant="h5" fontWeight="bold">
+                                Seleccionar Sucursal
+                            </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            Bienvenido, <strong>{pendingAuth.username}</strong>. Elige la sucursal a la que deseas conectarte:
+                        </Typography>
+
+                        {(error || loginError) && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                {error || loginError}
+                            </Alert>
+                        )}
+
+                        <List disablePadding>
+                            {pendingAuth.sucursales.map((s, idx) => (
+                                <React.Fragment key={s.sucursalId}>
+                                    {idx > 0 && <Divider />}
+                                    <ListItemButton
+                                        onClick={() => handleSelectSucursal(s.sucursalId)}
+                                        disabled={isLoading}
+                                        sx={{ borderRadius: 1, py: 1.5 }}>
+                                        <ListItemText
+                                            primary={<Typography fontWeight={600}>{s.sucursalNombre}</Typography>}
+                                            secondary={s.empresaNombre}
+                                        />
+                                        {isLoading && <CircularProgress size={20} />}
+                                    </ListItemButton>
+                                </React.Fragment>
+                            ))}
+                        </List>
+
+                        <Button
+                            startIcon={<ArrowBack />}
+                            onClick={() => window.location.reload()}
+                            size="small"
+                            sx={{ mt: 2 }}
+                            color="inherit">
+                            Volver al login
+                        </Button>
+                    </Paper>
+                </Box>
+            </Container>
+        );
+    }
+
+    // ── Paso 1: formulario de credenciales ────────────────────────────────────
     return (
         <Container component="main" maxWidth="sm">
             <Box
@@ -68,19 +139,8 @@ const LoginView: React.FC = () => {
                 }}>
                 <Paper
                     elevation={8}
-                    sx={{
-                        padding: 4,
-                        width: "100%",
-                        maxWidth: 400,
-                        borderRadius: 2,
-                    }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            mb: 3,
-                        }}>
+                    sx={{ padding: 4, width: "100%", maxWidth: 400, borderRadius: 2 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}>
                         <Box
                             sx={{
                                 width: 60,
@@ -114,16 +174,13 @@ const LoginView: React.FC = () => {
                             control={control}
                             rules={{
                                 required: "El nombre de usuario es requerido",
-                                minLength: {
-                                    value: 3,
-                                    message: "El nombre de usuario debe tener al menos 3 caracteres",
-                                },
+                                minLength: { value: 3, message: "Mínimo 3 caracteres" },
                             }}
                             render={({ field }) => (
                                 <TextField
                                     {...field}
                                     fullWidth
-                                    label="Nombre de Usuario"
+                                    label="Usuario"
                                     margin="normal"
                                     autoComplete="username"
                                     autoFocus
@@ -146,10 +203,7 @@ const LoginView: React.FC = () => {
                             control={control}
                             rules={{
                                 required: "La contraseña es requerida",
-                                minLength: {
-                                    value: 6,
-                                    message: "La contraseña debe tener al menos 6 caracteres",
-                                },
+                                minLength: { value: 6, message: "Mínimo 6 caracteres" },
                             }}
                             render={({ field }) => (
                                 <TextField
@@ -171,9 +225,8 @@ const LoginView: React.FC = () => {
                                         endAdornment: (
                                             <InputAdornment position="end">
                                                 <IconButton
-                                                    onClick={togglePasswordVisibility}
-                                                    edge="end"
-                                                    aria-label="toggle password visibility">
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    edge="end">
                                                     {showPassword ? <VisibilityOff /> : <Visibility />}
                                                 </IconButton>
                                             </InputAdornment>
@@ -188,14 +241,10 @@ const LoginView: React.FC = () => {
                             fullWidth
                             variant="contained"
                             disabled={isLoading || isSubmitting}
-                            sx={{
-                                mt: 3,
-                                mb: 2,
-                                py: 1.5,
-                                fontSize: "1.1rem",
-                                fontWeight: "bold",
-                            }}
-                            startIcon={(isLoading || isSubmitting) && <CircularProgress size={20} color="inherit" />}>
+                            sx={{ mt: 3, mb: 2, py: 1.5, fontSize: "1.1rem", fontWeight: "bold" }}
+                            startIcon={
+                                (isLoading || isSubmitting) && <CircularProgress size={20} color="inherit" />
+                            }>
                             {isLoading || isSubmitting ? "Iniciando sesión..." : "Iniciar Sesión"}
                         </Button>
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { AuthContextType, AuthUser, LoginRequest } from "../models/auth";
+import { AuthContextType, AuthUser, LoginRequest, PendingAuth } from "../models/auth";
 import { AuthService } from "../services/authService";
 import { TokenService } from "../services/tokenService";
 
@@ -11,30 +11,29 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<AuthUser | null>(null);
+    const [pendingAuth, setPendingAuth] = useState<PendingAuth | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Initialize authentication state
     useEffect(() => {
         const initializeAuth = async () => {
             try {
                 setIsLoading(true);
-
-                // Check if user has valid token
                 if (TokenService.isTokenValid()) {
                     const userData = TokenService.getUser();
                     if (userData) {
                         setUser(userData);
-
-                        // Optional: Validate session with backend
                         const isValidSession = await AuthService.validateSession();
                         if (!isValidSession) {
                             setUser(null);
                             setError("Sesión expirada. Por favor, inicie sesión nuevamente.");
+                        } else {
+                            // Recargar usuario por si se actualizaron los nombres
+                            const refreshed = TokenService.getUser();
+                            if (refreshed) setUser(refreshed);
                         }
                     }
                 } else {
-                    // Clean up invalid tokens
                     TokenService.removeToken();
                 }
             } catch (error) {
@@ -49,25 +48,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         initializeAuth();
     }, []);
 
-    // Auto token refresh
     useEffect(() => {
         if (!user) return;
-
         const checkTokenExpiration = async () => {
             if (TokenService.willTokenExpireSoon()) {
-                console.log("Token will expire soon, attempting refresh...");
                 const newToken = await AuthService.refreshToken();
-
                 if (!newToken) {
                     setError("Sesión expirada. Por favor, inicie sesión nuevamente.");
                     setUser(null);
                 }
             }
         };
-
-        // Check token expiration every minute
         const interval = setInterval(checkTokenExpiration, 60000);
-
         return () => clearInterval(interval);
     }, [user]);
 
@@ -75,21 +67,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             setIsLoading(true);
             setError(null);
+            setPendingAuth(null);
 
             const response = await AuthService.login(credentials);
 
-            const userData: AuthUser = {
-                username: response.username,
-                empresaId: response.empresaId,
-                sucursalId: response.sucursalId,
-                isAuthenticated: true,
-            };
-
-            setUser(userData);
+            if (response.requiresSucursalSelection) {
+                // Guardar estado de pre-autenticación: el LoginView mostrará el selector
+                setPendingAuth({
+                    preAuthToken: response.preAuthToken!,
+                    sucursales: response.sucursalesDisponibles!,
+                    username: response.username,
+                });
+            } else {
+                const userData: AuthUser = {
+                    username: response.username,
+                    empresaId: response.empresaId!,
+                    sucursalId: response.sucursalId,
+                    sucursalNombre: response.sucursalNombre,
+                    empresaNombre: response.empresaNombre,
+                    isAuthenticated: true,
+                };
+                setUser(userData);
+            }
         } catch (error: any) {
             const errorMessage = error.message || "Error durante el login";
             setError(errorMessage);
-            throw error; // Re-throw to handle in component
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const selectSucursal = async (sucursalId: number): Promise<void> => {
+        if (!pendingAuth) throw new Error("No hay sesión pendiente de selección de sucursal");
+
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            const response = await AuthService.selectSucursal(pendingAuth.preAuthToken, sucursalId);
+
+            const userData: AuthUser = {
+                username: response.username,
+                empresaId: response.empresaId!,
+                sucursalId: response.sucursalId,
+                sucursalNombre: response.sucursalNombre,
+                empresaNombre: response.empresaNombre,
+                isAuthenticated: true,
+            };
+
+            setPendingAuth(null);
+            setUser(userData);
+        } catch (error: any) {
+            const errorMessage = error.message || "Error al seleccionar sucursal";
+            setError(errorMessage);
+            throw error;
         } finally {
             setIsLoading(false);
         }
@@ -99,6 +131,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         try {
             AuthService.logout();
             setUser(null);
+            setPendingAuth(null);
             setError(null);
         } catch (error) {
             console.error("Logout error:", error);
@@ -107,7 +140,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const value: AuthContextType = {
         user,
+        pendingAuth,
         login,
+        selectSucursal,
         logout,
         isLoading,
         error,
@@ -116,7 +151,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook to use auth context
 export const useAuth = (): AuthContextType => {
     const context = useContext(AuthContext);
     if (context === undefined) {
@@ -125,19 +159,11 @@ export const useAuth = (): AuthContextType => {
     return context;
 };
 
-// Higher-order component for protecting routes
 export const withAuth = <P extends object>(Component: React.ComponentType<P>) => {
     return (props: P) => {
         const { user, isLoading } = useAuth();
-
-        if (isLoading) {
-            return <div>Cargando...</div>; // You can replace with a loading component
-        }
-
-        if (!user?.isAuthenticated) {
-            return <div>No autorizado. Redirigiendo al login...</div>;
-        }
-
+        if (isLoading) return <div>Cargando...</div>;
+        if (!user?.isAuthenticated) return <div>No autorizado. Redirigiendo al login...</div>;
         return <Component {...props} />;
     };
 };

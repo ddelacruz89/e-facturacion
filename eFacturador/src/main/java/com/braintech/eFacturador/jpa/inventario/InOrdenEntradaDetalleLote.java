@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.inventario;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
@@ -30,6 +31,7 @@ public class InOrdenEntradaDetalleLote implements Serializable {
 
   @JoinColumn(name = "orden_entrada_detalle_id", referencedColumnName = "id")
   @ManyToOne(optional = false)
+  @JsonIgnoreProperties({"inOrdenDetalleLotes", "ordenEntradaId"})
   private InOrdenEntradaDetalle ordenEntradaDetalle;
 
   @JoinColumns({

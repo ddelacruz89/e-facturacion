@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.dto.producto;
 
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -11,5 +12,5 @@ public class MgProductoCompraDTO {
   private String nombreProducto;
   private BigDecimal precio;
   private BigDecimal itbis;
-  private MgProductoUnidadSuplidorCompraDTO unidadSuplidor;
+  private List<MgProductoUnidadSuplidorCompraDTO> unidades;
 }

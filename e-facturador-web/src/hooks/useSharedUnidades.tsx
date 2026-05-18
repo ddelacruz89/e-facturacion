@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
-import { getUnidades } from "../apis/UnidadController";
-import { MgUnidad } from "../models/producto";
+import { getUnidadesResumen } from "../apis/UnidadController";
+import { MgUnidadSimpleDTO } from "../models/producto";
 
 // Global state to share between all components
-let globalUnidades: MgUnidad[] = [];
+let globalUnidades: MgUnidadSimpleDTO[] = [];
 let globalLoading = false;
 let globalError: string | null = null;
 let subscribers: Array<() => void> = [];
@@ -32,7 +32,7 @@ const loadUnidadesOnce = async (): Promise<void> => {
 
         try {
             console.log("Loading unidades from API...");
-            const data = await getUnidades();
+            const data = await getUnidadesResumen();
             globalUnidades = data;
             globalError = null;
         } catch (error) {
@@ -77,7 +77,7 @@ export const useSharedUnidades = () => {
     }, []);
 
     return {
-        unidades: globalUnidades,
+        unidades: globalUnidades as MgUnidadSimpleDTO[],
         loading: globalLoading,
         error: globalError,
         refresh,

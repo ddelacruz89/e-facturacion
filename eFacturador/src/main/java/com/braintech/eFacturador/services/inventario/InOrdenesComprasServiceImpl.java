@@ -273,21 +273,23 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
     ordenEntrada.setTotal(ordenCompra.getTotal());
     ordenEntrada.setDescuento(ordenCompra.getDescuento());
     ordenEntrada.setAlmacenId(almacenId);
+    ordenEntrada.setOrdenCompraId(ordenCompraId);
     ordenEntrada.setEmpresaId(ordenCompra.getEmpresaId());
     ordenEntrada.setSucursalId(ordenCompra.getSucursalId());
     ordenEntrada.setUsuarioReg(username);
+    ordenEntrada.setFechaReg(LocalDateTime.now());
+    ordenEntrada.setEstadoId("PEN");
 
     // Convertir detalles
     List<InOrdenEntradaDetalle> detallesEntrada = new ArrayList<>();
     for (InOrdenesComprasDetalles detalleCompra : ordenCompra.getDetalles()) {
       InOrdenEntradaDetalle detalleEntrada =
           getInOrdenEntradaDetalle(detalleCompra, ordenCompra, ordenEntrada);
-
       detallesEntrada.add(detalleEntrada);
     }
     ordenEntrada.setInOrdenDetalleList(detallesEntrada);
 
-    // Retornar la orden de entrada convertida (sin guardar)
+    // Retornar el preview sin persistir — el usuario asigna lotes y luego guarda
     return Response.builder().status(HttpStatus.OK).content(ordenEntrada).build();
   }
 

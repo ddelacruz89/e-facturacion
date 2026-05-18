@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
-import { Control, FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
+import { Control, Controller, FieldErrors, UseFormSetValue, UseFormWatch } from "react-hook-form";
 import { NumberInput } from "../../customers/CustomComponents";
 import { InOrdenCompraFormDTO } from "../../models/inventario";
 import ModalSearch from "../search/ModalSearch";
@@ -83,7 +83,7 @@ const OrdenCompraDetalleForm: React.FC<OrdenCompraDetalleFormProps> = ({ control
                         helperText={detalleErrors?.productoId?.message}
                     />
                     <SearchButton
-                        config={SEARCH_CONFIGS.PRODUCTO}
+                        config={SEARCH_CONFIGS.PRODUCTO_COMPRA}
                         onOpenSearch={productoSearch.openModal}
                         variant="icon"
                         tooltip="Buscar Producto"
@@ -92,7 +92,21 @@ const OrdenCompraDetalleForm: React.FC<OrdenCompraDetalleFormProps> = ({ control
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
-                <TextField fullWidth label="Unidad" value={selectedProducto?.unidadNombre || ""} size="small" disabled />
+                <Controller
+                    control={control}
+                    name={`detalles.${index}.unidadNombre` as any}
+                    render={({ field }) => (
+                        <TextField
+                            {...field}
+                            fullWidth
+                            label="Unidad *"
+                            size="small"
+                            placeholder="Ej: Unidad, Caja, Servicio..."
+                            error={!!detalleErrors?.unidadNombre}
+                            helperText={(detalleErrors?.unidadNombre as any)?.message}
+                        />
+                    )}
+                />
             </Grid>
 
             <NumberInput

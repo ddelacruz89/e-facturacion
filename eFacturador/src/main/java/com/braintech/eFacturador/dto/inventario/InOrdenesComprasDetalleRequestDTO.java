@@ -11,7 +11,9 @@ public class InOrdenesComprasDetalleRequestDTO {
   private BigDecimal itbisProducto;
   private Double descuentoPorciento;
   private Double descuentoCantidad;
+
   private BigDecimal subTotal;
+
   private BigDecimal itbis;
   private BigDecimal total;
   private String unidadNombre;

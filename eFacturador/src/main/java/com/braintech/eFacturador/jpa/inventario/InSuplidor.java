@@ -25,6 +25,10 @@ public class InSuplidor extends BaseEntity implements Serializable {
   @Basic(optional = false)
   private String nombre;
 
+  //  @Basic(optional = false)
+  @Column(name = "razon_social")
+  private String razonSocial;
+
   private String rnc;
 
   private String direccion;
@@ -49,6 +53,13 @@ public class InSuplidor extends BaseEntity implements Serializable {
 
   @Column(name = "estado_id")
   private String estadoId;
+
+  /**
+   * Tipo de identificación: "C" = Cédula, "R" = RNC. El valor se guarda sin formato (solo dígitos
+   * en {@code rnc}).
+   */
+  @Column(name = "tipo_identificacion")
+  private String tipoIdentificacion;
 
   @ManyToOne(optional = false)
   @JoinColumn(name = "tipo_comprobante_id", referencedColumnName = "id")

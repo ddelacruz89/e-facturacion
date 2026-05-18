@@ -2,6 +2,8 @@ package com.braintech.eFacturador.controllers.facturacion;
 
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
 import com.braintech.eFacturador.models.IProductoVenta;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.facturacion.FacturacionServices;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -39,12 +41,14 @@ public class FacturaController {
     return ResponseEntity.ok(factura);
   }
 
+  @RequierePermiso(menuUrl = "/facturacion/facturas", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MfFactura> create(@RequestBody MfFactura factura) {
     MfFactura saved = facturacionServices.create(factura);
     return ResponseEntity.ok(saved);
   }
 
+  @RequierePermiso(menuUrl = "/facturacion/facturas", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MfFactura> update(
       @PathVariable Integer id, @RequestBody MfFactura factura) {
@@ -53,6 +57,7 @@ public class FacturaController {
   }
 
   // Soft delete - changes estadoId to 'INA'
+  @RequierePermiso(menuUrl = "/facturacion/facturas", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> disable(@PathVariable Integer id) {
     facturacionServices.disable(id);

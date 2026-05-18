@@ -14,6 +14,7 @@ import { ToastContainer } from "react-toastify";
 const HomeView = lazy(() => import("./HomeView"));
 const EmpresaView = lazy(() => import("./components/seguridad/EmpresaView"));
 const UsuarioView = lazy(() => import("./components/seguridad/UsuarioView"));
+const RolView = lazy(() => import("./components/seguridad/RolView"));
 const TipoFacturaView = lazy(() => import("./components/facturacion/TipoFacturaView"));
 const TipoItbisView = lazy(() => import("./components/facturacion/TipoItbisView"));
 const RetencionView = lazy(() => import("./components/facturacion/TipoRetencionView"));
@@ -22,11 +23,19 @@ const TipoComprobanteView = lazy(() => import("./components/facturacion/TipoComp
 const ProductoView = lazy(() => import("./components/producto/ProductoView"));
 const CategoriaView = lazy(() => import("./components/producto/CategoriaView"));
 const UnidadView = lazy(() => import("./components/producto/UnidadView"));
+const PaqueteView = lazy(() => import("./components/producto/PaqueteView"));
 const SuplidorView = lazy(() => import("./components/inventario/SuplidorView"));
 const CotizacionView = lazy(() => import("./components/inventario/CotizacionView"));
 const OrdenCompraView = lazy(() => import("./components/inventario/OrdenCompraView"));
 const OrdenEntradaView = lazy(() => import("./components/inventario/OrdenEntradaView"));
+const TransferenciaView = lazy(() => import("./components/inventario/TransferenciaView"));
+const LoteView = lazy(() => import("./components/inventario/LoteView"));
+const MovimientoView = lazy(() => import("./components/inventario/MovimientoView"));
 const ClientesView = lazy(() => import("./components/Cliente/ClientesView"));
+const AjusteInventarioView = lazy(() => import("./components/inventario/AjusteInventarioView"));
+const AlmacenView = lazy(() => import("./components/inventario/AlmacenView"));
+const StockArbolView = lazy(() => import("./components/inventario/StockArbolView"));
+const FacturaSuplidorView = lazy(() => import("./components/facturacion/FacturaSuplidorView"));
 
 // Routes component that uses authentication context
 const AppRoutes = () => {
@@ -49,6 +58,7 @@ const AppRoutes = () => {
                     }>
                     <Route path="empresa" element={<EmpresaView />} />
                     <Route path="usuario" element={<UsuarioView />} />
+                    <Route path="roles" element={<RolView />} />
                     <Route path="tipo/factura" element={<TipoFacturaView />} />
                     <Route path="tipo/itbis" element={<TipoItbisView />} />
                     <Route path="tipo/retencion" element={<RetencionView />} />
@@ -57,11 +67,19 @@ const AppRoutes = () => {
                     <Route path="producto" element={<ProductoView />} />
                     <Route path="categoria" element={<CategoriaView />} />
                     <Route path="unidad" element={<UnidadView />} />
+                    <Route path="paquete" element={<PaqueteView />} />
                     <Route path="suplidores" element={<SuplidorView />} />
                     <Route path="cotizacion" element={<CotizacionView />} />
                     <Route path="orden-compra" element={<OrdenCompraView />} />
                     <Route path="orden-entrada" element={<OrdenEntradaView />} />
+                    <Route path="transferencias" element={<TransferenciaView />} />
+                    <Route path="lotes" element={<LoteView />} />
+                    <Route path="movimientos" element={<MovimientoView />} />
                     <Route path="clientes" element={<ClientesView />} />
+                    <Route path="ajuste-inventario" element={<AjusteInventarioView />} />
+                    <Route path="almacenes" element={<AlmacenView />} />
+                    <Route path="stock-arbol" element={<StockArbolView />} />
+                    <Route path="factura-suplidor" element={<FacturaSuplidorView />} />
                 </Route>
 
                 {/* Catch all route */}
@@ -83,7 +101,7 @@ function App() {
                 },
             },
         },
-    });
+    })
 
     return (
         <ThemeProvider theme={theme}>

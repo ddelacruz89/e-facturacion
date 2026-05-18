@@ -43,7 +43,7 @@ public class InOrdenesComprasDetalles implements Serializable {
 
   @JoinColumn(name = "orden_compra_id", referencedColumnName = "id")
   @ManyToOne(optional = false)
-  @JsonIgnoreProperties({"inOrdenesComprasDetallesList", "suplidorId"})
+  @JsonIgnoreProperties({"detalles", "suplidorId", "sucursalId"})
   private InOrdenesCompras ordenCompraId;
 
   @JoinColumn(name = "producto_id")
@@ -51,10 +51,14 @@ public class InOrdenesComprasDetalles implements Serializable {
   @JsonIgnoreProperties({
     "unidadProductorSuplidor",
     "inInventarioList",
+    "inventarios",
     "categoriaId",
     "itbisId",
     "unidadMedida",
-    "mgProductoTagsList"
+    "mgProductoTagsList",
+    "tags",
+    "productosModulos",
+    "productosAlmacenesLimites"
   })
   private MgProducto productoId;
 

@@ -11,6 +11,8 @@ export interface InOrdenEntrada {
     descuentoPorciento?: number;
     inOrdenDetalleList?: InOrdenEntradaDetalle[];
     almacenId?: number;
+    /** ID de la orden de compra que originó esta OE. Null si fue creada manualmente. */
+    ordenCompraId?: number;
 }
 
 export interface InOrdenEntradaDetalle {
@@ -28,6 +30,10 @@ export interface InOrdenEntradaDetalle {
     productoId?: number | MgProducto;
     unidadNombre?: string;
     unidadCantidad?: number;
+    /** Cantidad en unidad de fracción (usada en el movimiento de inventario).
+     *  Para fraccionarios: cantidad × unidadCantidad.
+     *  Para enteros: igual a cantidad. */
+    cantidadFraccionaria?: number;
     itbisAlSubTotal?: boolean;
     servicio?: boolean;
     estado?: string;

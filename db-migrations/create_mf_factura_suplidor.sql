@@ -1,0 +1,2 @@
+INSERT INTO seguridad.sg_menu (activo, empresa_id, orden, secuencia, modulo_id, fecha_reg, menu, tipo_menu_id, url, url_sql, usuario_reg)
+VALUES (TRUE, 1, 0, 9, 'TAR', NOW(), 'Paquetes', 'A', '/paquete', NULL, 'Master');

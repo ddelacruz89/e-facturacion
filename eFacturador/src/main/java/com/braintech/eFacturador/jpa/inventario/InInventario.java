@@ -2,7 +2,7 @@ package com.braintech.eFacturador.jpa.inventario;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
-import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import lombok.Getter;
@@ -21,7 +21,7 @@ public class InInventario extends BaseSucursal implements Serializable {
   @Basic(optional = false)
   private Integer id;
 
-  private Double cantidad;
+  private Integer cantidad;
 
   @JoinColumn(name = "almacen_id")
   @ManyToOne(optional = false)
@@ -29,6 +29,7 @@ public class InInventario extends BaseSucursal implements Serializable {
 
   @JoinColumn(name = "producto_id")
   @ManyToOne(optional = false)
+  @JsonIgnore
   private MgProducto productoId;
 
   @Column(name = "estado_producto_inventario")
@@ -36,8 +37,5 @@ public class InInventario extends BaseSucursal implements Serializable {
 
   @Column(name = "lote")
   private String loteId;
-
-  @JoinColumn(name = "sucursal_id")
-  @ManyToOne(optional = false)
-  private SgSucursal sucursalId;
+  // sucursalId heredado de BaseSucursal — no redeclarar aquí
 }

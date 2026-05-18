@@ -2,6 +2,8 @@ package com.braintech.eFacturador.controllers.facturacion;
 
 import com.braintech.eFacturador.jpa.facturacion.MgTipoFactura;
 import com.braintech.eFacturador.models.Response;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.facturacion.TipoFacturaService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class TipoFacturaController {
     return ResponseEntity.status(response.status()).body(response);
   }
 
+  @RequierePermiso(menuUrl = "/facturacion/tipo", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<Response<MgTipoFactura>> save(@RequestBody MgTipoFactura tipoFactura) {
     Response<MgTipoFactura> response = tipoFacturaService.save(tipoFactura);

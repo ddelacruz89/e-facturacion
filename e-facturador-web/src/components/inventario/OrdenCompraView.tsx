@@ -56,6 +56,8 @@ interface DetalleFormState {
     productoId?: number | MgProducto;
     unidadId?: number;
     unidadNombre?: string;
+    unidadCantidad?: number;
+    unidadFraccionNombre?: string;
     cantidad: number;
     precioUnitario: number;
     itbisProducto: number;
@@ -280,13 +282,13 @@ export const OrdenCompraView: React.FC = () => {
             const productoCompleto = response.data;
 
             setSelectedProducto(productoCompleto);
-            // Store unidadSuplidor as an array for compatibility with the dropdown
-            const unidadesArray = productoCompleto.unidadSuplidor ? [productoCompleto.unidadSuplidor] : [];
+            // El backend ahora retorna todas las unidades disponibles en compra
+            const unidadesArray: any[] = productoCompleto.unidades || [];
             setUnidadesDisponibles(unidadesArray);
 
-            // Get the unidadSuplidor and its precio
-            const unidadSuplidor = productoCompleto.unidadSuplidor;
-            const precioSuplidor = unidadSuplidor?.suplidor?.precio || 0;
+            // Seleccionar la unidad base (primera con disponibleEnCompra = true)
+            const primeraUnidad = unidadesArray[0] || null;
+            const precioSuplidor = primeraUnidad?.suplidor?.precio || 0;
 
             const cantidad = 1;
             const itbis = productoCompleto.itbis || 0;
@@ -299,8 +301,10 @@ export const OrdenCompraView: React.FC = () => {
             setDetalleForm((prev) => ({
                 ...prev,
                 productoId: productoCompleto,
-                unidadId: unidadSuplidor?.id,
-                unidadNombre: unidadSuplidor?.unidadNombre || "",
+                unidadId: primeraUnidad?.id,
+                unidadNombre: primeraUnidad?.unidadNombre || "",
+                unidadCantidad: primeraUnidad?.cantidad ?? undefined,
+                unidadFraccionNombre: primeraUnidad?.unidadFraccionNombre || "",
                 cantidad: cantidad,
                 precioUnitario: precioSuplidor,
                 itbisProducto: itbis,
@@ -354,6 +358,8 @@ export const OrdenCompraView: React.FC = () => {
             ...prev,
             unidadId: unidadSeleccionada.id,
             unidadNombre: unidadSeleccionada.unidadNombre,
+            unidadCantidad: unidadSeleccionada.cantidad ?? undefined,
+            unidadFraccionNombre: unidadSeleccionada.unidadFraccionNombre || "",
             precioUnitario: precioSuplidor,
         }));
     };
@@ -430,6 +436,17 @@ export const OrdenCompraView: React.FC = () => {
             return;
         }
 
+        const nuevoProductoId = getDetalleProductoId(detalleForm);
+        const yaExiste = (detalles || []).some(
+            (d: any) => getDetalleProductoId(d) === nuevoProductoId && d.estadoId !== "INA",
+        );
+        if (yaExiste) {
+            setSnackbarMessage("Este producto ya fue agregado a la orden");
+            setSnackbarSeverity("error");
+            setSnackbarOpen(true);
+            return;
+        }
+
         append({
             productoId: detalleForm.productoId,
             cantidad: detalleForm.cantidad,
@@ -440,6 +457,8 @@ export const OrdenCompraView: React.FC = () => {
             subTotal: detalleForm.subTotal,
             itbis: detalleForm.itbis,
             total: detalleForm.total,
+            unidadNombre: detalleForm.unidadNombre,
+            unidadCantidad: detalleForm.unidadCantidad,
             estadoId: "ACT",
         } as InOrdenCompraDetalleFormDTO);
 
@@ -532,23 +551,6 @@ export const OrdenCompraView: React.FC = () => {
 
                                 <Grid size={{ xs: 12, md: 2 }}>
                                     <TextField
-                                        select
-                                        fullWidth
-                                        label="Unidad"
-                                        value={detalleForm.unidadId || ""}
-                                        onChange={(e) => handleUnidadChange(Number(e.target.value))}
-                                        size="small"
-                                        disabled={unidadesDisponibles.length === 0}>
-                                        {unidadesDisponibles.map((unidad: any) => (
-                                            <option key={unidad.id} value={unidad.id}>
-                                                {unidad.unidadNombre}
-                                            </option>
-                                        ))}
-                                    </TextField>
-                                </Grid>
-
-                                <Grid size={{ xs: 12, md: 2 }}>
-                                    <TextField
                                         fullWidth
                                         label="Cantidad"
                                         type="number"
@@ -560,8 +562,38 @@ export const OrdenCompraView: React.FC = () => {
 
                                 <Grid size={{ xs: 12, md: 2 }}>
                                     <TextField
+                                        select
                                         fullWidth
-                                        label="Precio Unitario"
+                                        label="Unidad"
+                                        value={detalleForm.unidadId || ""}
+                                        onChange={(e) => handleUnidadChange(Number(e.target.value))}
+                                        size="small"
+                                        disabled={unidadesDisponibles.length === 0}
+                                        SelectProps={{ native: true }}>
+                                        {unidadesDisponibles.map((unidad: any) => (
+                                            <option key={unidad.id} value={unidad.id}>
+                                                {unidad.unidadNombre}
+                                                {unidad.cantidad ? ` / ${unidad.cantidad}` : ""}
+                                            </option>
+                                        ))}
+                                    </TextField>
+                                </Grid>
+
+                                <Grid size={{ xs: 12, md: 2 }}>
+                                    <TextField
+                                        fullWidth
+                                        label="Fraccionario"
+                                        value={detalleForm.unidadFraccionNombre || ""}
+                                        size="small"
+                                        disabled
+                                        InputProps={{ readOnly: true }}
+                                    />
+                                </Grid>
+
+                                <Grid size={{ xs: 12, md: 2 }}>
+                                    <TextField
+                                        fullWidth
+                                        label="Precio"
                                         type="number"
                                         value={detalleForm.precioUnitario}
                                         onChange={(e) => handleDetalleChange("precioUnitario", parseFloat(e.target.value) || 0)}

@@ -1,108 +1,26 @@
-import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import { Button, Box, Typography } from "@mui/material";
 import { ExitToApp } from "@mui/icons-material";
 import "./menu.css"; // Asegúrate de que la ruta sea correcta
-import { use, useEffect, useState } from "react";
-import "./menu.css"; // Asegúrate de que la ruta sea correcta
+import { useState } from "react";
 import logo from "./assets/logo-braintech.png";
-import { getModulos } from "./apis/ModulosController";
+import { useSharedModulos } from "./hooks/useSharedModulos";
 import { ModuloDto } from "./models/seguridad";
 
 const HomeView = () => {
     const [mostrarPanel, setMostrarPanel] = useState(false);
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    const [modulos, setModulos] = useState<ModuloDto[]>([]);
     const [moduloActivo, setModuloActivo] = useState<ModuloDto>({ id: "", menus: [], modulo: "" });
 
-    useEffect(() => {
-        getModulos().then((loadedModulos) => {
-            // Add temporary Suplidores menu for testing
-            const updatedModulos = loadedModulos.map((modulo) => {
-                if (modulo.id === "INV") {
-                    return {
-                        ...modulo,
-                        menus: [
-                            ...modulo.menus,
-                            {
-                                id: 11,
-                                menu: "Suplidores",
-                                urlSql: "/suplidores",
-                                url: "/suplidores",
-                            },
-                            {
-                                id: 12,
-                                menu: "Cotizaciones",
-                                urlSql: "/cotizacion",
-                                url: "/cotizacion",
-                            },
-                            {
-                                id: 13,
-                                menu: "Órdenes de Compra",
-                                urlSql: "/orden-compra",
-                                url: "/orden-compra",
-                            },
-                            {
-                                id: 14,
-                                menu: "Órdenes de Entrada",
-                                urlSql: "/orden-entrada",
-                                url: "/orden-entrada",
-                            },
-                        ],
-                    };
-                }
-                return modulo;
-            });
-
-            // If INV module doesn't exist, create it
-            const invModuleExists = updatedModulos.some((modulo) => modulo.id === "INV");
-            if (!invModuleExists) {
-                updatedModulos.push({
-                    id: "INV",
-                    modulo: "Inventario",
-                    menus: [
-                        {
-                            id: 11,
-                            menu: "Suplidores",
-                            urlSql: "/suplidores",
-                            url: "/suplidores",
-                        },
-                        {
-                            id: 12,
-                            menu: "Cotizaciones",
-                            urlSql: "/cotizacion",
-                            url: "/cotizacion",
-                        },
-                        {
-                            id: 13,
-                            menu: "Órdenes de Compra",
-                            urlSql: "/orden-compra",
-                            url: "/orden-compra",
-                        },
-                        {
-                            id: 14,
-                            menu: "Órdenes de Entrada",
-                            urlSql: "/orden-entrada",
-                            url: "/orden-entrada",
-                        },
-                    ],
-                });
-            }
-
-            setModulos(updatedModulos);
-        });
-    }, []);
-
-    const handleNavigation = (path: string) => {
-        navigate(path);
-        setMostrarPanel(false); // Ocultar el panel al navegar}
-    };
+    const { data: modulos } = useSharedModulos();
 
     const handleLogout = () => {
         logout();
         navigate("/login");
     };
+
     return (
         <div className="container-main">
             <div className="top">
@@ -117,8 +35,11 @@ const HomeView = () => {
                         borderBottom: "1px solid #ddd",
                     }}>
                     <Typography variant="body2" color="text.secondary">
-                        Bienvenido, <strong>{user?.username}</strong> | Empresa: <strong>{user?.empresaId}</strong>
-                        {user?.sucursalId && ` | Sucursal: ${user.sucursalId}`}
+                        Bienvenido, <strong>{user?.username}</strong>
+                        {" | "}<strong>{user?.empresaNombre ?? `Empresa #${user?.empresaId}`}</strong>
+                        {(user?.sucursalNombre ?? user?.sucursalId) && (
+                            <> {" — "}<strong>{user?.sucursalNombre ?? `Sucursal #${user?.sucursalId}`}</strong></>
+                        )}
                     </Typography>
                     <Button
                         variant="outlined"
@@ -134,7 +55,6 @@ const HomeView = () => {
             <div className="left">
                 <div
                     style={{ cursor: "pointer", fontWeight: "bold" }}
-                    // onClick={() => setMostrarPanel(!mostrarPanel)}
                 >
                     <div className="short-menu">
                         <ul>
@@ -164,50 +84,23 @@ const HomeView = () => {
                         </div>
                         <ul>
                             {moduloActivo.menus.map((menu) => (
-                                <li
-                                    className="menu-item"
-                                    onClick={() => handleNavigation(menu.url)}
-                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}>
-                                    {menu.menu}
+                                <li key={menu.id} className="menu-item">
+                                    <NavLink
+                                        to={menu.url}
+                                        onClick={() => setMostrarPanel(false)}
+                                        style={({ isActive }) => ({
+                                            display: "block",
+                                            padding: "inherit",
+                                            color: isActive ? "#1976d2" : "inherit",
+                                            fontWeight: isActive ? 700 : "inherit",
+                                            textDecoration: "none",
+                                            width: "100%",
+                                        })}
+                                    >
+                                        {menu.menu}
+                                    </NavLink>
                                 </li>
                             ))}
-                            {/* <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/empresa")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Empresa</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/usuario")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Usuario</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/tipo/factura")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Tipo Factura</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/tipo/itbis")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Tipo ITBIS</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/tipo/comprobante")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Tipo Comprobante</li>
-                            <li
-                                className="menu-item"
-                                onClick={() => handleNavigation("/facturacion")}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#e0e0e0")}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
-                            >Facturacion</li> */}
                         </ul>
                     </div>
                 )}
@@ -218,7 +111,7 @@ const HomeView = () => {
                 <Outlet />
             </div>
             <div className="foot">
-                <img src={logo} alt="Mi Logo" width="125" />{" "}
+                <img src={logo} alt="Braintech" style={{ height: "40px" }} />
             </div>
         </div>
     );

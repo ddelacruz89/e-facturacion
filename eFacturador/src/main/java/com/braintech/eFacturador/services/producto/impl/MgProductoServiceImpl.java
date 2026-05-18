@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.services.producto.impl;
 
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
+import com.braintech.eFacturador.dao.inventario.InInventarioRepository;
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
 import com.braintech.eFacturador.dto.producto.MgProductoCompraDTO;
 import com.braintech.eFacturador.dto.producto.MgProductoResumenDTO;
@@ -16,10 +17,7 @@ import com.braintech.eFacturador.services.producto.MgProductoService;
 import com.braintech.eFacturador.util.TenantContext;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,6 +35,7 @@ public class MgProductoServiceImpl implements MgProductoService {
   private final MgProductoRepository productoRepository;
   private final SecuenciasDao secuenciasDao;
   private final TenantContext tenantContext;
+  private final InInventarioRepository inventarioRepository;
   @PersistenceContext private EntityManager entityManager;
 
   @Override
@@ -286,10 +285,63 @@ public class MgProductoServiceImpl implements MgProductoService {
               cb.lower(product.get("descripcion")),
               "%" + criteria.getDescripcion().toLowerCase(Locale.ROOT) + "%"));
     }
+    if (criteria.getCategoriaId() != null) {
+      predicates.add(cb.equal(product.get("categoriaId").get("id"), criteria.getCategoriaId()));
+    }
 
     query.where(cb.and(predicates.toArray(new Predicate[0])));
     query.select(
-        cb.construct(MgProductoResumenDTO.class, product.get("id"), product.get("nombreProducto")));
+        cb.construct(
+            MgProductoResumenDTO.class,
+            product.get("id"),
+            product.get("nombreProducto"),
+            product.get("precio")));
+    query.orderBy(cb.asc(product.get("nombreProducto")));
+    return entityManager.createQuery(query).getResultList();
+  }
+
+  @Override
+  public List<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria) {
+    CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+    CriteriaQuery<MgProductoResumenDTO> query = cb.createQuery(MgProductoResumenDTO.class);
+    Root<MgProducto> product = query.from(MgProducto.class);
+    List<Predicate> predicates = new ArrayList<>();
+
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    if (empresaId != null) {
+      predicates.add(cb.equal(product.get("empresaId"), empresaId));
+    } else throw new ApplicationException("Empresa no encontrada");
+
+    // Solo productos con al menos una unidad disponible en compra (EXISTS)
+    Subquery<Integer> subq = query.subquery(Integer.class);
+    Root<MgProductoUnidadSuplidor> uRoot = subq.from(MgProductoUnidadSuplidor.class);
+    subq.select(cb.literal(1));
+    subq.where(
+        cb.and(
+            cb.equal(uRoot.get("productoId"), product),
+            cb.equal(uRoot.get("disponibleEnCompra"), true)));
+    predicates.add(cb.exists(subq));
+
+    if (criteria.getNombreProducto() != null && !criteria.getNombreProducto().trim().isEmpty()) {
+      predicates.add(
+          cb.like(
+              cb.lower(product.get("nombreProducto")),
+              "%" + criteria.getNombreProducto().toLowerCase(Locale.ROOT) + "%"));
+    }
+    if (criteria.getCodigoBarra() != null && !criteria.getCodigoBarra().trim().isEmpty()) {
+      predicates.add(cb.equal(product.get("codigoBarra"), criteria.getCodigoBarra()));
+    }
+    if (criteria.getId() != null) {
+      predicates.add(cb.equal(product.get("id"), criteria.getId()));
+    }
+
+    query.where(cb.and(predicates.toArray(new Predicate[0])));
+    query.select(
+        cb.construct(
+            MgProductoResumenDTO.class,
+            product.get("id"),
+            product.get("nombreProducto"),
+            product.get("precioVenta")));
     query.orderBy(cb.asc(product.get("nombreProducto")));
     return entityManager.createQuery(query).getResultList();
   }
@@ -310,9 +362,9 @@ public class MgProductoServiceImpl implements MgProductoService {
             .findProductoCompraById(productoId, empresaId)
             .orElseThrow(() -> new RecordNotFoundException("Producto no encontrado"));
 
-    MgProductoUnidadSuplidorCompraDTO unidadSuplidor =
+    List<MgProductoUnidadSuplidorCompraDTO> unidades =
         p.getUnidadProductorSuplidor() == null
-            ? null
+            ? List.of()
             : p.getUnidadProductorSuplidor().stream()
                 .filter(
                     u ->
@@ -346,14 +398,25 @@ public class MgProductoServiceImpl implements MgProductoService {
                                             s.getPrecio(),
                                             s.getItbisDefault(),
                                             s.getEstadoId()))))
-                .findFirst()
-                .orElseThrow(
-                    () -> new RecordNotFoundException("Suplidor no asociado a este producto"));
+                .toList();
+
+    if (unidades.isEmpty()) {
+      throw new RecordNotFoundException("Suplidor no asociado a este producto");
+    }
 
     BigDecimal itbis = p.getItbisId() != null ? p.getItbisId().getItbis() : BigDecimal.ZERO;
 
     return new MgProductoCompraDTO(
-        p.getId(), p.getNombreProducto(), p.getPrecio(), itbis, unidadSuplidor);
+        p.getId(), p.getNombreProducto(), p.getPrecio(), itbis, unidades);
+  }
+
+  @Override
+  public List<MgProductoResumenDTO> searchByAlmacen(Integer almacenId, String nombre) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Integer sucursalId = tenantContext.getCurrentSucursalId();
+    String nombreParam = (nombre != null && !nombre.trim().isEmpty()) ? nombre.trim() : null;
+    return inventarioRepository.findProductosActivosByAlmacen(
+        almacenId, empresaId, sucursalId, nombreParam);
   }
 
   @Override
