@@ -12,7 +12,7 @@ public class AppConstants {
   public static final Integer ITBIS_TASA_2 = 16;
   public static final Integer ITBIS_TASA_3 = 0;
   public static final Integer EXENTO = 0;
-  public static final int COMPRAS_ELECTRONICOS = 41;
-  public static final int GASTOS_MENORES_ELECTRONICOS = 43;
-  public static final int COMPROBANTE_PAGOS_EXTERIOR = 47;
+  public static final String COMPRAS_ELECTRONICOS = "41";
+  public static final String GASTOS_MENORES_ELECTRONICOS = "43";
+  public static final String COMPROBANTE_PAGOS_EXTERIOR = "47";
 }

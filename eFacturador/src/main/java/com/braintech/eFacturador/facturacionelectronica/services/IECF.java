@@ -1,13 +1,14 @@
 package com.braintech.eFacturador.facturacionelectronica.services;
 
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
+import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidor;
 
 public interface IECF {
   //  ECFSecuencia getECF(String tipo);
 
   void senderEcfFactura(MfFactura factura);
 
-  //  ECF senderEcfTerceros(MfFacturaSuplidor facturaSuplidor);
+  void senderEcfTerceros(MfFacturaSuplidor facturaSuplidor, Boolean override);
   //
   //
   //  ECF senderEcfNotas(NotaEcf nota);

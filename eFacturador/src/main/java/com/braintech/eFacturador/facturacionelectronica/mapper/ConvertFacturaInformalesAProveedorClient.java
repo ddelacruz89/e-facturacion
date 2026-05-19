@@ -33,7 +33,6 @@
 //    return factura;
 //  }
 //
-//
 //  public static int buildPeriodoCosto(LocalDate fecha) {
 //    int year = fecha.getYear();
 //    int month = fecha.getMonth().getValue();

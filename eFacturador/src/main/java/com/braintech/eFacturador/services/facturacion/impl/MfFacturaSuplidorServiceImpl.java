@@ -9,6 +9,7 @@ import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorResumenDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorSearchCriteria;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
+import com.braintech.eFacturador.facturacionelectronica.services.ECFServices;
 import com.braintech.eFacturador.jpa.contabilidad.McCatalogoCuenta;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidor;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidorDetalle;
@@ -23,6 +24,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +37,8 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
   private final MfFacturaSuplidorDao dao;
   private final TenantContext tenantContext;
   private final SecuenciasDao secuenciasDao;
+
+  @Lazy @Autowired private ECFServices ecfServices;
 
   // ── Buscar ────────────────────────────────────────────────────────────────
 
@@ -68,6 +73,8 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
   @Override
   @Transactional
   public MfFacturaSuplidor save(MfFacturaSuplidorRequestDTO dto) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+
     MfFacturaSuplidor entity = new MfFacturaSuplidor();
     mapHeader(dto, entity);
     mapDetalles(dto, entity);
@@ -76,7 +83,21 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
         secuenciasDao.getNextSecuencia(
             saved.getEmpresaId(), MfFacturaSuplidor.class.getSimpleName().toUpperCase(Locale.ROOT));
     saved.setSecuencia(seq);
+    String nextSecuenciaEcf =
+        secuenciasDao.getNextSecuenciaEcfValidada(empresaId, entity.getTipoComprobanteId());
+    saved.setNcf(nextSecuenciaEcf);
+    ecfServices.senderEcfTerceros(saved, false);
     return repository.save(saved);
+  }
+
+  /**
+   * Crear nueva factura suplidor con sus detalles.
+   *
+   * @param facturaSuplidor
+   */
+  @Override
+  public MfFacturaSuplidor saveFactura(MfFacturaSuplidor facturaSuplidor) {
+    return repository.save(facturaSuplidor);
   }
 
   // ── Update ────────────────────────────────────────────────────────────────

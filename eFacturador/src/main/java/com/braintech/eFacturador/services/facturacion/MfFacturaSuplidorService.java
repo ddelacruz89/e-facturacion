@@ -20,6 +20,9 @@ public interface MfFacturaSuplidorService {
   /** Crear nueva factura suplidor con sus detalles. */
   MfFacturaSuplidor save(MfFacturaSuplidorRequestDTO dto);
 
+  /** Crear nueva factura suplidor con sus detalles. */
+  MfFacturaSuplidor saveFactura(MfFacturaSuplidor facturaSuplidor);
+
   /** Actualizar factura suplidor existente. */
   MfFacturaSuplidor update(Integer id, MfFacturaSuplidorRequestDTO dto);
 }

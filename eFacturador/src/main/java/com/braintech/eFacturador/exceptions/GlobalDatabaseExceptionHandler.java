@@ -23,6 +23,14 @@ import org.springframework.web.context.request.WebRequest;
 @Slf4j
 public class GlobalDatabaseExceptionHandler {
 
+  @ExceptionHandler(ComprobanteSecuenciaException.class)
+  public ResponseEntity<Object> handleComprobanteSecuencia(ComprobanteSecuenciaException ex) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("status", ex.getMotivo().name());
+    body.put("message", ex.getMessage());
+    return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_ENTITY);
+  }
+
   @ExceptionHandler(AccesoDenegadoException.class)
   public ResponseEntity<Object> handleAccesoDenegado(AccesoDenegadoException ex) {
     Map<String, Object> body = new HashMap<>();
