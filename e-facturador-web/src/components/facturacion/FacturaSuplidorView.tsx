@@ -45,6 +45,7 @@ import { SEARCH_CONFIGS } from "../../types/modalSearchTypes";
 import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
 import {
     getFacturaSuplidorById,
+    getFacturaSuplidorBySecuencia,
     saveFacturaSuplidor,
     updateFacturaSuplidor,
 } from "../../apis/FacturaSuplidorController";
@@ -163,6 +164,9 @@ const FacturaSuplidorView: React.FC = () => {
     const [pendingData, setPendingData]     = useState<MfFacturaSuplidorRequest | null>(null);
     const [yupErrors, setYupErrors]         = useState<FacturaSuplidorErrors>({});
     const [accordionOpen, setAccordionOpen] = useState(true);
+    // secuenciaInput: lo que el usuario ve/escribe; internalId: PK real usada en el backend
+    const [secuenciaInput, setSecuenciaInput] = useState<string>("");
+    const [internalId, setInternalId]         = useState<number | undefined>(undefined);
 
     // Retenciones activas (porcentajes propagados al detalle)
     const [isrPct,  setIsrPct]  = useState(0);
@@ -306,16 +310,12 @@ const FacturaSuplidorView: React.FC = () => {
 
     const handleCancelRetencionChange = () => setPendingRet(null);
 
-    // ── Búsqueda modal ────────────────────────────────────────────────────────
-    const handleFacturaSelect = facturaSearch.handleSelect(async (resumen: any) => {
-        const completa = await getFacturaSuplidorById(resumen.id);
-        if (!completa) return;
-
-        const loadedIsrPct   = completa.retencionIsr?.valor   ?? 0;
-        const loadedItbisPct = completa.retencionItbis?.valor ?? 0;
-        setIsrPct(loadedIsrPct);
-        setItbisPct(loadedItbisPct);
-
+    // ── Carga de factura (helper compartido por modal y búsqueda por secuencia) ─
+    const cargarFacturaEnForm = useCallback((completa: any) => {
+        setInternalId(completa.id);
+        setSecuenciaInput(String(completa.secuencia ?? completa.id));
+        setIsrPct(completa.retencionIsr?.valor   ?? 0);
+        setItbisPct(completa.retencionItbis?.valor ?? 0);
         reset({
             id:                  completa.id,
             suplidorId:          completa.suplidor?.id ?? completa.suplidorId,
@@ -342,7 +342,27 @@ const FacturaSuplidorView: React.FC = () => {
             esCredito:           completa.esCredito,
             detalles:            completa.detalles ?? [],
         });
+    }, [reset]);
+
+    // ── Búsqueda modal ────────────────────────────────────────────────────────
+    const handleFacturaSelect = facturaSearch.handleSelect(async (resumen: any) => {
+        const completa = await getFacturaSuplidorById(resumen.id);
+        if (completa) cargarFacturaEnForm(completa);
     });
+
+    // ── Búsqueda por secuencia (Enter en el campo) ────────────────────────────
+    const handleBuscarPorSecuencia = async () => {
+        const seq = Number(secuenciaInput);
+        if (!seq) return;
+        const completa = await getFacturaSuplidorBySecuencia(seq);
+        if (completa) {
+            cargarFacturaEnForm(completa);
+        } else {
+            showSnack(`No se encontró factura con No. ${seq}`, "error");
+            setSecuenciaInput("");
+            setInternalId(undefined);
+        }
+    };
 
     // ── Detalle helpers ───────────────────────────────────────────────────────
     const handleDetalleField = (field: keyof DetalleLocal, value: any) =>
@@ -426,10 +446,12 @@ const FacturaSuplidorView: React.FC = () => {
     const handleConfirmSave = async () => {
         if (!pendingData) return;
         try {
-            pendingData.id
-                ? await updateFacturaSuplidor(pendingData.id, pendingData)
+            internalId
+                ? await updateFacturaSuplidor(internalId, pendingData)
                 : await saveFacturaSuplidor(pendingData);
             reset(makeInitialForm());
+            setSecuenciaInput("");
+            setInternalId(undefined);
             setIsrPct(0); setItbisPct(0);
             setDetalleForm(makeInitialDetalle(0, 0));
             setShowConfirm(false);
@@ -473,9 +495,16 @@ const FacturaSuplidorView: React.FC = () => {
                 <Box sx={{ px: 2.5, pt: 2, pb: 2, backgroundColor: "#fff" }}>
                     <Grid container spacing={3} alignItems="flex-end">
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <FieldLabel>Cargar Factura Existente</FieldLabel>
+                            <FieldLabel>No. Factura Suplidor</FieldLabel>
                             <Box display="flex" gap={1} alignItems="center">
-                                <TextInputPk control={control} name="id" label="" error={errors.id} size={12} />
+                                <TextField
+                                    fullWidth size="small"
+                                    placeholder="Ingrese No."
+                                    value={secuenciaInput}
+                                    onChange={e => setSecuenciaInput(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && handleBuscarPorSecuencia()}
+                                    inputProps={{ style: { fontWeight: internalId ? 700 : undefined } }}
+                                />
                                 <SearchButton
                                     config={SEARCH_CONFIGS.FACTURA_SUPLIDOR}
                                     onOpenSearch={facturaSearch.openModal}
@@ -580,10 +609,13 @@ const FacturaSuplidorView: React.FC = () => {
 
                         <Grid size={{ xs: 12, md: 2 }}>
                             <TextField
-                                select fullWidth size="small" label="Tipo de Crédito"
-                                value={esCreditoVal ?? ""}
+                                select fullWidth size="small" label="Tipo de Pago *"
+                                value={esCreditoVal != null ? String(esCreditoVal) : ""}
+                                error={!!yupErrors.esCredito}
+                                helperText={yupErrors.esCredito}
                                 onChange={(e) => {
-                                    setValue("esCredito", e.target.value as any);
+                                    setValue("esCredito", e.target.value ? Number(e.target.value) : undefined);
+                                    setYupErrors((prev) => { const n = { ...prev }; delete n.esCredito; return n; });
                                     if (e.target.value !== "2") {
                                         setValue("fechaLimitePago", undefined);
                                     }

@@ -38,6 +38,11 @@ public class MfFacturaSuplidorController {
     return ResponseEntity.ok(service.findById(id));
   }
 
+  @GetMapping("/by-secuencia/{secuencia}")
+  public ResponseEntity<MfFacturaSuplidor> getBySecuencia(@PathVariable Integer secuencia) {
+    return ResponseEntity.ok(service.findBySecuencia(secuencia));
+  }
+
   /** Crear nueva factura suplidor. POST /api/v1/facturacion/facturas-suplidor */
   @RequierePermiso(menuUrl = "/factura-suplidor", accion = Accion.ESCRIBIR)
   @PostMapping

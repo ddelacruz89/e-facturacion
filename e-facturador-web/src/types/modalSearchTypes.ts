@@ -674,7 +674,7 @@ export const SEARCH_CONFIGS = {
             }
         ],
         displayColumns: [
-            { key: "id", label: "ID", width: "7%" },
+            { key: "secuencia", label: "No.", width: "7%" },
             {
                 key: "fechaReg",
                 label: "Fecha",

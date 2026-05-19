@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 public class MfFacturaSuplidorResumenDTO {
 
   private Integer id;
+  private Integer secuencia;
   private LocalDateTime fechaReg;
   private String suplidorNombre;
   private String numeroFactura;

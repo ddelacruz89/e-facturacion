@@ -11,8 +11,11 @@ public interface MfFacturaSuplidorService {
   /** Búsqueda paginada con filtros — devuelve proyección de resumen. */
   List<MfFacturaSuplidorResumenDTO> buscar(MfFacturaSuplidorSearchCriteria criteria);
 
-  /** Objeto completo con detalles por ID. */
+  /** Objeto completo con detalles por ID interno. */
   MfFacturaSuplidor findById(Integer id);
+
+  /** Objeto completo por secuencia (número visible al usuario, scoped a la empresa del JWT). */
+  MfFacturaSuplidor findBySecuencia(Integer secuencia);
 
   /** Crear nueva factura suplidor con sus detalles. */
   MfFacturaSuplidor save(MfFacturaSuplidorRequestDTO dto);

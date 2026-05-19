@@ -24,7 +24,7 @@ public class MfFacturaSuplidorDaoImpl implements MfFacturaSuplidorDao {
     StringBuilder jpql =
         new StringBuilder(
             "SELECT new com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorResumenDTO("
-                + "  f.id, f.fechaReg,"
+                + "  f.id, f.secuencia, f.fechaReg,"
                 + "  (SELECT s.nombre FROM InSuplidor s WHERE s.id = f.suplidor.id),"
                 + "  f.numeroFactura, f.ncf, f.total, f.estadoId, f.usuarioReg"
                 + ") "

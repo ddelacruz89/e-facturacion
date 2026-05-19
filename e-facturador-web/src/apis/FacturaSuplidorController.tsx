@@ -45,6 +45,16 @@ export function getFacturaSuplidorById(id: number): Promise<MfFacturaSuplidor | 
         });
 }
 
+export function getFacturaSuplidorBySecuencia(secuencia: number): Promise<MfFacturaSuplidor | null> {
+    return apiClient
+        .get(`${api}/by-secuencia/${secuencia}`)
+        .then((r) => r.data as MfFacturaSuplidor)
+        .catch((error) => {
+            console.error("getFacturaSuplidorBySecuencia error:", error);
+            return null;
+        });
+}
+
 export function saveFacturaSuplidor(
     dto: MfFacturaSuplidorRequest,
 ): Promise<MfFacturaSuplidor> {

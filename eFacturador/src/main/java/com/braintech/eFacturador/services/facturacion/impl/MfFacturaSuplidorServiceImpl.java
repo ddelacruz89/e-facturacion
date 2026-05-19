@@ -2,6 +2,7 @@ package com.braintech.eFacturador.services.facturacion.impl;
 
 import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorDao;
 import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorRepository;
+import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorDetalleDescuentoRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorDetalleRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorRequestDTO;
@@ -20,6 +21,7 @@ import com.braintech.eFacturador.services.facturacion.MfFacturaSuplidorService;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,7 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
   private final MfFacturaSuplidorRepository repository;
   private final MfFacturaSuplidorDao dao;
   private final TenantContext tenantContext;
+  private final SecuenciasDao secuenciasDao;
 
   // ── Buscar ────────────────────────────────────────────────────────────────
 
@@ -49,6 +52,17 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
         .orElseThrow(() -> new RecordNotFoundException("Factura suplidor no encontrada: " + id));
   }
 
+  @Override
+  public MfFacturaSuplidor findBySecuencia(Integer secuencia) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return repository
+        .findByEmpresaIdAndSecuencia(empresaId, secuencia)
+        .orElseThrow(
+            () ->
+                new RecordNotFoundException(
+                    "Factura suplidor no encontrada con secuencia: " + secuencia));
+  }
+
   // ── Save ──────────────────────────────────────────────────────────────────
 
   @Override
@@ -57,7 +71,12 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
     MfFacturaSuplidor entity = new MfFacturaSuplidor();
     mapHeader(dto, entity);
     mapDetalles(dto, entity);
-    return repository.save(entity);
+    MfFacturaSuplidor saved = repository.save(entity);
+    int seq =
+        secuenciasDao.getNextSecuencia(
+            saved.getEmpresaId(), MfFacturaSuplidor.class.getSimpleName().toUpperCase(Locale.ROOT));
+    saved.setSecuencia(seq);
+    return repository.save(saved);
   }
 
   // ── Update ────────────────────────────────────────────────────────────────

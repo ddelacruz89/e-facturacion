@@ -60,7 +60,7 @@ public class MfFacturaSuplidorRequestDTO {
   // ── Tipo factura ──────────────────────────────────────────────────────────
   private Integer tipoFacturaId;
   private Boolean esFacturadoElectronicamente;
-  private Boolean esCredito;
+  private Integer esCredito;
 
   // ── Contabilidad ──────────────────────────────────────────────────────────
   private Integer contableId;

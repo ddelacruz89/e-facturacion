@@ -1,6 +1,7 @@
 // ── Resumen (listado / modal de búsqueda) ──────────────────────────────────
 export interface MfFacturaSuplidorResumen {
     id: number;
+    secuencia?: number;
     fechaReg: string;
     suplidorNombre: string;
     numeroFactura: string;
@@ -86,7 +87,7 @@ export interface MfFacturaSuplidorRequest {
     retencionItbisId?: number;
     // Tipo factura
     tipoFacturaId?: number;
-    esCredito?: boolean;
+    esCredito?: number;
     // Contabilidad
     contableId?: number;
     cxpId?: number;
@@ -97,6 +98,7 @@ export interface MfFacturaSuplidorRequest {
 // ── Respuesta completa del GET /{id} ──────────────────────────────────────
 export interface MfFacturaSuplidor extends MfFacturaSuplidorRequest {
     empresaId?: number;
+    secuencia?: number;
     usuarioReg?: string;
     fechaReg?: string;
     suplidor?: { id: number; nombre: string };
