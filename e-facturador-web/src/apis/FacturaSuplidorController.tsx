@@ -67,3 +67,9 @@ export function updateFacturaSuplidor(
 ): Promise<MfFacturaSuplidor> {
     return apiClient.put(`${api}/${id}`, normalizePayload(dto)).then((r) => r.data as MfFacturaSuplidor);
 }
+
+export function validarQrFacturaSuplidor(id: number): Promise<number> {
+    return apiClient
+        .get(`${api}/${id}/validar-qr`)
+        .then((r) => (r.data as { aprobada: number }).aprobada);
+}

@@ -41,11 +41,11 @@ const facturaSuplidorSchema = Yup.object().shape({
     estadoId: Yup.string()
         .required("El estado es requerido"),
 
-    esCredito: Yup.number().required("El tipo de pago es requerido"),
+    tipoPago: Yup.number().required("El tipo de pago es requerido"),
 
     fechaLimitePago: Yup.string()
         .nullable()
-        .when("esCredito", {
+        .when("tipoPago", {
             is: 2,
             then: (schema) =>
                 schema.required("La fecha límite de pago es requerida para crédito"),

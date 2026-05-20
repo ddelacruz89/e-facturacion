@@ -25,4 +25,6 @@ public interface MfFacturaSuplidorService {
 
   /** Actualizar factura suplidor existente. */
   MfFacturaSuplidor update(Integer id, MfFacturaSuplidorRequestDTO dto);
+
+  Integer checkAndUpdateAprobadaFromQrUrl(Integer facturaId);
 }

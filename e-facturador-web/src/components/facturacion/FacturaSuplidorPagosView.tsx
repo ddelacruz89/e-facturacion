@@ -305,7 +305,7 @@ export default function FacturaSuplidorPagosView() {
                     </Grid>
                     <Grid size={{ xs: 6, sm: 2 }}>
                         <Typography sx={labelSx}>Tipo de Pago</Typography>
-                        <TextField fullWidth size="small" value={TIPO_PAGO[String(factura?.esCredito ?? "")] ?? ""} disabled sx={readSx} />
+                        <TextField fullWidth size="small" value={TIPO_PAGO[String(factura?.tipoPago ?? "")] ?? ""} disabled sx={readSx} />
                     </Grid>
                     <Grid size={{ xs: 6, sm: 2 }}>
                         <Typography sx={labelSx}>Retención Itbis</Typography>

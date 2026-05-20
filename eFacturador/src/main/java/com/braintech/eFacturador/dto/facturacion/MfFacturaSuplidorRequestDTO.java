@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.dto.facturacion;
 
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,7 +42,9 @@ public class MfFacturaSuplidorRequestDTO {
   private Integer ordenEntradaId;
 
   // ── Montos ────────────────────────────────────────────────────────────────
+  @NotNull(message = "El tipo de pago es requerido")
   private Integer tipoPago;
+
   private String concepto;
   private BigDecimal subTotal;
   private BigDecimal itbis;
@@ -60,7 +63,6 @@ public class MfFacturaSuplidorRequestDTO {
   // ── Tipo factura ──────────────────────────────────────────────────────────
   private Integer tipoFacturaId;
   private Boolean esFacturadoElectronicamente;
-  private Integer esCredito;
 
   // ── Contabilidad ──────────────────────────────────────────────────────────
   private Integer contableId;

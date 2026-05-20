@@ -2,6 +2,7 @@ package com.braintech.eFacturador.services.facturacion.impl;
 
 import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorDao;
 import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorRepository;
+import com.braintech.eFacturador.dao.general.SecuenciaEcfResult;
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorDetalleDescuentoRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorDetalleRequestDTO;
@@ -10,6 +11,7 @@ import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorResumenDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorSearchCriteria;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.facturacionelectronica.services.ECFServices;
+import com.braintech.eFacturador.interfaces.inventario.InSuplidorService;
 import com.braintech.eFacturador.jpa.contabilidad.McCatalogoCuenta;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidor;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidorDetalle;
@@ -20,23 +22,32 @@ import com.braintech.eFacturador.jpa.general.MgRetencionItbis;
 import com.braintech.eFacturador.jpa.inventario.InSuplidor;
 import com.braintech.eFacturador.services.facturacion.MfFacturaSuplidorService;
 import com.braintech.eFacturador.util.TenantContext;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
 
   private final MfFacturaSuplidorRepository repository;
   private final MfFacturaSuplidorDao dao;
   private final TenantContext tenantContext;
   private final SecuenciasDao secuenciasDao;
+  private final InSuplidorService suplidorService;
 
   @Lazy @Autowired private ECFServices ecfServices;
 
@@ -76,16 +87,24 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
 
     MfFacturaSuplidor entity = new MfFacturaSuplidor();
+    InSuplidor suplidor = suplidorService.findById(dto.getSuplidorId());
     mapHeader(dto, entity);
     mapDetalles(dto, entity);
+
     MfFacturaSuplidor saved = repository.save(entity);
+    saved.setSuplidor(suplidor);
     int seq =
         secuenciasDao.getNextSecuencia(
             saved.getEmpresaId(), MfFacturaSuplidor.class.getSimpleName().toUpperCase(Locale.ROOT));
     saved.setSecuencia(seq);
-    String nextSecuenciaEcf =
+    SecuenciaEcfResult ecfResult =
         secuenciasDao.getNextSecuenciaEcfValidada(empresaId, entity.getTipoComprobanteId());
-    saved.setNcf(nextSecuenciaEcf);
+    String ncf =
+        "E" + entity.getTipoComprobanteId() + String.format("%010d", ecfResult.secuencia());
+    saved.setNcf(ncf);
+    if (ecfResult.fechaValida() != null) {
+      saved.setFechaValido(ecfResult.fechaValida().atStartOfDay());
+    }
     ecfServices.senderEcfTerceros(saved, false);
     return repository.save(saved);
   }
@@ -111,6 +130,87 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
     entity.getDetalles().clear();
     mapDetalles(dto, entity);
     return repository.save(entity);
+  }
+
+  @Override
+  @jakarta.transaction.Transactional
+  public Integer checkAndUpdateAprobadaFromQrUrl(Integer facturaId) {
+    MfFacturaSuplidor factura =
+        repository
+            .findById(facturaId)
+            .orElseThrow(
+                () ->
+                    new IllegalArgumentException(
+                        "Factura suplidor informal no encontrada id=" + facturaId));
+
+    RestTemplate restTemplate = new RestTemplate();
+    Pattern aceptadoPattern =
+        Pattern.compile(
+            "<th[^>]*>\\s*Estado\\s*</th>\\s*<td[^>]*>\\s*Aceptado\\s*</td>",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+
+    return checkAndUpdateAprobadaFromQrUrlInternal(factura, restTemplate, aceptadoPattern);
+  }
+
+  private Integer checkAndUpdateAprobadaFromQrUrlInternal(
+      MfFacturaSuplidor factura, RestTemplate restTemplate, Pattern aceptadoPattern) {
+
+    String url = factura.getQrUrl();
+    if (url == null || url.isBlank()) {
+      log.warn("Factura suplidor informal id={} tiene qrUrl vacío, se omite", factura.getId());
+      // si no hay URL, devolvemos estado basado en el valor actual
+      return (factura.getAprobada() != null && factura.getAprobada()) ? 1 : 0;
+    }
+
+    try {
+      // Importante: usar URI para evitar que RestTemplate vuelva a codificar
+      // los parámetros ya codificados (%20, etc.). Si se pasara el String
+      // directamente, RestTemplate podría transformar "%20" en "%2520" y
+      // DGII respondería "No fue encontrada la factura".
+      URI uri = new URI(url);
+      ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
+
+      if (!response.getStatusCode().is2xxSuccessful()) {
+        log.warn(
+            "Respuesta HTTP no exitosa al consultar QR URL para factura id={} status={}",
+            factura.getId(),
+            response.getStatusCode());
+        return (factura.getAprobada() != null && factura.getAprobada()) ? 1 : 0;
+      }
+
+      String body = response.getBody();
+      if (body == null || body.isBlank()) {
+        log.warn("Respuesta vacía al consultar QR URL para factura id={}", factura.getId());
+        return (factura.getAprobada() != null && factura.getAprobada()) ? 1 : 0;
+      }
+
+      if (aceptadoPattern.matcher(body).find()) {
+        factura.setAprobada(true);
+        repository.save(factura);
+        log.info(
+            "Factura suplidor informal id={} marcada como aprobada (aprobada=1) por respuesta QR",
+            factura.getId());
+      } else {
+        // Si no se encuentra el estado Aceptado, se marca explícitamente como no aprobada (0)
+        factura.setAprobada(false);
+        repository.save(factura);
+
+        // Logueamos un pequeño fragmento del HTML para facilitar el diagnóstico
+        String snippet = body.length() > 300 ? body.substring(0, 300) + "..." : body;
+        log.info(
+            "Factura suplidor informal id={} marcada como NO aprobada (aprobada=0). Fragmento respuesta: {}",
+            factura.getId(),
+            snippet);
+      }
+    } catch (URISyntaxException | RestClientException ex) {
+      log.error(
+          "Error al consultar QR URL '{}' para factura suplidor informal id={}",
+          url,
+          factura.getId(),
+          ex);
+    }
+
+    return (factura.getAprobada() != null && factura.getAprobada()) ? 1 : 0;
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -194,7 +294,6 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
       e.setTipoFactura(null);
     }
     e.setEsFacturadoElectronicamente(dto.getEsFacturadoElectronicamente());
-    e.setEsCredito(dto.getEsCredito());
 
     // Contabilidad — proxy por ID
     if (dto.getContableId() != null) {
@@ -246,6 +345,7 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
       detalle.setFormaPagoId(d.getFormaPagoId());
       detalle.setUsuarioReg(usuario);
       detalle.setFechaReg(LocalDateTime.now());
+      detalle.setEstado("ACT");
 
       // ITBIS — proxy por ID
       if (d.getItbisId() != null) {

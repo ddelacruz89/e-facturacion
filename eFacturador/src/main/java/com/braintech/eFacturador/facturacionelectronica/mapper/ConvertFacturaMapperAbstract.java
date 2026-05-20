@@ -372,8 +372,13 @@ public abstract class ConvertFacturaMapperAbstract {
     List<Item> items = new ArrayList<>();
     for (int i = 0; i < mfFacturaSuplidor.getDetalles().size(); i++) {
 
-      BigDecimal montoItbis = mfFacturaSuplidor.getDetalles().get(i).getMontoItbisRetenido();
-      BigDecimal montoIsrRetenido = mfFacturaSuplidor.getDetalles().get(i).getRetencion();
+      BigDecimal montoItbisRaw = mfFacturaSuplidor.getDetalles().get(i).getMontoItbisRetenido();
+      BigDecimal montoIsrRaw = mfFacturaSuplidor.getDetalles().get(i).getRetencion();
+
+      BigDecimal montoItbis =
+          montoItbisRaw != null ? montoItbisRaw.setScale(2, RoundingMode.HALF_UP) : null;
+      BigDecimal montoIsrRetenido =
+          montoIsrRaw != null ? montoIsrRaw.setScale(2, RoundingMode.HALF_UP) : null;
 
       Retencion retencion =
           Retencion.builder()

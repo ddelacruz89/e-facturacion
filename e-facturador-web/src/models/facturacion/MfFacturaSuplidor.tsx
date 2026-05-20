@@ -87,7 +87,6 @@ export interface MfFacturaSuplidorRequest {
     retencionItbisId?: number;
     // Tipo factura
     tipoFacturaId?: number;
-    esCredito?: number;
     // Contabilidad
     contableId?: number;
     cxpId?: number;
@@ -101,6 +100,8 @@ export interface MfFacturaSuplidor extends MfFacturaSuplidorRequest {
     secuencia?: number;
     usuarioReg?: string;
     fechaReg?: string;
+    aprobada?: boolean;
+    qrUrl?: string;
     suplidor?: { id: number; nombre: string };
     tipoFactura?: { id: number; nombre: string };
     retencionIsr?: { id: number; descripcion: string; valor: number };
