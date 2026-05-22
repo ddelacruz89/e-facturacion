@@ -79,6 +79,30 @@ displayColumns: [
 
 ---
 
+## Patrón de secuencia por empresa — OBLIGATORIO en módulos de negocio
+
+Aunque la PK interna es `id` (autoincremental global), el usuario siempre ve un número de secuencia propio por empresa (`secuencia`). Ejemplo: empresa 1 tiene facturas 1, 2, 3; empresa 2 también tiene 1, 2, 3 — pero internamente son IDs 1, 2, 3, 4, 5, 6.
+
+### Reglas
+- `secuencia` está en `BaseEntityPk` como `Integer secuencia`.
+- Se genera **solo en `save`** (creación), nunca en `update`.
+- Llamar `secuenciasDao.getNextSecuencia(empresaId, NombreClase.class.getSimpleName().toUpperCase(Locale.ROOT))` después del primer `repository.save()` para tener el `id` asignado, luego hacer un segundo `save` con la secuencia.
+- **Nunca** usar `id` en la UI para mostrar al usuario — siempre mostrar `secuencia`.
+- Internamente los joins, FKs y llamadas GET `/{id}` siguen usando `id`.
+- El DTO de resumen (búsqueda) debe incluir `secuencia` y el modal de búsqueda muestra `secuencia` como columna "No." en lugar de "ID".
+- El frontend guarda `id` en el estado interno y `secuencia` solo como display.
+
+### Ejemplo (service)
+```java
+MfFacturaSuplidor saved = repository.save(entity);
+int seq = secuenciasDao.getNextSecuencia(
+    saved.getEmpresaId(), MfFacturaSuplidor.class.getSimpleName().toUpperCase(Locale.ROOT));
+saved.setSecuencia(seq);
+return repository.save(saved);
+```
+
+---
+
 ## Reglas generales del backend
 
 ### TenantContext — siempre en el service, nunca en el DAO

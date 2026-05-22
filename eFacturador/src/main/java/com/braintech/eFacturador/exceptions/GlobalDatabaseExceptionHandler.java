@@ -6,15 +6,18 @@ import jakarta.persistence.JoinColumn;
 import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.postgresql.util.PSQLException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
@@ -22,6 +25,26 @@ import org.springframework.web.context.request.WebRequest;
 @ControllerAdvice
 @Slf4j
 public class GlobalDatabaseExceptionHandler {
+
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Object> handleValidation(MethodArgumentNotValidException ex) {
+    List<String> errores =
+        ex.getBindingResult().getFieldErrors().stream()
+            .map(e -> e.getField() + ": " + e.getDefaultMessage())
+            .collect(Collectors.toList());
+    Map<String, Object> body = new HashMap<>();
+    body.put("status", "VALIDACION_FALLIDA");
+    body.put("errores", errores);
+    return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(ComprobanteSecuenciaException.class)
+  public ResponseEntity<Object> handleComprobanteSecuencia(ComprobanteSecuenciaException ex) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("status", ex.getMotivo().name());
+    body.put("message", ex.getMessage());
+    return new ResponseEntity<>(body, HttpStatus.UNPROCESSABLE_ENTITY);
+  }
 
   @ExceptionHandler(AccesoDenegadoException.class)
   public ResponseEntity<Object> handleAccesoDenegado(AccesoDenegadoException ex) {

@@ -6,19 +6,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/** Proyección mínima para listado/modal de búsqueda de factura suplidor. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class MfFacturaSuplidorResumenDTO {
-
+public class MfFacturaSuplidorPagosHeaderResumenDTO {
   private Integer id;
-  private Integer secuencia;
-  private LocalDateTime fechaReg;
+  private LocalDateTime fechaPago;
+  private Integer facturaSuplidorId;
   private String suplidorNombre;
-  private String numeroFactura;
-  private String ncf;
-  private BigDecimal total;
-  private String estadoId;
+  private BigDecimal monto;
+  private BigDecimal pagado;
   private String usuarioReg;
+  private String estadoId;
 }

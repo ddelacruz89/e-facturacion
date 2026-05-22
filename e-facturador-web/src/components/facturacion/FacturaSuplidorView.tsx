@@ -30,7 +30,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Grid from "@mui/material/Grid";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import GridOnIcon from "@mui/icons-material/GridOn";
+import QrCode2Icon from "@mui/icons-material/QrCode2";
 import ActionBar from "../../customers/ActionBar";
 import { SuplidorComboBox } from "../../customers/ProductComboBoxes";
 import { getItbisActivos } from "../../apis/ItbisController";
@@ -45,8 +45,10 @@ import { SEARCH_CONFIGS } from "../../types/modalSearchTypes";
 import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
 import {
     getFacturaSuplidorById,
+    getFacturaSuplidorBySecuencia,
     saveFacturaSuplidor,
     updateFacturaSuplidor,
+    validarQrFacturaSuplidor,
 } from "../../apis/FacturaSuplidorController";
 import {
     MfFacturaSuplidorRequest,
@@ -90,6 +92,8 @@ interface PendingRetencionChange {
 function makeInitialForm(): MfFacturaSuplidorRequest {
     const hoy = getDRToday();
     return {
+        tipoCfId:            "" as any,
+        numeroFactura:       "",
         estadoId:            "ACT",
         descuento:           0,
         itbis:               0,
@@ -98,8 +102,8 @@ function makeInitialForm(): MfFacturaSuplidorRequest {
         montoAnulado:        0,
         montoRetencionIsr:   0,
         montoRetencionItbis: 0,
-        fechaEmision:        hoy,  // hoy en RD
-        fechaVencimiento:    hoy,  // igual a emisión por ahora; backend ajustará
+        fechaEmision:        hoy,
+        fechaVencimiento:    hoy,
         detalles:            [],
     };
 }
@@ -163,6 +167,11 @@ const FacturaSuplidorView: React.FC = () => {
     const [pendingData, setPendingData]     = useState<MfFacturaSuplidorRequest | null>(null);
     const [yupErrors, setYupErrors]         = useState<FacturaSuplidorErrors>({});
     const [accordionOpen, setAccordionOpen] = useState(true);
+    // secuenciaInput: lo que el usuario ve/escribe; internalId: PK real usada en el backend
+    const [secuenciaInput, setSecuenciaInput] = useState<string>("");
+    const [internalId, setInternalId]         = useState<number | undefined>(undefined);
+    const [qrUrl, setQrUrl]                   = useState<string | undefined>(undefined);
+    const [qrAprobado, setQrAprobado]         = useState<boolean | null | undefined>(undefined);
 
     // Retenciones activas (porcentajes propagados al detalle)
     const [isrPct,  setIsrPct]  = useState(0);
@@ -210,9 +219,10 @@ const FacturaSuplidorView: React.FC = () => {
         ? itbisOpciones.filter((i) => i.nombre?.toLowerCase().includes("exento"))
         : itbisOpciones;
     // Valor del select ITBIS: cuando soloExento, forzar al primer exento disponible
+    // Usar itbisNombre como centinela de "ha seleccionado algo" porque itbisId puede ser 0 (No Facturable)
     const itbisSelectValue = soloExento
         ? (itbisDisponibles[0]?.id ?? "")
-        : (detalleForm.itbisId || "");
+        : (detalleForm.itbisNombre ? detalleForm.itbisId : "");
 
     // Reacciona al cambio de tipo de comprobante
     useEffect(() => {
@@ -306,16 +316,18 @@ const FacturaSuplidorView: React.FC = () => {
 
     const handleCancelRetencionChange = () => setPendingRet(null);
 
-    // ── Búsqueda modal ────────────────────────────────────────────────────────
-    const handleFacturaSelect = facturaSearch.handleSelect(async (resumen: any) => {
-        const completa = await getFacturaSuplidorById(resumen.id);
-        if (!completa) return;
-
-        const loadedIsrPct   = completa.retencionIsr?.valor   ?? 0;
-        const loadedItbisPct = completa.retencionItbis?.valor ?? 0;
-        setIsrPct(loadedIsrPct);
-        setItbisPct(loadedItbisPct);
-
+    // ── Carga de factura (helper compartido por modal y búsqueda por secuencia) ─
+    const cargarFacturaEnForm = useCallback((completa: any) => {
+        setInternalId(completa.id);
+        setSecuenciaInput(String(completa.secuencia ?? completa.id));
+        setQrUrl(completa.qrUrl ?? undefined);
+        setQrAprobado(
+            completa.aprobada != null ? Boolean(completa.aprobada)
+            : completa.qrUrl  ? null
+            : undefined
+        );
+        setIsrPct(completa.retencionIsr?.valor   ?? 0);
+        setItbisPct(completa.retencionItbis?.valor ?? 0);
         reset({
             id:                  completa.id,
             suplidorId:          completa.suplidor?.id ?? completa.suplidorId,
@@ -339,10 +351,29 @@ const FacturaSuplidorView: React.FC = () => {
             montoRetencionIsr:   completa.montoRetencionIsr,
             retencionItbisId:    completa.retencionItbis?.id ?? completa.retencionItbisId,
             montoRetencionItbis: completa.montoRetencionItbis,
-            esCredito:           completa.esCredito,
             detalles:            completa.detalles ?? [],
         });
+    }, [reset]);
+
+    // ── Búsqueda modal ────────────────────────────────────────────────────────
+    const handleFacturaSelect = facturaSearch.handleSelect(async (resumen: any) => {
+        const completa = await getFacturaSuplidorById(resumen.id);
+        if (completa) cargarFacturaEnForm(completa);
     });
+
+    // ── Búsqueda por secuencia (Enter en el campo) ────────────────────────────
+    const handleBuscarPorSecuencia = async () => {
+        const seq = Number(secuenciaInput);
+        if (!seq) return;
+        const completa = await getFacturaSuplidorBySecuencia(seq);
+        if (completa) {
+            cargarFacturaEnForm(completa);
+        } else {
+            showSnack(`No se encontró factura con No. ${seq}`, "error");
+            setSecuenciaInput("");
+            setInternalId(undefined);
+        }
+    };
 
     // ── Detalle helpers ───────────────────────────────────────────────────────
     const handleDetalleField = (field: keyof DetalleLocal, value: any) =>
@@ -381,7 +412,7 @@ const FacturaSuplidorView: React.FC = () => {
     const handleAddDetalle = () => {
         if (!detalleForm.indicadorBienServicio) { showSnack("Seleccione si el renglón es Bien o Servicio", "error"); return; }
         if (!detalleForm.concepto?.trim())       { showSnack("El concepto del renglón es requerido", "error"); return; }
-        if (!detalleForm.itbisId)                { showSnack("Seleccione el ITBIS del renglón", "error"); return; }
+        if (!detalleForm.itbisNombre)             { showSnack("Seleccione el ITBIS del renglón", "error"); return; }
         append({ ...detalleForm });
         recalcTotals([...detalles, detalleForm]);
         setDetalleForm(makeInitialDetalle(isrPct, itbisPct));
@@ -423,24 +454,38 @@ const FacturaSuplidorView: React.FC = () => {
         setShowConfirm(true);
     };
 
+    const validarQrConReintentos = async (id: number): Promise<void> => {
+        for (let intento = 0; intento < 3; intento++) {
+            const resultado = await validarQrFacturaSuplidor(id);
+            if (resultado === 1) { setQrAprobado(true); return; }
+            if (intento < 2) await new Promise(r => setTimeout(r, 3000));
+        }
+        setQrAprobado(false);
+    };
+
     const handleConfirmSave = async () => {
         if (!pendingData) return;
         try {
-            pendingData.id
-                ? await updateFacturaSuplidor(pendingData.id, pendingData)
+            const saved = internalId
+                ? await updateFacturaSuplidor(internalId, pendingData)
                 : await saveFacturaSuplidor(pendingData);
-            reset(makeInitialForm());
-            setIsrPct(0); setItbisPct(0);
-            setDetalleForm(makeInitialDetalle(0, 0));
             setShowConfirm(false);
-            showSnack("Factura guardada exitosamente", "success");
+            setDetalleForm(makeInitialDetalle(0, 0));
+            if (saved) {
+                cargarFacturaEnForm(saved);
+                showSnack("Factura guardada exitosamente", "success");
+                if (saved.id && saved.qrUrl) {
+                    setQrAprobado(null);
+                    validarQrConReintentos(saved.id);
+                }
+            }
         } catch { showSnack("Error al guardar la factura", "error"); }
     };
 
     const showSnack = (msg: string, sev: "success" | "error") => { setSnackMsg(msg); setSnackSeverity(sev); setSnackOpen(true); };
 
     // ── Cálculos totales ──────────────────────────────────────────────────────
-    const esCreditoVal       = watch("esCredito");
+    const esCreditoVal       = watch("tipoPago");
     const esCredito2         = String(esCreditoVal) === "2"; // solo Crédito muestra fecha límite
 
     const subtotalH          = watch("subTotal")            ?? 0;
@@ -461,9 +506,14 @@ const FacturaSuplidorView: React.FC = () => {
         <>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <ActionBar title="Facturas Suplidor">
-                    <Button variant="contained" color="primary" type="submit">Guardar</Button>
+                    <Button variant="contained" color="primary" type="submit" disabled={!!internalId}>Guardar</Button>
                     <Button variant="outlined" type="button" onClick={() => {
                         reset(makeInitialForm());
+                        setValue("numeroFactura", "");
+                        setSecuenciaInput("");
+                        setInternalId(undefined);
+                        setQrUrl(undefined);
+                        setQrAprobado(undefined);
                         setIsrPct(0); setItbisPct(0);
                         setDetalleForm(makeInitialDetalle(0, 0));
                     }}>Nuevo</Button>
@@ -473,9 +523,16 @@ const FacturaSuplidorView: React.FC = () => {
                 <Box sx={{ px: 2.5, pt: 2, pb: 2, backgroundColor: "#fff" }}>
                     <Grid container spacing={3} alignItems="flex-end">
                         <Grid size={{ xs: 12, md: 4 }}>
-                            <FieldLabel>Cargar Factura Existente</FieldLabel>
+                            <FieldLabel>No. Factura Suplidor</FieldLabel>
                             <Box display="flex" gap={1} alignItems="center">
-                                <TextInputPk control={control} name="id" label="" error={errors.id} size={12} />
+                                <TextField
+                                    fullWidth size="small"
+                                    placeholder="Ingrese No."
+                                    value={secuenciaInput}
+                                    onChange={e => setSecuenciaInput(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && handleBuscarPorSecuencia()}
+                                    inputProps={{ style: { fontWeight: internalId ? 700 : undefined } }}
+                                />
                                 <SearchButton
                                     config={SEARCH_CONFIGS.FACTURA_SUPLIDOR}
                                     onOpenSearch={facturaSearch.openModal}
@@ -494,13 +551,22 @@ const FacturaSuplidorView: React.FC = () => {
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "4px 0 0 4px",
                                         "&.Mui-focused fieldset": { borderColor: COLOR.accentTeal } } }}
                                 />
-                                <IconButton size="small" sx={{
-                                    border: `1px solid ${COLOR.accentTeal}`, borderLeft: "none",
-                                    borderRadius: "0 4px 4px 0", backgroundColor: `${COLOR.accentTeal}15`,
-                                    color: COLOR.accentTeal, height: 40, width: 40,
-                                    "&:hover": { backgroundColor: `${COLOR.accentTeal}30` },
-                                }}>
-                                    <GridOnIcon fontSize="small" />
+                                <IconButton
+                                    size="small"
+                                    disabled={!qrUrl}
+                                    onClick={() => qrUrl && window.open(qrUrl, "_blank", "noopener,noreferrer")}
+                                    sx={{
+                                        borderLeft: "none",
+                                        borderRadius: "0 4px 4px 0",
+                                        height: 40, width: 40,
+                                        ...(qrAprobado === true  && { border: "1px solid #2e7d32", backgroundColor: "#e8f5e9", color: "#2e7d32", "&:hover": { backgroundColor: "#c8e6c9" } }),
+                                        ...(qrAprobado === false && { border: "1px solid #c62828", backgroundColor: "#ffebee", color: "#c62828", "&:hover": { backgroundColor: "#ffcdd2" } }),
+                                        ...(qrAprobado === null  && { border: "1px solid #9e9e9e", backgroundColor: "#f5f5f5", color: "#9e9e9e", "&:hover": { backgroundColor: "#eeeeee" } }),
+                                        ...(qrAprobado === undefined && { border: `1px solid ${COLOR.accentTeal}`, backgroundColor: `${COLOR.accentTeal}15`, color: COLOR.accentTeal, "&:hover": { backgroundColor: `${COLOR.accentTeal}30` } }),
+                                        "&.Mui-disabled": { borderColor: "#ccc", color: "#ccc", backgroundColor: "transparent" },
+                                    }}
+                                >
+                                    <QrCode2Icon fontSize="small" />
                                 </IconButton>
                             </Box>
                         </Grid>
@@ -580,10 +646,14 @@ const FacturaSuplidorView: React.FC = () => {
 
                         <Grid size={{ xs: 12, md: 2 }}>
                             <TextField
-                                select fullWidth size="small" label="Tipo de Crédito"
-                                value={esCreditoVal ?? ""}
+                                select fullWidth size="small" label="Tipo de Pago *"
+                                value={esCreditoVal != null ? String(esCreditoVal) : ""}
+                                error={!!yupErrors.tipoPago}
+                                helperText={yupErrors.tipoPago}
                                 onChange={(e) => {
-                                    setValue("esCredito", e.target.value as any);
+                                    const val = e.target.value ? Number(e.target.value) : undefined;
+                                    setValue("tipoPago", val);
+                                    setYupErrors((prev) => { const n = { ...prev }; delete n.tipoPago; return n; });
                                     if (e.target.value !== "2") {
                                         setValue("fechaLimitePago", undefined);
                                     }
@@ -737,7 +807,7 @@ const FacturaSuplidorView: React.FC = () => {
                                     </FieldLabel>
                                     <TextField select fullWidth size="small"
                                         value={itbisSelectValue}
-                                        disabled={soloExento || !(detalleForm.montoItem && detalleForm.montoItem > 0)}
+                                        disabled={soloExento}
                                         onChange={(e) => {
                                             const sel = itbisDisponibles.find((i) => i.id === Number(e.target.value));
                                             handleItbisSelect(sel?.id??0, sel?.itbis??0, sel?.nombre??"");

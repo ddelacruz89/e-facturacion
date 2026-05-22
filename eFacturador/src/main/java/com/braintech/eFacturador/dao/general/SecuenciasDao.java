@@ -1,7 +1,10 @@
 package com.braintech.eFacturador.dao.general;
 
+import com.braintech.eFacturador.exceptions.ComprobanteSecuenciaException;
+import com.braintech.eFacturador.exceptions.ComprobanteSecuenciaException.Motivo;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.time.LocalDate;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -35,5 +38,33 @@ public class SecuenciasDao {
     String paddedNumber = String.format("%010d", nextNumero); // left-pad with zeros to 10 chars
 
     return serie.concat(tipoComprobante).concat(paddedNumber);
+  }
+
+  public SecuenciaEcfResult getNextSecuenciaEcfValidada(int empresaId, String tipoComprobante) {
+    Object[] row =
+        (Object[])
+            entityManager
+                .createNativeQuery(
+                    "SELECT p_secuencia, p_fecha_valida"
+                        + " FROM general.get_next_secuencia_ecf_validada(:empresaId, :tipoComprobante)")
+                .setParameter("empresaId", empresaId)
+                .setParameter("tipoComprobante", tipoComprobante)
+                .getSingleResult();
+
+    int secuencia = ((Number) row[0]).intValue();
+    LocalDate fechaValida = row[1] != null ? ((java.sql.Date) row[1]).toLocalDate() : null;
+
+    if (secuencia == -1) {
+      throw new ComprobanteSecuenciaException(
+          Motivo.FECHA_EXPIRADA,
+          "El comprobante tipo " + tipoComprobante + " tiene la fecha de vigencia expirada.");
+    }
+    if (secuencia == -2) {
+      throw new ComprobanteSecuenciaException(
+          Motivo.COMPROBANTES_AGOTADOS,
+          "No hay comprobantes disponibles para el tipo " + tipoComprobante + ".");
+    }
+
+    return new SecuenciaEcfResult(secuencia, fechaValida);
   }
 }

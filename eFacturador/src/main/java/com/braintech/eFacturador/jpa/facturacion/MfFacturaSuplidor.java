@@ -126,9 +126,6 @@ public class MfFacturaSuplidor extends BaseDgII implements Serializable {
   @Column(name = "es_facturado_electronicamente")
   private Boolean esFacturadoElectronicamente;
 
-  @Column(name = "es_credito")
-  private Boolean esCredito;
-
   // ── Contabilidad ──────────────────────────────────────────────────────────
 
   @ManyToOne(fetch = FetchType.LAZY)

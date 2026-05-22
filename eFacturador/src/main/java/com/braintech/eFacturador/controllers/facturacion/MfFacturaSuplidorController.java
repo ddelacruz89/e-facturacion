@@ -7,7 +7,10 @@ import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidor;
 import com.braintech.eFacturador.security.Accion;
 import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.facturacion.MfFacturaSuplidorService;
+import jakarta.validation.Valid;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,10 +41,16 @@ public class MfFacturaSuplidorController {
     return ResponseEntity.ok(service.findById(id));
   }
 
+  @GetMapping("/by-secuencia/{secuencia}")
+  public ResponseEntity<MfFacturaSuplidor> getBySecuencia(@PathVariable Integer secuencia) {
+    return ResponseEntity.ok(service.findBySecuencia(secuencia));
+  }
+
   /** Crear nueva factura suplidor. POST /api/v1/facturacion/facturas-suplidor */
   @RequierePermiso(menuUrl = "/factura-suplidor", accion = Accion.ESCRIBIR)
   @PostMapping
-  public ResponseEntity<MfFacturaSuplidor> save(@RequestBody MfFacturaSuplidorRequestDTO dto) {
+  public ResponseEntity<MfFacturaSuplidor> save(
+      @Valid @RequestBody MfFacturaSuplidorRequestDTO dto) {
     return ResponseEntity.ok(service.save(dto));
   }
 
@@ -49,7 +58,16 @@ public class MfFacturaSuplidorController {
   @RequierePermiso(menuUrl = "/factura-suplidor", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MfFacturaSuplidor> update(
-      @PathVariable Integer id, @RequestBody MfFacturaSuplidorRequestDTO dto) {
+      @PathVariable Integer id, @Valid @RequestBody MfFacturaSuplidorRequestDTO dto) {
     return ResponseEntity.ok(service.update(id, dto));
+  }
+
+  @GetMapping("/{id}/validar-qr")
+  public ResponseEntity<Map<String, Integer>> validarQr(@PathVariable Integer id) {
+    Integer resultado = service.checkAndUpdateAprobadaFromQrUrl(id);
+    Map<String, Integer> body = new HashMap<>();
+    body.put("aprobada", resultado);
+
+    return ResponseEntity.ok(body);
   }
 }
