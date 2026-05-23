@@ -8,7 +8,9 @@
       "Bash(xargs grep -l \"facturas-suplidor\")",
       "Bash(xargs grep -n \"factura.*suplidor\\\\|facturacion.*facturas\")",
       "Bash(Get-ChildItem -Path \"D:\\\\Work\\\\sigme\\\\e-facturacion\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(cd /d D:\\\\Work\\\\sigme\\\\e-facturacion)",
+      "Bash(Get-ChildItem -Path . -Directory)"
     ]
   }
 }
