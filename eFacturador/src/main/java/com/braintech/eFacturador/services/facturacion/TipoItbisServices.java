@@ -21,7 +21,8 @@ public class TipoItbisServices implements ITipoEntity<MfSucursalItbis> {
 
   @Override
   public Response<List<MfSucursalItbis>> findAll() {
-    List<MfSucursalItbis> itbis = tipoItbisDao.findAll();
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    List<MfSucursalItbis> itbis = tipoItbisDao.findByEmpresaId(empresaId);
     if (itbis.isEmpty()) {
       return Response.<List<MfSucursalItbis>>builder()
           .status(HttpStatus.NOT_FOUND)
@@ -35,8 +36,9 @@ public class TipoItbisServices implements ITipoEntity<MfSucursalItbis> {
   @Override
   public Response<MfSucursalItbis> save(MfSucursalItbis entity) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
+    entity.setEmpresaId(empresaId);
     entity.setFechaReg(LocalDateTime.now());
-    entity.setUsuarioReg("Master");
+    entity.setUsuarioReg(tenantContext.getCurrentUsername());
     MfSucursalItbis save = tipoItbisDao.save(entity);
 
     if (save.getId() > 0 && entity.getSecuencia() == null) {

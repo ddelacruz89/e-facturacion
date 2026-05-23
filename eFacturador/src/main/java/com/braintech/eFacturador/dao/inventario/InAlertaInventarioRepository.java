@@ -55,4 +55,21 @@ public interface InAlertaInventarioRepository extends JpaRepository<InAlertaInve
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId,
       @Param("tipo") String tipo);
+
+  /** Cuenta alertas activas del tenant que el usuario aún no ha marcado como vistas. */
+  @Query(
+      """
+      SELECT COUNT(a) FROM InAlertaInventario a
+      WHERE a.empresaId = :empresaId
+        AND a.sucursalId.id = :sucursalId
+        AND a.estadoId = 'ACT'
+        AND NOT EXISTS (
+            SELECT v FROM InAlertaVisto v
+            WHERE v.alerta.id = a.id AND v.username = :username
+        )
+      """)
+  long contarNoVistas(
+      @Param("empresaId") Integer empresaId,
+      @Param("sucursalId") Integer sucursalId,
+      @Param("username") String username);
 }

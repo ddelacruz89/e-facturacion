@@ -16,7 +16,6 @@ export function getMfSucursalItbis(): Promise<MfSucursalItbis[]> {
 }
 
 export function saveMfSucursalItbis(mfSucursalItbis: MfSucursalItbis): Promise<MfSucursalItbis | any> {
-    console.log("saveMfSucursalItbis", mfSucursalItbis);
     return apiClient
         .post(api, mfSucursalItbis)
         .then((x: { data: MfSucursalItbis }) => x.data)
@@ -30,7 +29,6 @@ export function saveMfSucursalItbis(mfSucursalItbis: MfSucursalItbis): Promise<M
                 empresaId: 0,
                 usuarioReg: "",
                 fechaReg: new Date(),
-                sucursalId: 0,
                 mgItbisId: 0,
             };
         });

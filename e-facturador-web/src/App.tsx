@@ -39,6 +39,7 @@ const FacturaSuplidorView = lazy(() => import("./components/facturacion/FacturaS
 const FacturaSuplidorPagosView = lazy(() => import("./components/facturacion/FacturaSuplidorPagosView"));
 const FormaPagoSuplidorView = lazy(() => import("./components/facturacion/FormaPagoSuplidorView"));
 const MfItbisView = lazy(() => import("./components/facturacion/MfItbisView"));
+const NotificacionesView = lazy(() => import("./components/notificaciones/NotificacionesView"));
 
 // Routes component that uses authentication context
 const AppRoutes = () => {
@@ -86,6 +87,7 @@ const AppRoutes = () => {
                     <Route path="pagos-suplidor" element={<FacturaSuplidorPagosView />} />
                     <Route path="formas-pago-suplidor" element={<FormaPagoSuplidorView />} />
                     <Route path="mf-itbis" element={<MfItbisView />} />
+                    <Route path="alertas" element={<NotificacionesView />} />
                 </Route>
 
                 {/* Catch all route */}

@@ -3,7 +3,7 @@ import Grid from "@mui/material/Grid";
 import { TableComponent, TextInput, TextInputPk, SwitchInput } from "../../customers/CustomComponents";
 import { FieldErrors, SubmitHandler, useForm } from "react-hook-form";
 import { MfSucursalItbis, MgItbis } from "../../models/facturacion";
-import { ItbisComboBox, SucursalComboBox } from "../../customers/ProductComboBoxes";
+import { ItbisComboBox } from "../../customers/ProductComboBoxes";
 import ActionBar from "../../customers/ActionBar";
 import { saveMfSucursalItbis, getMfSucursalItbis } from "../../apis/MfSucursalItbisController";
 import { getItbisActivos } from "../../apis/ItbisController";
@@ -21,7 +21,6 @@ export default function TipoItbisView() {
             itbis: 0,
             activo: true,
             mgItbisId: 0,
-            sucursalId: 0,
         },
     });
     const [tipoItbis, setTipoItbis] = useState<MgItbis[]>([]);
@@ -29,12 +28,11 @@ export default function TipoItbisView() {
     useEffect(() => {
         getItbisActivos()
             .then((data: MgItbis[]) => {
-                // Asegurar que data sea un array válido
                 setTipoItbis(Array.isArray(data) ? data : []);
             })
             .catch((error: any) => {
                 console.error("Error al cargar tipos de ITBIS:", error);
-                setTipoItbis([]); // Asegurar que siempre sea un array
+                setTipoItbis([]);
             });
     }, []);
 
@@ -49,11 +47,9 @@ export default function TipoItbisView() {
                 setValue("usuarioReg", response.usuarioReg);
                 setValue("fechaReg", response.fechaReg);
                 setValue("activo", response.activo);
-                setValue("sucursalId", response.sucursalId);
                 setValue("mgItbisId", response.mgItbisId);
                 alert("Tipo de ITBIS guardado correctamente");
 
-                // Recargar la lista después de guardar
                 return getMfSucursalItbis();
             })
             .then((data: MfSucursalItbis[]) => {
@@ -78,7 +74,6 @@ export default function TipoItbisView() {
         setValue("usuarioReg", "");
         setValue("fechaReg", new Date());
         setValue("activo", true);
-        setValue("sucursalId", 0);
         setValue("mgItbisId", 0);
     };
 
@@ -91,7 +86,6 @@ export default function TipoItbisView() {
         setValue("usuarioReg", row.usuarioReg);
         setValue("fechaReg", row.fechaReg);
         setValue("activo", row.activo);
-        setValue("sucursalId", row.sucursalId);
         setValue("mgItbisId", row.mgItbisId);
     };
 
@@ -114,9 +108,6 @@ export default function TipoItbisView() {
                 <Grid container spacing={2} style={{ padding: 20 }}>
                     <TextInput control={control} name="nombre" label="Nombre ITBIS" error={errors.nombre} size={4} />
                     <TextInput control={control} name="itbis" label="ITBIS (%)" error={errors.itbis} size={2} />
-                </Grid>
-                <Grid container spacing={2} style={{ padding: 20 }}>
-                    <SucursalComboBox control={control} name="sucursalId" label="Sucursal" error={errors.sucursalId} size={4} />
                     <ItbisComboBox control={control} name="mgItbisId" label="Tipo ITBIS Base" error={errors.mgItbisId} size={4} />
                 </Grid>
                 <Divider>Listado</Divider>
@@ -127,7 +118,6 @@ export default function TipoItbisView() {
                         { id: "id", label: "No." },
                         { id: "nombre", label: "Nombre" },
                         { id: "itbis", label: "ITBIS (%)" },
-                        { id: "sucursalId", label: "Sucursal" },
                         { id: "mgItbisId", label: "Tipo Base" },
                         { id: "activo", label: "Activo" },
                     ]}

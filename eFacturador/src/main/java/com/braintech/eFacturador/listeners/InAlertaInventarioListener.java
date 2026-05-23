@@ -1,12 +1,12 @@
 package com.braintech.eFacturador.listeners;
 
-import com.braintech.eFacturador.dao.inventario.InAlertaInventarioRepository;
 import com.braintech.eFacturador.dao.inventario.InAlertaLimiteRepository;
-import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
+import com.braintech.eFacturador.dao.notificacion.SgNotificacionRepository;
 import com.braintech.eFacturador.events.InStockBajoEvent;
-import com.braintech.eFacturador.jpa.inventario.InAlertaInventario;
-import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
+import com.braintech.eFacturador.jpa.notificacion.SgNotificacion;
+import com.braintech.eFacturador.sse.InAlertaSseService;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,9 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <ol>
  *   <li>Lee el límite mínimo configurado para ese producto/almacén/empresa.
- *   <li>Si no hay límite configurado → no hace nada.
- *   <li>Si {@code cantidadActual < limite} → crea una alerta ACT (si no existe ya).
- *   <li>Si {@code cantidadActual >= limite} → cierra la alerta ACT existente (si la hay).
+ *   <li>Si no hay límite → no hace nada.
+ *   <li>Si {@code cantidadActual < limite} → crea notificación STOCK_BAJO (si no existe ya).
+ *   <li>Si {@code cantidadActual >= limite} → cierra la notificación activa (si existe).
  * </ol>
  */
 @Slf4j
@@ -32,14 +32,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class InAlertaInventarioListener {
 
-  private static final String TIPO_STOCK_BAJO = "STOCK_BAJO";
+  private static final String MODULO = "INVENTARIO";
+  private static final String TIPO = "STOCK_BAJO";
   private static final String ESTADO_ACT = "ACT";
   private static final String ESTADO_CER = "CER";
   private static final String USUARIO_SISTEMA = "SISTEMA";
 
-  private final InAlertaInventarioRepository alertaRepository;
+  private final SgNotificacionRepository notificacionRepository;
   private final InAlertaLimiteRepository limiteRepository;
-  private final SgSucursalRepository sucursalRepository;
+  private final InAlertaSseService sseService;
 
   @Async("alertasExecutor")
   @EventListener
@@ -53,7 +54,6 @@ public class InAlertaInventarioListener {
           event.getSucursalId(),
           event.getCantidadActual());
     } catch (Exception ex) {
-      // No propagar — el movimiento ya se guardó; la alerta es best-effort
       log.error(
           "Error procesando alerta de stock para productoId={} almacenId={} empresaId={}: {}",
           event.getProductoId(),
@@ -70,59 +70,87 @@ public class InAlertaInventarioListener {
       Integer sucursalId,
       Integer cantidadActual) {
 
-    // 1. Buscar límite configurado
     Optional<Integer> limiteOpt = limiteRepository.findLimite(productoId, almacenId, empresaId);
-    if (limiteOpt.isEmpty()) {
-      return; // sin límite configurado → no hay nada que verificar
-    }
-    int limite = limiteOpt.get();
+    if (limiteOpt.isEmpty()) return;
 
-    // 2. Buscar alerta activa existente
-    Optional<InAlertaInventario> existente =
-        alertaRepository.findByTipoAndProductoIdAndAlmacenIdAndEmpresaIdAndSucursalIdIdAndEstadoId(
-            TIPO_STOCK_BAJO, productoId, almacenId, empresaId, sucursalId, ESTADO_ACT);
+    int limite = limiteOpt.get();
+    String referenciaKey = productoId + ":" + almacenId;
+
+    Optional<SgNotificacion> existente =
+        notificacionRepository.findByModuloAndTipoAndReferenciaKeyAndEmpresaIdAndEstadoId(
+            MODULO, TIPO, referenciaKey, empresaId, ESTADO_ACT);
 
     if (cantidadActual < limite) {
-      // Stock por debajo del límite → crear alerta si no existe
       if (existente.isEmpty()) {
-        SgSucursal sucursal = sucursalRepository.findById(sucursalId).orElse(null);
-        if (sucursal == null) return;
-
-        InAlertaInventario alerta = new InAlertaInventario();
-        alerta.setTipo(TIPO_STOCK_BAJO);
-        alerta.setProductoId(productoId);
-        alerta.setAlmacenId(almacenId);
-        alerta.setCantidadActual(cantidadActual);
-        alerta.setLimite(limite);
-        alerta.setEmpresaId(empresaId);
-        alerta.setSucursalId(sucursal);
-        alerta.setEstadoId(ESTADO_ACT);
-        alerta.setUsuarioReg(USUARIO_SISTEMA);
-        alerta.setFechaReg(LocalDateTime.now());
-        alertaRepository.save(alerta);
+        SgNotificacion notif = new SgNotificacion();
+        notif.setEmpresaId(empresaId);
+        notif.setSucursalId(sucursalId);
+        notif.setModulo(MODULO);
+        notif.setTipo(TIPO);
+        notif.setTitulo("Stock bajo: producto #" + productoId);
+        notif.setDescripcion(
+            "El producto #"
+                + productoId
+                + " en almacén #"
+                + almacenId
+                + " tiene "
+                + cantidadActual
+                + " unidades (límite: "
+                + limite
+                + ")");
+        notif.setReferenciaId(productoId);
+        notif.setReferenciaTipo("MgProducto");
+        notif.setReferenciaKey(referenciaKey);
+        notif.setPayload(
+            Map.of(
+                "productoId", productoId,
+                "almacenId", almacenId,
+                "cantidadActual", cantidadActual,
+                "limite", limite));
+        notif.setEstadoId(ESTADO_ACT);
+        notif.setFechaReg(LocalDateTime.now());
+        notif.setUsuarioReg(USUARIO_SISTEMA);
+        notificacionRepository.save(notif);
+        sseService.push(empresaId, sucursalId);
 
         log.info(
-            "Alerta STOCK_BAJO creada: productoId={} almacenId={} cantidad={} limite={}",
+            "Notificación STOCK_BAJO creada: productoId={} almacenId={} cantidad={} limite={}",
             productoId,
             almacenId,
             cantidadActual,
             limite);
       } else {
-        // Actualizar cantidad actual en alerta existente
-        InAlertaInventario alerta = existente.get();
-        alerta.setCantidadActual(cantidadActual);
-        alertaRepository.save(alerta);
+        // Actualizar cantidad en el payload de la notificación existente
+        SgNotificacion notif = existente.get();
+        notif.setDescripcion(
+            "El producto #"
+                + productoId
+                + " en almacén #"
+                + almacenId
+                + " tiene "
+                + cantidadActual
+                + " unidades (límite: "
+                + limite
+                + ")");
+        notif.setPayload(
+            Map.of(
+                "productoId", productoId,
+                "almacenId", almacenId,
+                "cantidadActual", cantidadActual,
+                "limite", limite));
+        notificacionRepository.save(notif);
       }
     } else {
-      // Stock recuperado → cerrar alerta si existe
       existente.ifPresent(
-          alerta -> {
-            alerta.setEstadoId(ESTADO_CER);
-            alerta.setFechaCierre(LocalDateTime.now());
-            alerta.setUsuarioCierre(USUARIO_SISTEMA);
-            alertaRepository.save(alerta);
+          notif -> {
+            notif.setEstadoId(ESTADO_CER);
+            notif.setFechaCierre(LocalDateTime.now());
+            notif.setUsuarioCierre(USUARIO_SISTEMA);
+            notificacionRepository.save(notif);
             log.info(
-                "Alerta STOCK_BAJO cerrada: productoId={} almacenId={}", productoId, almacenId);
+                "Notificación STOCK_BAJO cerrada: productoId={} almacenId={}",
+                productoId,
+                almacenId);
           });
     }
   }

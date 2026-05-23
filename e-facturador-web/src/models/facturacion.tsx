@@ -35,19 +35,15 @@ export interface MgItbisSimpleDTO {
 }
 
 export interface MfSucursalItbis {
-    // From BaseEntityPk
     id?: number;
     empresaId: number;
     secuencia?: number;
-    // From BaseEntitySucursal
     usuarioReg: string;
     fechaReg: Date;
-    sucursalId: number;
     activo: boolean;
-    // Own properties
     nombre: string;
     itbis: number;
-    mgItbisId: number; // Foreign key reference to MgItbis
+    mgItbisId: number;
 }
 
 export interface Factura {

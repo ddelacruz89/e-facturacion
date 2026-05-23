@@ -34,8 +34,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     String authHeader = request.getHeader("Authorization");
     String token = null;
     String username = null;
+
     if (authHeader != null && authHeader.startsWith("Bearer ")) {
       token = authHeader.substring(7);
+    } else {
+      // Fallback para SSE: EventSource del browser no soporta headers personalizados,
+      // por lo que el token se envía como query param ?token=
+      String queryToken = request.getParameter("token");
+      if (queryToken != null && !queryToken.isBlank()) {
+        token = queryToken;
+      }
+    }
+
+    if (token != null) {
       try {
         Claims claims =
             Jwts.parser().setSigningKey(jwtUtil.getSecretKey()).parseClaimsJws(token).getBody();

@@ -10,7 +10,9 @@
       "Bash(Get-ChildItem -Path \"D:\\\\Work\\\\sigme\\\\e-facturacion\" -Directory)",
       "Bash(Select-Object Name)",
       "Bash(cd /d D:\\\\Work\\\\sigme\\\\e-facturacion)",
-      "Bash(Get-ChildItem -Path . -Directory)"
+      "Bash(Get-ChildItem -Path . -Directory)",
+      "Bash(grep -E \"\\\\.java$\")",
+      "Bash(xargs cat)"
     ]
   }
 }
