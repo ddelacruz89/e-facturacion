@@ -128,6 +128,12 @@ LocalDateTime hasta  = criteria.getFechaFin().atTime(LocalTime.MAX);
 
 ---
 
+## Documentación de referencia por módulo
+Archivos disponibles en `contexto/` — lee solo los relevantes a la tarea:
+- `alertas.md` — módulo de notificaciones, SSE, deduplicación, productores
+
+---
+
 ## Reglas generales del frontend
 
 ### API controllers
