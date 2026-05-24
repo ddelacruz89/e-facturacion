@@ -118,6 +118,41 @@ sseService.push(empresaId, sucursalId);
 - Timeout de emitter: 25 minutos (fuerza reconexión antes del proxy timeout)
 - El `JwtAuthenticationFilter` acepta token también via query param `?token=` (necesario para `EventSource`)
 
+### SSE vs fallback poll — dos mecanismos distintos en `HomeView.tsx`
+
+**SSE (principal, tiempo real):**
+```typescript
+const eventSource = new EventSource(`/api/v1/notificaciones/stream?token=...`);
+eventSource.addEventListener("nueva-alerta", () => {
+    getContadorNoVistas(); // badge se actualiza al instante
+});
+```
+
+**Fallback poll (seguridad, cada 5 min):**
+```typescript
+setInterval(() => {
+    getContadorNoVistas(); // por si el EventSource se cayó
+}, 5 * 60 * 1000);
+```
+
+El poll existe porque SSE es una conexión HTTP larga que puede cortarse (proxy timeout, red inestable). Si el `EventSource` se desconecta silenciosamente, el poll garantiza que el badge se sincroniza como máximo cada 5 minutos. En condiciones normales el usuario solo usa SSE y el poll no aporta nada nuevo.
+
+### Insertar desde trigger/stored procedure
+
+Si una notificación nace desde un trigger de DB o stored procedure (sin pasar por Java), `sseService.push()` **nunca se llama**. El `EventSource` del frontend no recibe el evento y el badge solo se actualiza en el siguiente poll de 5 minutos. Para notificaciones no urgentes esto es aceptable.
+
+Opciones si se necesita tiempo real desde DB:
+1. Mover la lógica al service Java para usar el flujo de eventos existente (recomendado).
+2. Usar `PERFORM pg_notify(...)` en el SP + un listener Java sobre JDBC dedicado que llame a `sseService.push()`.
+
+### Escalabilidad
+
+| Usuarios concurrentes | Diseño actual |
+|---|---|
+| < 1,000 | Sin problema. Monitorear heap JVM (512 MB–1 GB es suficiente). |
+| 1,000 – 5,000 | Monitorear memoria y sockets abiertos. |
+| > 5,000 o múltiples pods | Requiere Redis Pub/Sub: cada instancia suscribe su canal y reenvía a sus emitters locales. El diseño actual no funciona correctamente en escala horizontal porque los emitters viven en memoria de una sola JVM. |
+
 ---
 
 ## Frontend
