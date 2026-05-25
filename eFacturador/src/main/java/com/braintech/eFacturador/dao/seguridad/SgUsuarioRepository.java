@@ -40,12 +40,17 @@ public interface SgUsuarioRepository extends JpaRepository<SgUsuario, String> {
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId);
 
-  /** Búsqueda de resumen: filtra por empresa, rango de fechas y texto en username/nombre. */
+  /**
+   * Búsqueda de resumen: filtra por empresa, rango de fechas y texto en username/nombre. LEFT JOIN
+   * con manager para incluir username/nombre del manager (null si no tiene).
+   */
   @Query(
       """
       SELECT new com.braintech.eFacturador.dto.seguridad.SgUsuarioResumenDTO(
-          u.username, u.nombre, u.loginEmail, u.fechaReg, u.usuarioReg, u.estadoId)
+          u.username, u.nombre, u.loginEmail, u.fechaReg, u.usuarioReg, u.estadoId,
+          m.username, m.nombre)
       FROM SgUsuario u
+      LEFT JOIN u.manager m
       WHERE u.empresaId = :empresaId
         AND u.fechaReg BETWEEN :desde AND :hasta
         AND (CAST(:q AS String) IS NULL

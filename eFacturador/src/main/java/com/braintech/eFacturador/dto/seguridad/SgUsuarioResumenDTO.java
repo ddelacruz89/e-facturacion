@@ -15,4 +15,10 @@ public class SgUsuarioResumenDTO {
   private LocalDateTime fechaReg;
   private String usuarioReg;
   private String estadoId;
+
+  /** Username del manager directo (null si no tiene). */
+  private String managerUsername;
+
+  /** Nombre completo del manager directo (null si no tiene). */
+  private String managerNombre;
 }

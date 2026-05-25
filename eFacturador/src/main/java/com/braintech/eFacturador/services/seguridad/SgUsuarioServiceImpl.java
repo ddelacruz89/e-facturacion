@@ -62,6 +62,8 @@ public class SgUsuarioServiceImpl implements SgUsuarioService {
     if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
       usuario.setPassword(passwordEncoder.encode(usuario.getPassword()));
     }
+    // Resolver manager: si viene con username, cargar la entidad completa del mismo tenant
+    usuario.setManager(resolverManager(usuario.getManager(), empresaId));
     return usuarioRepository.save(usuario);
   }
 
@@ -83,6 +85,27 @@ public class SgUsuarioServiceImpl implements SgUsuarioService {
       existing.setPassword(passwordEncoder.encode(usuario.getPassword()));
     }
 
+    // Actualizar manager: null limpia el campo, objeto con username lo asigna
+    existing.setManager(resolverManager(usuario.getManager(), empresaId));
+
     return usuarioRepository.save(existing);
+  }
+
+  /**
+   * Dado un SgUsuario parcial (solo con username) recibido del frontend, carga la entidad completa
+   * del mismo tenant. Devuelve null si no hay manager.
+   */
+  private SgUsuario resolverManager(SgUsuario managerParcial, Integer empresaId) {
+    if (managerParcial == null
+        || managerParcial.getUsername() == null
+        || managerParcial.getUsername().isBlank()) {
+      return null;
+    }
+    return usuarioRepository
+        .findByIdAndEmpresaId(managerParcial.getUsername(), empresaId)
+        .orElseThrow(
+            () ->
+                new RecordNotFoundException(
+                    "Manager no encontrado: " + managerParcial.getUsername()));
   }
 }

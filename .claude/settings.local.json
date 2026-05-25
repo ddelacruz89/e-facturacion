@@ -14,7 +14,9 @@
       "Bash(grep -E \"\\\\.java$\")",
       "Bash(xargs cat)",
       "Bash(npx tsc *)",
-      "Bash(npx react-scripts *)"
+      "Bash(npx react-scripts *)",
+      "Bash(xargs cat -n)",
+      "Bash(xargs ls)"
     ]
   }
 }

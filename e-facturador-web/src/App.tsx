@@ -15,6 +15,8 @@ const HomeView = lazy(() => import("./HomeView"));
 const EmpresaView = lazy(() => import("./components/seguridad/EmpresaView"));
 const UsuarioView = lazy(() => import("./components/seguridad/UsuarioView"));
 const RolView = lazy(() => import("./components/seguridad/RolView"));
+const AprobacionConfigView = lazy(() => import("./components/seguridad/AprobacionConfigView"));
+const AprobacionBandejaView = lazy(() => import("./components/seguridad/AprobacionBandejaView"));
 const TipoFacturaView = lazy(() => import("./components/facturacion/TipoFacturaView"));
 const TipoItbisView = lazy(() => import("./components/facturacion/TipoItbisView"));
 const RetencionView = lazy(() => import("./components/facturacion/TipoRetencionView"));
@@ -90,6 +92,8 @@ const AppRoutes = () => {
                     <Route path="mf-itbis" element={<MfItbisView />} />
                     <Route path="alertas" element={<NotificacionesView />} />
                     <Route path="inventario/requisicion" element={<RequisicionView />} />
+                    <Route path="aprobaciones-config"  element={<AprobacionConfigView />} />
+                    <Route path="aprobaciones-bandeja" element={<AprobacionBandejaView />} />
                 </Route>
 
                 {/* Catch all route */}

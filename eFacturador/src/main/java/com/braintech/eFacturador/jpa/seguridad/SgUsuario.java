@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.jpa.seguridad;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -38,4 +39,14 @@ public class SgUsuario extends BaseSucursal implements Serializable {
 
   @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<SgUsuarioSucursal> sucursalesAsignadas = new ArrayList<>();
+
+  /**
+   * Manager directo del usuario (relación self-referencial, opcional). Se ignoran
+   * sucursalesAsignadas, password y manager del manager para evitar ciclos JSON y recursión
+   * infinita.
+   */
+  @ManyToOne(fetch = FetchType.LAZY, optional = true)
+  @JoinColumn(name = "manager_username", nullable = true)
+  @JsonIgnoreProperties({"sucursalesAsignadas", "password", "manager"})
+  private SgUsuario manager;
 }

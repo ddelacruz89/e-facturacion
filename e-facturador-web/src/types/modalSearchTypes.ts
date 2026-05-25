@@ -70,7 +70,7 @@ const to12Hour = (hour24: number): { hour12: number; meridian: "AM" | "PM" } => 
     return { hour12, meridian };
 };
 
-const formatDateTimeForUi = (value: any): string => {
+export const formatDateTimeForUi = (value: any): string => {
     if (value === null || value === undefined || value === "") return "-";
 
     if (typeof value === "string") {
@@ -903,6 +903,52 @@ export const SEARCH_CONFIGS = {
             },
             { key: "usuarioReg", label: "Usuario", width: "12%" },
             { key: "estadoId", label: "Estado", width: "13%" },
+        ],
+    } as SearchConfig,
+
+    APROBACION: {
+        title: "Buscar Aprobación",
+        endpoint: "/api/v1/seguridad/aprobaciones/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: { enabled: true, pageSize: 10 },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace30 = new Date(); hace30.setDate(hoy.getDate() - 30);
+            return {
+                fechaInicio: hace30.toISOString().split("T")[0],
+                fechaFin: hoy.toISOString().split("T")[0],
+                estadoId: "PEN",
+            };
+        })(),
+        fields: [
+            { key: "tipoDocumento", label: "Tipo documento", type: "select" as const,
+              options: [
+                  { value: "", label: "Todos" },
+                  { value: "REQUISICION", label: "Requisición" },
+                  { value: "ORDEN_COMPRA", label: "Orden de Compra" },
+                  { value: "TRANSFERENCIA", label: "Transferencia" },
+              ]},
+            { key: "estadoId", label: "Estado", type: "select" as const,
+              options: [
+                  { value: "", label: "Todos" },
+                  { value: "PEN", label: "Pendiente" },
+                  { value: "APR", label: "Aprobado" },
+                  { value: "REC", label: "Rechazado" },
+              ]},
+            { key: "fechaInicio", label: "Desde", type: "date" as const },
+            { key: "fechaFin",    label: "Hasta", type: "date" as const },
+        ],
+        displayColumns: [
+            { key: "id",               label: "ID",          width: "6%" },
+            { key: "tipoDocumento",    label: "Tipo",         width: "16%" },
+            { key: "documentoId",      label: "Doc.",         width: "8%" },
+            { key: "solicitanteNombre",label: "Solicitante",  width: "22%" },
+            { key: "modoAprobacion",   label: "Modo",         width: "14%" },
+            { key: "fechaSolicitud",   label: "Fecha",        width: "18%",
+              render: (v: any) => formatDateTimeForUi(v) },
+            { key: "estadoId",         label: "Estado",       width: "16%" },
         ],
     } as SearchConfig,
 
