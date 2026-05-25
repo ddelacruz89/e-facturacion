@@ -1,6 +1,7 @@
 /**
  * Types and interfaces for the modal search component
  */
+import React from "react";
 
 // Base search field configuration
 export interface SearchField {
@@ -710,6 +711,12 @@ export const SEARCH_CONFIGS = {
                 placeholder: "Nombre del almacén"
             },
             {
+                key: "sucursalId",
+                label: "Sucursal ID",
+                type: "number" as const,
+                placeholder: "ID de sucursal"
+            },
+            {
                 key: "estadoId",
                 label: "Estado",
                 type: "select" as const,
@@ -722,8 +729,8 @@ export const SEARCH_CONFIGS = {
         ],
         displayColumns: [
             { key: "id", label: "ID", width: "8%" },
-            { key: "nombre", label: "Nombre", width: "42%" },
-            { key: "sucursalNombre", label: "Sucursal", width: "35%" },
+            { key: "nombre", label: "Nombre", width: "37%" },
+            { key: "sucursalNombre", label: "Sucursal", width: "40%" },
             { key: "estadoId", label: "Estado", width: "15%" }
         ]
     } as SearchConfig,
@@ -802,6 +809,101 @@ export const SEARCH_CONFIGS = {
             { key: "estadoId", label: "Estado", width: "8%" },
             { key: "usuarioReg", label: "Usuario", width: "6%" },
         ]
+    } as SearchConfig,
+
+    REQUISICION: {
+        title: "Buscar Requisición",
+        endpoint: "/api/v1/inventario/requisiciones/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: {
+            enabled: true,
+            pageSize: 10,
+        },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace30Dias = new Date();
+            hace30Dias.setDate(hoy.getDate() - 30);
+            return {
+                fechaInicio: hace30Dias.toISOString().split("T")[0],
+                fechaFin: hoy.toISOString().split("T")[0],
+                estadoId: "PEN",
+            };
+        })(),
+        fields: [
+            {
+                key: "fechaInicio",
+                label: "Fecha Inicio",
+                type: "date" as const,
+            },
+            {
+                key: "fechaFin",
+                label: "Fecha Fin",
+                type: "date" as const,
+            },
+            {
+                key: "prioridad",
+                label: "Prioridad",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todas" },
+                    { value: "ALTA", label: "Alta" },
+                    { value: "MEDIA", label: "Media" },
+                    { value: "BAJA", label: "Baja" },
+                ],
+            },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "PEN", label: "Pendiente" },
+                    { value: "APR", label: "Aprobada" },
+                    { value: "REC", label: "Rechazada" },
+                    { value: "COM", label: "Completada" },
+                    { value: "ANU", label: "Anulada" },
+                ],
+            },
+        ],
+        displayColumns: [
+            { key: "secuencia", label: "No.", width: "7%" },
+            {
+                key: "fechaReg",
+                label: "Fecha",
+                width: "18%",
+                render: (v: any) => formatDateTimeForUi(v),
+            },
+            { key: "almacenSolicitanteNombre", label: "Solicitante", width: "20%" },
+            { key: "almacenOrigenNombre", label: "Origen", width: "20%" },
+            {
+                key: "prioridad",
+                label: "Prioridad",
+                width: "10%",
+                render: (v: any) => {
+                    const colorMap: Record<string, string> = {
+                        ALTA: "#71526B",
+                        MEDIA: "#716752",
+                        BAJA: "#527158",
+                    };
+                    const labelMap: Record<string, string> = { ALTA: "Alta", MEDIA: "Media", BAJA: "Baja" };
+                    return React.createElement("span", {
+                        style: {
+                            backgroundColor: colorMap[v] ?? "#525C71",
+                            color: "#fff",
+                            padding: "2px 8px",
+                            borderRadius: "12px",
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                        },
+                    }, labelMap[v] ?? v);
+                },
+            },
+            { key: "usuarioReg", label: "Usuario", width: "12%" },
+            { key: "estadoId", label: "Estado", width: "13%" },
+        ],
     } as SearchConfig,
 
     MOVIMIENTO_TIPO: {

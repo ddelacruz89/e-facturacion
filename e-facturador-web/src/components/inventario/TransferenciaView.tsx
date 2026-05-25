@@ -46,6 +46,7 @@ import {
     getLotesConStockEnAlmacen,
     InProductoLotesStock,
 } from "../../apis/TransferenciaController";
+import { getRequisicion } from "../../apis/RequisicionController";
 
 // ── SIN_LOTE sentinel ────────────────────────────────────────────────────────
 // El backend devuelve lote=null cuando el stock no tiene lote asignado.
@@ -126,7 +127,14 @@ export const TransferenciaView: React.FC = () => {
         open: boolean; message: string; severity: "success" | "error" | "warning" | "info";
     }>({ open: false, message: "", severity: "info" });
 
+    const [requisicionCargada, setRequisicionCargada] = useState<{
+        secuencia: number;
+        almacenOrigenNombre: string;
+        almacenSolicitanteNombre: string;
+    } | null>(null);
+
     const productoSearch = useModalSearch();
+    const requisicionSearch = useModalSearch();
 
     const { control, handleSubmit, watch, setValue, reset } = useForm<TransferenciaForm>({
         defaultValues: initialForm,
@@ -213,6 +221,49 @@ export const TransferenciaView: React.FC = () => {
             await cargarLotes(activeDetalleIndex, productoId, origenId);
         }
         setActiveDetalleIndex(null);
+    });
+
+    // ── cargar desde requisición ──────────────────────────────────────────────
+
+    const handleRequisicionSelect = requisicionSearch.handleSelect(async (resumen: any) => {
+        try {
+            const req = await getRequisicion(resumen.id);
+            setRequisicionCargada({
+                secuencia: resumen.secuencia,
+                almacenOrigenNombre: resumen.almacenOrigenNombre,
+                almacenSolicitanteNombre: resumen.almacenSolicitanteNombre,
+            });
+            const origenId = typeof req.almacenOrigenId === "object"
+                ? (req.almacenOrigenId as any)?.id as number
+                : req.almacenOrigenId as number | undefined;
+            reset({
+                origenAlmacenId: origenId != null ? String(origenId) : undefined,
+                destinoAlmacenId: req.almacenSolicitanteId != null ? String(req.almacenSolicitanteId) : undefined,
+                estadoId: "PEN",
+                detalles: (req.detalles ?? []).map((d) => ({
+                    productoId: d.productoId,
+                    cant: d.cantidadSolicitada ?? 1,
+                    lote: SIN_LOTE,
+                    cantidadUnidad: undefined,
+                    unidadDescripcion: "",
+                })),
+            });
+            setLotesMap({});
+            if (origenId) {
+                const detalles = req.detalles ?? [];
+                for (let i = 0; i < detalles.length; i++) {
+                    const productoId = typeof detalles[i].productoId === "object"
+                        ? (detalles[i].productoId as any)?.id
+                        : detalles[i].productoId as number | undefined;
+                    if (productoId) {
+                        cargarLotes(i, productoId, origenId);
+                    }
+                }
+            }
+            showMsg("Requisición cargada. Verifique los almacenes y cantidades.", "info");
+        } catch {
+            showMsg("Error al cargar la requisición", "error");
+        }
     });
 
     // ── agregar detalle ───────────────────────────────────────────────────────
@@ -341,9 +392,12 @@ export const TransferenciaView: React.FC = () => {
         <main>
             <Box component="form" onSubmit={(e) => { e.preventDefault(); handleGuardarClick(); }}>
                 <ActionBar title="Transferencia de Inventario">
-                    <Button size="small" variant="contained" type="submit">Guardar</Button>
-                    <Button size="small" variant="outlined" type="button" onClick={() => { reset(initialForm); setLotesMap({}); }}>Nuevo</Button>
-                    <Button size="small" variant="outlined" type="button" onClick={loadList}>
+                    <Button size="small" variant="contained" type="submit" sx={{ bgcolor: "#526671", "&:hover": { bgcolor: "#3d4f57" } }}>Guardar</Button>
+                    <Button size="small" variant="contained" type="button" onClick={() => { reset(initialForm); setLotesMap({}); setRequisicionCargada(null); }} sx={{ bgcolor: "#525271", "&:hover": { bgcolor: "#3d3d57" } }}>Nuevo</Button>
+                    <Button size="small" variant="contained" type="button" onClick={() => requisicionSearch.openModal(SEARCH_CONFIGS.REQUISICION)} sx={{ bgcolor: "#715D52", "&:hover": { bgcolor: "#57473f" } }}>
+                        Requisición
+                    </Button>
+                    <Button size="small" variant="contained" type="button" onClick={loadList} sx={{ bgcolor: "#716752", "&:hover": { bgcolor: "#574f3f" } }}>
                         {showList ? "Ocultar lista" : "Ver transferencias"}
                     </Button>
                 </ActionBar>
@@ -351,6 +405,13 @@ export const TransferenciaView: React.FC = () => {
                 {/* cabecera */}
                 <Paper sx={{ p: 2, mb: 2 }}>
                     <Typography variant="h6" gutterBottom>Información General</Typography>
+                    {requisicionCargada && (
+                        <Alert severity="info" sx={{ mb: 2 }} onClose={() => setRequisicionCargada(null)}>
+                            Requisición <strong>#{requisicionCargada.secuencia}</strong> —&nbsp;
+                            <strong>Origen:</strong> {requisicionCargada.almacenOrigenNombre}&nbsp;→&nbsp;
+                            <strong>Destino (solicitante):</strong> {requisicionCargada.almacenSolicitanteNombre}
+                        </Alert>
+                    )}
                     <Grid container spacing={2}>
                         <AlmacenComboBox
                             name="origenAlmacenId"
@@ -359,6 +420,7 @@ export const TransferenciaView: React.FC = () => {
                             size={4}
                             rules={{ required: "Requerido" }}
                             onSelectionChange={handleOrigenChange}
+                            disabled={!!requisicionCargada}
                         />
                         <AlmacenComboBox
                             name="destinoAlmacenId"
@@ -366,6 +428,7 @@ export const TransferenciaView: React.FC = () => {
                             control={control}
                             size={4}
                             rules={{ required: "Requerido" }}
+                            disabled={!!requisicionCargada}
                         />
                     </Grid>
                 </Paper>
@@ -651,6 +714,17 @@ export const TransferenciaView: React.FC = () => {
                     onSelect={handleProductoSelect}
                     config={productoSearch.config}
                     initialValues={productoSearch.initialValues}
+                />
+            )}
+
+            {/* modal búsqueda de requisiciones */}
+            {requisicionSearch.config && (
+                <ModalSearch
+                    open={requisicionSearch.isOpen}
+                    onClose={requisicionSearch.closeModal}
+                    onSelect={handleRequisicionSelect}
+                    config={requisicionSearch.config}
+                    initialValues={requisicionSearch.initialValues}
                 />
             )}
 

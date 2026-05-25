@@ -12,7 +12,9 @@
       "Bash(cd /d D:\\\\Work\\\\sigme\\\\e-facturacion)",
       "Bash(Get-ChildItem -Path . -Directory)",
       "Bash(grep -E \"\\\\.java$\")",
-      "Bash(xargs cat)"
+      "Bash(xargs cat)",
+      "Bash(npx tsc *)",
+      "Bash(npx react-scripts *)"
     ]
   }
 }

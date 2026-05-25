@@ -35,6 +35,14 @@ export type {
     InOrdenCompraSimpleDTO,
 } from "./ordenCompra";
 export type { InOrdenEntrada, InOrdenEntradaDetalle, InOrdenEntradaDetalleLote } from "./ordenEntrada";
+export type {
+    InRequisicion,
+    InRequisicionDetalle,
+    InRequisicionSearchCriteria,
+    InRequisicionResumen,
+    PrioridadRequisicion,
+    EstadoRequisicion,
+} from "./InRequisicion";
 
 export interface InLote {
   lote: string;

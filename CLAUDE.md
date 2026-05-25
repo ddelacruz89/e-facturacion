@@ -128,9 +128,128 @@ LocalDateTime hasta  = criteria.getFechaFin().atTime(LocalTime.MAX);
 
 ---
 
+## Esquema para crear un nuevo módulo (backend Java)
+
+Al crear un módulo nuevo (ej. `InRequisicion`), seguir este orden exacto:
+
+### 1 — Entidad JPA
+```
+jpa/{dominio}/NombreEntidad.java          ← extiende BaseSucursal o BaseEntityPk
+jpa/{dominio}/NombreEntidadDetalle.java   ← si tiene líneas de detalle
+```
+- `@Table(name = "nombre_tabla", schema = "inventario"|"general"|etc.)`
+- `@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")` en el header.
+- `@JsonIgnoreProperties({"header"})` en el detalle para el lado `@ManyToOne`.
+- `@OneToMany(cascade = CascadeType.ALL, mappedBy = "headerId", fetch = FetchType.EAGER)` en el header.
+
+### 2 — DTOs
+```
+dto/{dominio}/NombreEntidadResumenDTO.java    ← campos para la tabla de búsqueda
+dto/{dominio}/NombreEntidadSearchCriteria.java ← filtros + page/size
+```
+- `ResumenDTO` siempre tiene `@Data @NoArgsConstructor @AllArgsConstructor`.
+- Incluir `secuencia` en el ResumenDTO si el módulo lo usa.
+
+### 3 — DAO interface
+```
+dao/{dominio}/NombreEntidadDao.java
+```
+Métodos estándar:
+```java
+NombreEntidad save(NombreEntidad e);
+Optional<NombreEntidad> findById(Integer id, Integer empresaId);
+List<NombreEntidad> findAll(Integer empresaId);
+void disableById(Integer id, Integer empresaId);
+Page<NombreEntidadResumenDTO> searchByCriteria(NombreEntidadSearchCriteria criteria, Integer empresaId);
+```
+
+### 4 — DAO implementación
+```
+dao/{dominio}/NombreEntidadDaoImpl.java   ← @Repository
+```
+- `EntityManager` con JPQL; nunca SQL nativo para búsquedas.
+- Proyección JPQL con `new com.braintech.eFacturador.dto...ResumenDTO(...)`.
+- Subquery para nombres de entidades referenciadas solo por ID:
+  `(SELECT a.nombre FROM InAlmacen a WHERE a.id = o.almacenId)`.
+
+### 5 — Service interface
+```
+interfaces/{dominio}/NombreEntidadService.java
+```
+
+### 6 — Service implementación
+```
+services/{dominio}/NombreEntidadServiceImpl.java   ← @Service @AllArgsConstructor
+```
+- Lee `empresaId`, `sucursalId`, `username` de `TenantContext` **siempre**.
+- En `save()` nuevo: set `fechaReg`, `usuarioReg`, `estadoId` inicial, luego llamar `secuenciasDao.getNextSecuencia(empresaId, Clase.class.getSimpleName().toUpperCase(Locale.ROOT))` en el **segundo** save.
+- Llama `fixEntityGraph()` para back-references del grafo JPA.
+
+### 7 — Controller REST
+```
+controllers/{dominio}/NombreEntidadController.java   ← @RestController
+```
+Ruta base estándar: `api/v1/{dominio}/{nombre-modulo-kebab-case}`
+```
+GET    /                  → getAll()
+GET    /{id}              → getById()
+POST   /                  → create()   [@RequierePermiso ESCRIBIR]
+PUT    /{id}              → update()   [@RequierePermiso ESCRIBIR]
+POST   /buscar            → buscar()   [sin permiso, filtra por tenant]
+DELETE /{id}              → disable()  [@RequierePermiso ELIMINAR]
+```
+
+---
+
+## Esquema para crear un nuevo módulo (frontend React/TypeScript)
+
+### Naming conventions
+| Artefacto | Nombre | Ruta |
+|-----------|--------|------|
+| Modelos TS | `NombreEntidad.tsx` | `src/models/{dominio}/NombreEntidad.tsx` |
+| API client | `NombreEntidadController.tsx` | `src/apis/NombreEntidadController.tsx` |
+| Componente | `NombreEntidadView.tsx` | `src/components/{dominio}/NombreEntidadView.tsx` |
+
+### Funciones del API controller (`src/apis/`)
+```typescript
+// Una función por endpoint backend
+buscarNombre(criteria: SearchCriteria): Promise<Page<ResumenDTO>>
+getNombre(id: number): Promise<NombreEntidad>
+saveNombre(dto: NombreEntidad): Promise<NombreEntidad>
+updateNombre(id: number, dto: NombreEntidad): Promise<NombreEntidad>
+disableNombre(id: number): Promise<void>
+```
+- Siempre usar la función `unwrapContent<T>()` local para desempaquetar la respuesta.
+- La constante de ruta base se llama `BASE_URL` = `"/api/v1/{dominio}/{nombre-kebab}"`.
+
+### Config de búsqueda modal (`src/types/modalSearchTypes.ts`)
+Agregar a `SEARCH_CONFIGS`:
+```typescript
+NOMBRE_MODULO: {
+    title: "Buscar ...",
+    endpoint: "/api/v1/.../buscar",
+    method: "POST",
+    keyField: "id",
+    searchOnLoad: true,
+    pagination: { enabled: true, pageSize: 10 },
+    defaultParams: { /* últimos 30 días */ },
+    fields: [ /* filtros */ ],
+    displayColumns: [ /* columnas de la tabla */ ],
+} as SearchConfig
+```
+
+### Modelos TypeScript (`src/models/{dominio}/`)
+- Exportar desde `index.tsx` del dominio.
+- Incluir siempre: `ResumenDTO`, `SearchCriteria`, entidad principal y detalle.
+
+---
+
 ## Documentación de referencia por módulo
 Archivos disponibles en `contexto/` — lee solo los relevantes a la tarea:
 - `alertas.md` — módulo de notificaciones, SSE, deduplicación, productores
+- `requisiciones.md` — módulo de requisiciones de transferencia entre almacenes (estados, validaciones, layout, config de búsqueda de almacén con select de sucursal)
+- `transferencia.md` — módulo de transferencia de inventario entre almacenes (lotes, stock en tiempo real, transferencias parciales, integración con requisiciones)
+- `coloresapp.md` — paleta de colores oficial (monocromática, complementaria y tetrádica), reglas de botones en ActionBar
 
 ---
 
