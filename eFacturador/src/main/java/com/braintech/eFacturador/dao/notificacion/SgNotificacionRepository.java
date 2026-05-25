@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.dao.notificacion;
 
 import com.braintech.eFacturador.jpa.notificacion.SgNotificacion;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,19 +18,26 @@ public interface SgNotificacionRepository extends JpaRepository<SgNotificacion, 
   Optional<SgNotificacion> findByModuloAndTipoAndReferenciaKeyAndEmpresaIdAndEstadoId(
       String modulo, String tipo, String referenciaKey, Integer empresaId, String estadoId);
 
-  /** Notificaciones activas del tenant, ordenadas por más recientes primero. */
+  /**
+   * Notificaciones activas del tenant visibles para el usuario. urlsPermitidas = URLs de menú donde
+   * el usuario tiene puedeLeer=true. Alertas con menuUrlOrigen=NULL son globales y las ve
+   * cualquiera.
+   */
   @Query(
       """
       SELECT n FROM SgNotificacion n
       WHERE n.empresaId = :empresaId
         AND n.sucursalId = :sucursalId
         AND n.estadoId = 'ACT'
+        AND (n.menuUrlOrigen IS NULL OR n.menuUrlOrigen IN :urlsPermitidas)
       ORDER BY n.fechaReg DESC
       """)
   List<SgNotificacion> findActivasByTenant(
-      @Param("empresaId") Integer empresaId, @Param("sucursalId") Integer sucursalId);
+      @Param("empresaId") Integer empresaId,
+      @Param("sucursalId") Integer sucursalId,
+      @Param("urlsPermitidas") Collection<String> urlsPermitidas);
 
-  /** Notificaciones activas filtradas por módulo. */
+  /** Notificaciones activas filtradas por módulo, visibles para el usuario. */
   @Query(
       """
       SELECT n FROM SgNotificacion n
@@ -37,20 +45,23 @@ public interface SgNotificacionRepository extends JpaRepository<SgNotificacion, 
         AND n.sucursalId = :sucursalId
         AND n.modulo = :modulo
         AND n.estadoId = 'ACT'
+        AND (n.menuUrlOrigen IS NULL OR n.menuUrlOrigen IN :urlsPermitidas)
       ORDER BY n.fechaReg DESC
       """)
   List<SgNotificacion> findActivasByModuloAndTenant(
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId,
-      @Param("modulo") String modulo);
+      @Param("modulo") String modulo,
+      @Param("urlsPermitidas") Collection<String> urlsPermitidas);
 
-  /** Cuenta notificaciones activas no vistas por el usuario para el tenant. */
+  /** Cuenta notificaciones activas no vistas por el usuario, respetando sus permisos de menú. */
   @Query(
       """
       SELECT COUNT(n) FROM SgNotificacion n
       WHERE n.empresaId = :empresaId
         AND n.sucursalId = :sucursalId
         AND n.estadoId = 'ACT'
+        AND (n.menuUrlOrigen IS NULL OR n.menuUrlOrigen IN :urlsPermitidas)
         AND NOT EXISTS (
             SELECT v FROM SgNotificacionVisto v
             WHERE v.notificacion.id = n.id AND v.username = :username
@@ -59,5 +70,6 @@ public interface SgNotificacionRepository extends JpaRepository<SgNotificacion, 
   long contarNoVistas(
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId,
-      @Param("username") String username);
+      @Param("username") String username,
+      @Param("urlsPermitidas") Collection<String> urlsPermitidas);
 }

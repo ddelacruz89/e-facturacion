@@ -2,6 +2,7 @@ package com.braintech.eFacturador.services.notificacion;
 
 import com.braintech.eFacturador.dao.notificacion.SgNotificacionRepository;
 import com.braintech.eFacturador.dao.notificacion.SgNotificacionVistoRepository;
+import com.braintech.eFacturador.dao.seguridad.SgPermisoRepository;
 import com.braintech.eFacturador.dto.notificacion.SgNotificacionDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.notificacion.SgNotificacionService;
@@ -9,6 +10,7 @@ import com.braintech.eFacturador.jpa.notificacion.SgNotificacion;
 import com.braintech.eFacturador.jpa.notificacion.SgNotificacionVisto;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,7 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
 
   @Autowired private SgNotificacionRepository notificacionRepository;
   @Autowired private SgNotificacionVistoRepository vistoRepository;
+  @Autowired private SgPermisoRepository permisoRepository;
   @Autowired private TenantContext tenantContext;
 
   @Override
@@ -27,8 +30,10 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     Integer sucursalId = tenantContext.getCurrentSucursalId();
     String username = tenantContext.getCurrentUsername();
+    Collection<String> urls = urlsPermitidas(username, empresaId, sucursalId);
 
-    List<SgNotificacion> notifs = notificacionRepository.findActivasByTenant(empresaId, sucursalId);
+    List<SgNotificacion> notifs =
+        notificacionRepository.findActivasByTenant(empresaId, sucursalId, urls);
     Set<Integer> vistas = vistoRepository.findNotificacionIdsByUsername(username);
 
     return notifs.stream().map(n -> toDTO(n, vistas.contains(n.getId()))).toList();
@@ -39,9 +44,10 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     Integer sucursalId = tenantContext.getCurrentSucursalId();
     String username = tenantContext.getCurrentUsername();
+    Collection<String> urls = urlsPermitidas(username, empresaId, sucursalId);
 
     List<SgNotificacion> notifs =
-        notificacionRepository.findActivasByModuloAndTenant(empresaId, sucursalId, modulo);
+        notificacionRepository.findActivasByModuloAndTenant(empresaId, sucursalId, modulo, urls);
     Set<Integer> vistas = vistoRepository.findNotificacionIdsByUsername(username);
 
     return notifs.stream().map(n -> toDTO(n, vistas.contains(n.getId()))).toList();
@@ -52,7 +58,19 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     Integer sucursalId = tenantContext.getCurrentSucursalId();
     String username = tenantContext.getCurrentUsername();
-    return notificacionRepository.contarNoVistas(empresaId, sucursalId, username);
+    Collection<String> urls = urlsPermitidas(username, empresaId, sucursalId);
+    return notificacionRepository.contarNoVistas(empresaId, sucursalId, username, urls);
+  }
+
+  /**
+   * Retorna las URLs de menú permitidas para el usuario. Si no tiene ningún permiso aún, devuelve
+   * un centinela que no matchea nada — así el IN no queda vacío y solo pasan alertas globales
+   * (menuUrlOrigen IS NULL).
+   */
+  private Collection<String> urlsPermitidas(
+      String username, Integer empresaId, Integer sucursalId) {
+    Set<String> urls = permisoRepository.findMenuUrlsPermitidas(username, empresaId, sucursalId);
+    return urls.isEmpty() ? Set.of("__NO_MATCH__") : urls;
   }
 
   @Override

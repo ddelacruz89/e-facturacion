@@ -17,6 +17,7 @@
 | `referencia_tipo` | VARCHAR(50) | `InLote` \| `MgProducto` \| … |
 | `referencia_key` | VARCHAR(200) | Clave de negocio para deduplicar. VENCIMIENTO: `"lote:productoId"`, STOCK_BAJO: `"productoId:almacenId"` |
 | `payload` | JSONB | Datos estructurados específicos del tipo |
+| `menu_url_origen` | VARCHAR(200) | NULL = global (todos la ven). Con valor = solo usuarios con `puedeLeer=true` en ese menú (`sg_menu.url`) |
 | `estado_id` | VARCHAR(10) | `ACT` \| `CER` |
 | `fecha_reg` | TIMESTAMPTZ | |
 | `usuario_reg` | VARCHAR(45) | |
@@ -81,6 +82,7 @@ sse/
 - Native query sobre `inventario.in_lote` buscando lotes por vencer
 - Deduplication via `NOT EXISTS` en `sg_notificacion`
 - `referenciaKey = "lote:productoId"`
+- `menuUrlOrigen = "/lotes"` — solo la ven usuarios con acceso al menú Lotes
 - Llama `sseService.push(empresaId, sucursalId)` por cada notificación creada
 
 ### `InAlertaInventarioListener` — `@Async("alertasExecutor")` + `@EventListener(InStockBajoEvent)`
@@ -88,6 +90,15 @@ sse/
 - Actualiza el payload si ya existe una activa
 - Cierra la notificación si el stock se recupera
 - `referenciaKey = "productoId:almacenId"`
+- `menuUrlOrigen = "/almacenes"` — solo la ven usuarios con acceso al menú Almacenes
+- Llama `sseService.push(empresaId, sucursalId)` al crear
+
+### `InRequisicionServiceImpl.save()` — al crear una requisición nueva
+- Se dispara en el `save()` del service, después del segundo save (cuando ya tiene `secuencia`)
+- `tipo = "REQUISICION_PENDIENTE"`, `modulo = "INVENTARIO"`
+- `referenciaKey = "requisicion:{id}"` — una por requisición, sin deduplicación adicional
+- `menuUrlOrigen = "/transferencias"` — solo la ven usuarios con acceso al menú Transferencias
+- `payload`: `{ requisicionId, secuencia, almacenSolicitanteId, almacenOrigenId, prioridad }`
 - Llama `sseService.push(empresaId, sucursalId)` al crear
 
 ### Para agregar un nuevo productor (aprobaciones, límite de producto, etc.)
@@ -102,6 +113,7 @@ notif.setTitulo("...");
 notif.setDescripcion("...");
 notif.setReferenciaKey("ordenId:" + id); // clave única para dedup
 notif.setPayload(Map.of(...));
+notif.setMenuUrlOrigen("/url-del-menu"); // URL de sg_menu.url; null = global
 notif.setEstadoId("ACT");
 notif.setFechaReg(LocalDateTime.now());
 notif.setUsuarioReg(username);
@@ -169,6 +181,39 @@ components/notificaciones/
 - Clic en campana → `Popover` con las 5 notificaciones más recientes + botón "Ver todas"
 - Fallback poll cada **5 minutos** por si la conexión SSE se pierde
 - Ruta `/alertas` → `NotificacionesView`
+
+---
+
+## Segregación por permisos de menú
+
+Las alertas se filtran automáticamente según los menús a los que tiene acceso el usuario autenticado. El mecanismo aprovecha el sistema de permisos existente (`sg_permiso` → `sg_menu`).
+
+### Cómo funciona
+
+- `SgNotificacion.menuUrlOrigen` contiene la URL del menú (`sg_menu.url`) al que pertenece la alerta.
+- `NULL` = alerta global, la ve cualquier usuario del tenant.
+- Al leer (listado, contador, badge), el service llama `SgPermisoRepository.findMenuUrlsPermitidas()` para obtener las URLs donde el usuario tiene `puedeLeer = true`, y filtra con:
+  ```sql
+  AND (menu_url_origen IS NULL OR menu_url_origen IN :urlsPermitidas)
+  ```
+- El SSE sigue empujando a todos en la sucursal (solo es un ping). El badge se actualiza llamando al contador, que ya aplica el filtro.
+
+### Mapa de alertas y menús
+
+| Tipo | `menuUrlOrigen` | Quién la ve |
+|---|---|---|
+| `VENCIMIENTO` | `/lotes` | Usuarios con acceso al menú Lotes |
+| `STOCK_BAJO` | `/almacenes` | Usuarios con acceso al menú Almacenes |
+| `REQUISICION_PENDIENTE` | `/transferencias` | Usuarios con acceso al menú Transferencias |
+| *(global)* | `null` | Todos los usuarios del tenant |
+
+### Regla para nuevos productores
+
+Siempre establecer `menuUrlOrigen` usando la constante `MENU_URL` al inicio de la clase productora:
+```java
+private static final String MENU_URL = "/url-del-menu"; // debe existir en sg_menu
+```
+Si la alerta es realmente para todos, no llamar `setMenuUrlOrigen()` (queda `null`).
 
 ---
 

@@ -94,8 +94,11 @@ public class InRequisicionDaoImpl implements InRequisicionDao {
             + "(SELECT a.nombre FROM InAlmacen a WHERE a.id = r.almacenOrigenId), "
             + "r.prioridad, r.usuarioReg, r.estadoId) ";
 
-    String jpql = select + "FROM InRequisicion r " + where
-        + " ORDER BY CASE WHEN r.prioridad = 'ALTA' THEN 1 WHEN r.prioridad = 'MEDIA' THEN 2 ELSE 3 END ASC, r.fechaReg DESC";
+    String jpql =
+        select
+            + "FROM InRequisicion r "
+            + where
+            + " ORDER BY CASE WHEN r.prioridad = 'ALTA' THEN 1 WHEN r.prioridad = 'MEDIA' THEN 2 ELSE 3 END ASC, r.fechaReg DESC";
     String countJpql = "SELECT COUNT(r) FROM InRequisicion r " + where;
 
     TypedQuery<InRequisicionResumenDTO> query =

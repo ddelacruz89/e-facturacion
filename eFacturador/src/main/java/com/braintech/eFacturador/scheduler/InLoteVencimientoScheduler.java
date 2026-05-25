@@ -38,6 +38,7 @@ public class InLoteVencimientoScheduler {
   private static final String TIPO = "VENCIMIENTO";
   private static final String ESTADO_ACT = "ACT";
   private static final String USUARIO_SISTEMA = "SISTEMA";
+  private static final String MENU_URL = "/lotes";
 
   @PersistenceContext private EntityManager entityManager;
 
@@ -133,6 +134,7 @@ public class InLoteVencimientoScheduler {
             "lote", lote,
             "productoId", productoId,
             "fechaVencimiento", fechaVencimiento != null ? fechaVencimiento.toString() : ""));
+    notif.setMenuUrlOrigen(MENU_URL);
     notif.setEstadoId(ESTADO_ACT);
     notif.setFechaReg(LocalDateTime.now());
     notif.setUsuarioReg(USUARIO_SISTEMA);

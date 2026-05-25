@@ -87,6 +87,12 @@ public class SgNotificacion implements Serializable {
   @Column(name = "payload", columnDefinition = "jsonb")
   private Map<String, Object> payload;
 
+  // ── Segregación por permisos ──────────────────────────────────────────────
+
+  /** URL del menú origen (sg_menu.url). NULL = visible para todos. */
+  @Column(name = "menu_url_origen", length = 200)
+  private String menuUrlOrigen;
+
   // ── Estado ────────────────────────────────────────────────────────────────
 
   @Column(name = "estado_id", length = 10, nullable = false)

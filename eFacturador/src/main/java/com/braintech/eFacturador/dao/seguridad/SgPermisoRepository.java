@@ -60,4 +60,21 @@ public interface SgPermisoRepository extends JpaRepository<SgPermiso, Integer> {
       @Param("username") String username,
       @Param("empresaId") Integer empresaId,
       @Param("sucursalId") Integer sucursalId);
+
+  /** URLs de todos los menús donde el usuario tiene puedeLeer=true. Usado para filtrar alertas. */
+  @Query(
+      """
+      SELECT p.menu.url FROM SgPermiso p
+      JOIN SgUsuarioRol ur ON ur.rol.id = p.rol.id
+      WHERE ur.usuario.username = :username
+        AND ur.empresaId        = :empresaId
+        AND ur.sucursalId.id    = :sucursalId
+        AND ur.activo           = true
+        AND p.empresaId         = :empresaId
+        AND p.puedeLeer         = true
+      """)
+  Set<String> findMenuUrlsPermitidas(
+      @Param("username") String username,
+      @Param("empresaId") Integer empresaId,
+      @Param("sucursalId") Integer sucursalId);
 }
