@@ -17,4 +17,9 @@ public interface InRequisicionService {
   void disableById(Integer id);
 
   Page<InRequisicionResumenDTO> searchByCriteria(InRequisicionSearchCriteria criteria);
+
+  /**
+   * Envía la requisición al flujo de aprobaciones. Si no existe config activa, la aprueba directo.
+   */
+  InRequisicion enviarAprobacion(Integer id);
 }

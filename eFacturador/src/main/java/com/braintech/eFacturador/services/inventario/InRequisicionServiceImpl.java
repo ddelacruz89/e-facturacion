@@ -8,9 +8,11 @@ import com.braintech.eFacturador.dto.inventario.InRequisicionResumenDTO;
 import com.braintech.eFacturador.dto.inventario.InRequisicionSearchCriteria;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.inventario.InRequisicionService;
+import com.braintech.eFacturador.interfaces.seguridad.SgAprobacionService;
 import com.braintech.eFacturador.jpa.inventario.InRequisicion;
 import com.braintech.eFacturador.jpa.inventario.InRequisicionDetalle;
 import com.braintech.eFacturador.jpa.notificacion.SgNotificacion;
+import com.braintech.eFacturador.jpa.seguridad.SgAprobacion;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.sse.InAlertaSseService;
 import com.braintech.eFacturador.util.TenantContext;
@@ -33,6 +35,7 @@ public class InRequisicionServiceImpl implements InRequisicionService {
   private final SgNotificacionRepository notificacionRepository;
   private final InAlertaSseService sseService;
   private final TenantContext tenantContext;
+  private final SgAprobacionService sgAprobacionService;
 
   @Override
   @Transactional
@@ -111,9 +114,48 @@ public class InRequisicionServiceImpl implements InRequisicionService {
   }
 
   @Override
+  @Transactional
   public InRequisicion findById(Integer id) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
-    return inRequisicionDao.findById(id, empresaId).orElse(null);
+    InRequisicion req = inRequisicionDao.findById(id, empresaId).orElse(null);
+    if (req != null && "PEN_APR".equals(req.getEstadoId())) {
+      List<SgAprobacion> aprobaciones = sgAprobacionService.findByDocumento("REQUISICION", id);
+      if (!aprobaciones.isEmpty()) {
+        String estadoApr = aprobaciones.get(0).getEstadoId();
+        if ("APR".equals(estadoApr) || "REC".equals(estadoApr)) {
+          req.setEstadoId(estadoApr);
+          req = inRequisicionDao.save(req);
+        }
+      }
+    }
+    return req;
+  }
+
+  @Override
+  @Transactional
+  public InRequisicion enviarAprobacion(Integer id) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    String username = tenantContext.getCurrentUsername();
+
+    InRequisicion req =
+        inRequisicionDao
+            .findById(id, empresaId)
+            .orElseThrow(() -> new RecordNotFoundException("Requisición no encontrada: " + id));
+
+    if (!"PEN".equals(req.getEstadoId())) {
+      throw new IllegalStateException(
+          "Solo se puede enviar a aprobación una requisición en estado PEN.");
+    }
+
+    if (!sgAprobacionService.existeConfigActiva("REQUISICION")) {
+      req.setEstadoId("APR");
+      return inRequisicionDao.save(req);
+    }
+
+    req.setEstadoId("PEN_APR");
+    InRequisicion saved = inRequisicionDao.save(req);
+    sgAprobacionService.crearSolicitud("REQUISICION", saved.getId(), username);
+    return saved;
   }
 
   @Override

@@ -860,6 +860,7 @@ export const SEARCH_CONFIGS = {
                 options: [
                     { value: "", label: "Todos" },
                     { value: "PEN", label: "Pendiente" },
+                    { value: "PEN_APR", label: "En Aprobación" },
                     { value: "APR", label: "Aprobada" },
                     { value: "REC", label: "Rechazada" },
                     { value: "COM", label: "Completada" },

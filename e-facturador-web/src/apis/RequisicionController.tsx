@@ -64,3 +64,11 @@ export function updateRequisicion(id: number, requisicion: InRequisicion): Promi
 export function disableRequisicion(id: number): Promise<void> {
     return apiClient.delete(`${BASE_URL}/${id}`).then(() => undefined);
 }
+
+export function enviarAprobacionRequisicion(id: number): Promise<InRequisicion> {
+    return apiClient
+        .post(`${BASE_URL}/${id}/enviar-aprobacion`)
+        .then((x: { data: ApiResponse<InRequisicion> | InRequisicion }) =>
+            unwrapContent<InRequisicion>(x.data)
+        );
+}

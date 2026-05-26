@@ -1,5 +1,5 @@
 export type PrioridadRequisicion = "ALTA" | "MEDIA" | "BAJA";
-export type EstadoRequisicion = "PEN" | "APR" | "REC" | "COM" | "ANU";
+export type EstadoRequisicion = "PEN" | "PEN_APR" | "APR" | "REC" | "COM" | "ANU";
 
 export interface InRequisicionDetalle {
   id?: number;

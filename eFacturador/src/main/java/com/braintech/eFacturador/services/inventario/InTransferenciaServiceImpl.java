@@ -3,6 +3,7 @@ package com.braintech.eFacturador.services.inventario;
 import com.braintech.eFacturador.dao.inventario.InAlmacenDao;
 import com.braintech.eFacturador.dao.inventario.InInventarioRepository;
 import com.braintech.eFacturador.dao.inventario.InLoteDao;
+import com.braintech.eFacturador.dao.inventario.InRequisicionDao;
 import com.braintech.eFacturador.dao.inventario.InTransferenciaRepository;
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
 import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
@@ -16,12 +17,15 @@ import com.braintech.eFacturador.interfaces.inventario.InTransferenciaService;
 import com.braintech.eFacturador.jpa.inventario.InAlmacen;
 import com.braintech.eFacturador.jpa.inventario.InLote;
 import com.braintech.eFacturador.jpa.inventario.InMovimiento;
+import com.braintech.eFacturador.jpa.inventario.InRequisicion;
+import com.braintech.eFacturador.jpa.inventario.InRequisicionDetalle;
 import com.braintech.eFacturador.jpa.inventario.InTransferencia;
 import com.braintech.eFacturador.jpa.inventario.InTransferenciaDetalle;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.models.Response;
 import com.braintech.eFacturador.util.TenantContext;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,6 +47,7 @@ public class InTransferenciaServiceImpl implements InTransferenciaService {
   private static final int TIPO_SALIDA_TRANSFERENCIA = 3;
 
   private final InTransferenciaRepository inTransferenciaRepository;
+  private final InRequisicionDao inRequisicionDao;
   private final InAlmacenDao inAlmacenDao;
   private final MgProductoRepository mgProductoRepository;
   private final InInventarioRepository inInventarioRepository;
@@ -72,12 +77,18 @@ public class InTransferenciaServiceImpl implements InTransferenciaService {
     transferencia.setSucursalId(new SgSucursal(sucursalId));
     transferencia.setUsuarioReg(username);
     transferencia.setFechaReg(LocalDateTime.now());
+    transferencia.setRequisicionId(requestDTO.getRequisicionId());
     transferencia.setDetalles(
         buildDetalles(requestDTO.getDetalles(), transferencia, empresaId, origen.getId()));
 
     InTransferencia saved = inTransferenciaRepository.save(transferencia);
 
-    // ── 2. Generar movimientos solo para items con cant > 0 ──────────────────
+    // ── 2. Completar requisición de origen si aplica ─────────────────────────
+    if (requestDTO.getRequisicionId() != null) {
+      completarRequisicion(requestDTO.getRequisicionId(), empresaId, saved.getDetalles());
+    }
+
+    // ── 4. Generar movimientos solo para items con cant > 0 ──────────────────
     // El trigger trg_actualiza_inventario actualiza in_inventarios atomicamente al insertar.
     List<InMovimiento> movimientos = new ArrayList<>();
     for (InTransferenciaDetalle det : saved.getDetalles()) {
@@ -333,6 +344,32 @@ public class InTransferenciaServiceImpl implements InTransferenciaService {
               nuevo.setFechaReg(LocalDateTime.now());
               return inLoteDao.save(nuevo);
             });
+  }
+
+  private void completarRequisicion(
+      Integer requisicionId, Integer empresaId, List<InTransferenciaDetalle> detallesTransferidos) {
+
+    InRequisicion req = inRequisicionDao.findById(requisicionId, empresaId).orElse(null);
+    if (req == null) return;
+
+    // Acumular cantidades transferidas por productoId
+    Map<Integer, BigDecimal> transferidoPorProducto = new HashMap<>();
+    for (InTransferenciaDetalle det : detallesTransferidos) {
+      if (det.getProductoId() == null || det.getCant() == null || det.getCant() <= 0) continue;
+      Integer prodId = det.getProductoId().getId();
+      transferidoPorProducto.merge(prodId, BigDecimal.valueOf(det.getCant()), BigDecimal::add);
+    }
+
+    // Actualizar cantidadAprobada en cada detalle de la requisición
+    for (InRequisicionDetalle detReq : req.getDetalles()) {
+      BigDecimal cantTransferida = transferidoPorProducto.get(detReq.getProductoId());
+      if (cantTransferida != null) {
+        detReq.setCantidadAprobada(cantTransferida);
+      }
+    }
+
+    req.setEstadoId("COM");
+    inRequisicionDao.save(req);
   }
 
   @Override

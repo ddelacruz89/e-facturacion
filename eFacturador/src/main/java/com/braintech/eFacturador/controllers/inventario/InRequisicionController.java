@@ -68,4 +68,10 @@ public class InRequisicionController {
     inRequisicionService.disableById(id);
     return ResponseEntity.noContent().build();
   }
+
+  @RequierePermiso(menuUrl = "/inventario/requisicion", accion = Accion.ESCRIBIR)
+  @PostMapping("/{id}/enviar-aprobacion")
+  public ResponseEntity<InRequisicion> enviarAprobacion(@PathVariable Integer id) {
+    return ResponseEntity.ok(inRequisicionService.enviarAprobacion(id));
+  }
 }

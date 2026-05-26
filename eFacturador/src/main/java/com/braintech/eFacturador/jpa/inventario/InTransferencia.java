@@ -35,6 +35,9 @@ public class InTransferencia extends BaseSucursal implements Serializable {
   @NotNull(message = "Almacén destino no debe estar vacío")
   private InAlmacen destinoAlmacenId;
 
+  @Column(name = "requisicion_id")
+  private Integer requisicionId;
+
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "transferenciaId", fetch = FetchType.EAGER)
   private @Valid List<InTransferenciaDetalle> detalles;
 }

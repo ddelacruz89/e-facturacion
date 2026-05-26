@@ -26,6 +26,7 @@ export interface InTransferenciaRequestDTO {
     origenAlmacenId: number;
     destinoAlmacenId: number;
     estadoId?: string;
+    requisicionId?: number;
     detalles: {
         productoId: number;
         cant: number;

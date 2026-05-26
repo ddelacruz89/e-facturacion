@@ -39,6 +39,7 @@ import {
     saveRequisicion,
     updateRequisicion,
     disableRequisicion,
+    enviarAprobacionRequisicion,
 } from "../../apis/RequisicionController";
 import { validateRequisicion } from "../../validations/requisicionValidation";
 import { useSharedSucursalesActivas } from "../../apis/SucursalController";
@@ -51,6 +52,7 @@ const PRIORIDADES: { value: PrioridadRequisicion; label: string; color: "error" 
 
 const ESTADOS: Record<string, string> = {
     PEN: "Pendiente",
+    PEN_APR: "En Aprobación",
     APR: "Aprobada",
     REC: "Rechazada",
     COM: "Completada",
@@ -186,6 +188,21 @@ export const RequisicionView: React.FC = () => {
         }
     };
 
+    const handleEnviarAprobacion = async () => {
+        if (!currentId) return;
+        try {
+            const updated = await enviarAprobacionRequisicion(currentId);
+            reset(updated);
+            showSnackbar(
+                updated.estadoId === "APR"
+                    ? "Requisición aprobada automáticamente (sin configuración de aprobación)."
+                    : "Requisición enviada a aprobación."
+            );
+        } catch {
+            showSnackbar("Error al enviar la requisición a aprobación.", "error");
+        }
+    };
+
     const buildAlmacenDisplay = (nombre: string, sucursalNombre?: string) =>
         sucursalNombre ? `${nombre} (${sucursalNombre})` : nombre;
 
@@ -250,6 +267,11 @@ export const RequisicionView: React.FC = () => {
                     <Button variant="contained" color="primary" type="button" size="small" onClick={handleNuevo}>
                         Nuevo
                     </Button>
+                    {currentId && currentEstado === "PEN" && (
+                        <Button variant="contained" color="secondary" type="button" size="small" onClick={handleEnviarAprobacion}>
+                            Enviar a Aprobación
+                        </Button>
+                    )}
                     {currentId && esPendiente && (
                         <Button variant="outlined" color="error" type="button" size="small" onClick={handleAnular}>
                             Anular
@@ -269,6 +291,8 @@ export const RequisicionView: React.FC = () => {
                                             ? "success"
                                             : currentEstado === "PEN"
                                             ? "warning"
+                                            : currentEstado === "PEN_APR"
+                                            ? "info"
                                             : currentEstado === "REC"
                                             ? "error"
                                             : "default"

@@ -8,6 +8,7 @@ import com.braintech.eFacturador.dto.seguridad.SgAprobacionResumenDTO;
 import com.braintech.eFacturador.dto.seguridad.SgAprobacionSearchCriteria;
 import com.braintech.eFacturador.dto.seguridad.SgConfigAprobacionResumenDTO;
 import com.braintech.eFacturador.dto.seguridad.SgConfigAprobacionSearchCriteria;
+import com.braintech.eFacturador.events.AprobacionResueltaEvent;
 import com.braintech.eFacturador.exceptions.AccesoDenegadoException;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.seguridad.SgAprobacionService;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ public class SgAprobacionServiceImpl implements SgAprobacionService {
   private final SgUsuarioRepository usuarioRepo;
   private final SgSucursalRepository sucursalRepo;
   private final TenantContext tenantContext;
+  private final ApplicationEventPublisher eventPublisher;
 
   // ── Configuración ─────────────────────────────────────────────────────────
 
@@ -107,9 +110,12 @@ public class SgAprobacionServiceImpl implements SgAprobacionService {
     existing.setModoAprobacion(config.getModoAprobacion());
     if (config.getActivo() != null) existing.setActivo(config.getActivo());
 
-    // Reemplazar niveles completos (orphanRemoval=true los limpia)
+    // Reemplazar niveles completos (orphanRemoval=true borra los anteriores).
+    // Se nulean los IDs entrantes para forzar INSERT y evitar merge de entidades
+    // ya marcadas para borrar por orphanRemoval → StaleObjectStateException.
     existing.getNiveles().clear();
     for (SgConfigAprobacionNivel nivel : config.getNiveles()) {
+      nivel.setId(null); // siempre INSERT, nunca MERGE de entidad detached
       nivel.setConfig(existing);
       nivel.setEmpresaId(empresaId);
       nivel.setFechaReg(LocalDateTime.now());
@@ -268,7 +274,19 @@ public class SgAprobacionServiceImpl implements SgAprobacionService {
     // Evaluar estado global
     evaluarEstadoGlobal(aprobacion);
 
-    return aprobacionRepo.save(aprobacion);
+    SgAprobacion saved = aprobacionRepo.save(aprobacion);
+
+    if (!"PEN".equals(saved.getEstadoId())) {
+      eventPublisher.publishEvent(
+          new AprobacionResueltaEvent(
+              this,
+              saved.getTipoDocumento(),
+              saved.getDocumentoId(),
+              saved.getEmpresaId(),
+              saved.getEstadoId()));
+    }
+
+    return saved;
   }
 
   @Override
@@ -321,6 +339,12 @@ public class SgAprobacionServiceImpl implements SgAprobacionService {
   public boolean existeConfigActiva(String tipoDocumento) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     return configRepo.findActivaByTipoYEmpresa(tipoDocumento, empresaId).isPresent();
+  }
+
+  @Override
+  public List<SgAprobacion> findByDocumento(String tipoDocumento, Integer documentoId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return aprobacionRepo.findByDocumento(empresaId, tipoDocumento, documentoId);
   }
 
   // ── Privado ───────────────────────────────────────────────────────────────

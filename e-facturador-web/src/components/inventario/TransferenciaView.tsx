@@ -128,9 +128,11 @@ export const TransferenciaView: React.FC = () => {
     }>({ open: false, message: "", severity: "info" });
 
     const [requisicionCargada, setRequisicionCargada] = useState<{
+        id: number;
         secuencia: number;
         almacenOrigenNombre: string;
         almacenSolicitanteNombre: string;
+        estadoId: string;
     } | null>(null);
 
     const productoSearch = useModalSearch();
@@ -229,9 +231,11 @@ export const TransferenciaView: React.FC = () => {
         try {
             const req = await getRequisicion(resumen.id);
             setRequisicionCargada({
+                id: req.id!,
                 secuencia: resumen.secuencia,
                 almacenOrigenNombre: resumen.almacenOrigenNombre,
                 almacenSolicitanteNombre: resumen.almacenSolicitanteNombre,
+                estadoId: req.estadoId ?? resumen.estadoId ?? "PEN",
             });
             const origenId = typeof req.almacenOrigenId === "object"
                 ? (req.almacenOrigenId as any)?.id as number
@@ -310,6 +314,13 @@ export const TransferenciaView: React.FC = () => {
             if (!origenId || !destinoId) { showMsg("Seleccione almacen origen y destino", "warning"); return; }
             if (origenId === destinoId) { showMsg("El almacen origen y destino no pueden ser el mismo", "warning"); return; }
             if (data.detalles.length === 0) { showMsg("Agregue al menos un producto al detalle", "warning"); return; }
+            if (requisicionCargada && requisicionCargada.estadoId !== "APR") {
+                showMsg(
+                    `La requisición #${requisicionCargada.secuencia} necesita aprobación primero (estado actual: ${requisicionCargada.estadoId === "PEN_APR" ? "En Aprobación" : requisicionCargada.estadoId === "PEN" ? "Pendiente" : requisicionCargada.estadoId}).`,
+                    "error"
+                );
+                return;
+            }
             setConfirmOpen(true);
         })();
     };
@@ -337,6 +348,7 @@ export const TransferenciaView: React.FC = () => {
             origenAlmacenId: origenId,
             destinoAlmacenId: destinoId,
             estadoId: data.estadoId,
+            requisicionId: requisicionCargada?.id ?? undefined,
             detalles: data.detalles.map((d) => ({
                 productoId: typeof d.productoId === "object" ? d.productoId?.id : d.productoId,
                 cant: d.cant,
@@ -394,7 +406,7 @@ export const TransferenciaView: React.FC = () => {
                 <ActionBar title="Transferencia de Inventario">
                     <Button size="small" variant="contained" type="submit" sx={{ bgcolor: "#526671", "&:hover": { bgcolor: "#3d4f57" } }}>Guardar</Button>
                     <Button size="small" variant="contained" type="button" onClick={() => { reset(initialForm); setLotesMap({}); setRequisicionCargada(null); }} sx={{ bgcolor: "#525271", "&:hover": { bgcolor: "#3d3d57" } }}>Nuevo</Button>
-                    <Button size="small" variant="contained" type="button" onClick={() => requisicionSearch.openModal(SEARCH_CONFIGS.REQUISICION)} sx={{ bgcolor: "#715D52", "&:hover": { bgcolor: "#57473f" } }}>
+                    <Button size="small" variant="contained" type="button" onClick={() => requisicionSearch.openModal(SEARCH_CONFIGS.REQUISICION, { ...SEARCH_CONFIGS.REQUISICION.defaultParams, estadoId: "APR" })} sx={{ bgcolor: "#715D52", "&:hover": { bgcolor: "#57473f" } }}>
                         Requisición
                     </Button>
                     <Button size="small" variant="contained" type="button" onClick={loadList} sx={{ bgcolor: "#716752", "&:hover": { bgcolor: "#574f3f" } }}>
