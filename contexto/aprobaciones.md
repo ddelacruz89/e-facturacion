@@ -498,35 +498,101 @@ Body de aprobar/rechazar: `{ "comentario": "..." }` (opcional en aprobar, recome
 
 ## Integración desde un módulo externo
 
+### Patrón completo implementado en `InRequisicionServiceImpl`
+
+#### 1 — Al crear el documento (`save`)
+
+Si no existe configuración activa para el tipo, el documento se aprueba automáticamente al crear — sin pasar por `PEN` ni requerir acción del usuario.
+
 ```java
-// En el service del documento (ej. InRequisicionServiceImpl):
+if (isNew) {
+    // ... secuencia ...
+    if (!sgAprobacionService.existeConfigActiva("REQUISICION")) {
+        saved.setEstadoId("APR"); // sin config → aprobación directa
+    }
+    saved = repository.save(saved);
+    if ("PEN".equals(saved.getEstadoId())) {
+        notificarNuevaRequisicion(saved, username); // solo si queda pendiente
+    }
+}
+```
 
-@Autowired
-private SgAprobacionService aprobacionService;
+#### 2 — Al enviar a aprobación (`enviarAprobacion`)
 
-// Al enviar a aprobación:
+Endpoint `POST /{id}/enviar-aprobacion`, visible en UI solo cuando `estadoId === "PEN"`.
+
+```java
 public InRequisicion enviarAprobacion(Integer id) {
-    InRequisicion req = repository.findByIdAndEmpresaId(id, empresaId).orElseThrow(...);
+    // Solo acepta requisiciones en PEN
+    if (!"PEN".equals(req.getEstadoId())) throw new IllegalStateException(...);
 
-    // 1. Verificar si existe configuración activa para este tipo
-    if (!aprobacionService.existeConfigActiva("REQUISICION")) {
-        // Sin config activa: aprobar directo
+    if (!sgAprobacionService.existeConfigActiva("REQUISICION")) {
         req.setEstadoId("APR");
         return repository.save(req);
     }
 
-    // 2. Cambiar estado del documento
     req.setEstadoId("PEN_APR");
     repository.save(req);
-
-    // 3. Crear la solicitud de aprobación
-    aprobacionService.crearSolicitud("REQUISICION", req.getId(), username);
-
+    sgAprobacionService.crearSolicitud("REQUISICION", req.getId(), username);
     return req;
 }
 ```
 
-**Nota:** El módulo externo es responsable de consultar el estado de `SgAprobacion` (vía `findByDocumento`) para actualizar su propio estado cuando la aprobación se resuelva. No hay callback automático — el diseño actual es pull, no push.
+#### 3 — Sincronización push al resolver (evento)
+
+Cuando un aprobador aprueba o rechaza en la bandeja, `SgAprobacionServiceImpl.responder()` publica un `AprobacionResueltaEvent`. El listener `InRequisicionAprobacionListener` lo recibe y actualiza el estado del documento **en la misma transacción**, sin necesidad de que nadie haga `GET /{id}`.
+
+```java
+// events/AprobacionResueltaEvent.java
+// campos: tipoDocumento, documentoId, empresaId, nuevoEstado ("APR" | "REC")
+
+// En SgAprobacionServiceImpl.responder(), al final:
+if (!"PEN".equals(saved.getEstadoId())) {
+    eventPublisher.publishEvent(new AprobacionResueltaEvent(
+        this, saved.getTipoDocumento(), saved.getDocumentoId(),
+        saved.getEmpresaId(), saved.getEstadoId()));
+}
+
+// listeners/InRequisicionAprobacionListener.java
+@EventListener
+@Transactional
+public void onAprobacionResuelta(AprobacionResueltaEvent event) {
+    if (!"REQUISICION".equals(event.getTipoDocumento())) return;
+    inRequisicionDao.findById(event.getDocumentoId(), event.getEmpresaId())
+        .ifPresent(req -> {
+            if ("PEN_APR".equals(req.getEstadoId())) {
+                req.setEstadoId(event.getNuevoEstado());
+                inRequisicionDao.save(req);
+            }
+        });
+}
+```
+
+**Para agregar soporte a un nuevo módulo** (ej. `OrdenCompra`): crear su propio listener que filtre `tipoDocumento = "ORDEN_COMPRA"`. El evento ya se publica solo — no hay que tocar `SgAprobacionServiceImpl`.
+
+### Flujo de estados resultante
+
+| Condición | Al crear | Al enviar | Al aprobar en bandeja |
+|---|---|---|---|
+| Sin config activa | → `APR` directo | — | — |
+| Con config activa | → `PEN` | → `PEN_APR` | → `APR` o `REC` (push inmediato) |
+
+---
+
+## Gotcha: `updateConfig` — `StaleObjectStateException`
+
+Al reemplazar los niveles de una configuración existente, **nulificar el `id` de cada nivel entrante** antes de agregarlo a la colección. Sin esto Hibernate intenta hacer `merge` de entidades detached que ya están marcadas para borrar por `orphanRemoval=true`, lanzando `StaleObjectStateException`.
+
+```java
+existing.getNiveles().clear();
+for (SgConfigAprobacionNivel nivel : config.getNiveles()) {
+    nivel.setId(null); // ← forzar INSERT, nunca MERGE
+    nivel.setConfig(existing);
+    // ...
+    existing.getNiveles().add(nivel);
+}
+return configRepo.save(existing);
+```
 
 ---
 
@@ -698,6 +764,10 @@ Los `menuUrl` deben coincidir exactamente con `sg_menu.url`:
 ### 5. `@JsonIgnoreProperties("sucursalId")` en aprobador del nivel
 Sin ignorar `sucursalId`, Jackson intenta serializar la FK `SgSucursal` de `SgUsuario`
 (herencia de `BaseSucursal`) generando referencias circulares adicionales.
+
+### 6. `StaleObjectStateException` al actualizar niveles — `updateConfig`
+Ver sección **Gotcha: `updateConfig`** en Integración. Causa: merge de entidades detached
+ya marcadas para borrar por `orphanRemoval=true`. Solución: `nivel.setId(null)` antes de agregar.
 
 ---
 

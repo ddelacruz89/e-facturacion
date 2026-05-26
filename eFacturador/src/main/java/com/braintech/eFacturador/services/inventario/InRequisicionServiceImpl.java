@@ -69,9 +69,18 @@ public class InRequisicionServiceImpl implements InRequisicionService {
           secuenciasDao.getNextSecuencia(
               empresaId, InRequisicion.class.getSimpleName().toUpperCase(Locale.ROOT));
       saved.setSecuencia(seq);
+
+      // Si no hay configuración de aprobación activa, aprobar directo
+      if (!sgAprobacionService.existeConfigActiva("REQUISICION")) {
+        saved.setEstadoId("APR");
+      }
+
       saved = inRequisicionDao.save(saved);
 
-      notificarNuevaRequisicion(saved, username);
+      // Notificar solo cuando queda pendiente de aprobación
+      if ("PEN".equals(saved.getEstadoId())) {
+        notificarNuevaRequisicion(saved, username);
+      }
     }
 
     return saved;
