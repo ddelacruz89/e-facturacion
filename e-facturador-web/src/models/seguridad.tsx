@@ -21,6 +21,8 @@ export interface SgUsuario {
     estadoId?: string;
     fechaReg?: string;
     usuarioReg?: string;
+    /** Manager directo (opcional). Se envía solo { username } al guardar. */
+    manager?: { username: string; nombre: string } | null;
 }
 
 export interface SgUsuarioResumenDTO {
@@ -30,6 +32,8 @@ export interface SgUsuarioResumenDTO {
     fechaReg: string;
     usuarioReg: string;
     estadoId?: string;
+    managerUsername?: string;
+    managerNombre?: string;
 }
 
 export interface SgUsuarioSearchCriteria {

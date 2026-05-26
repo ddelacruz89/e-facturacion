@@ -53,4 +53,7 @@ public interface SgAprobacionService {
 
   /** Verifica si existe configuración activa para el tipo de documento en el tenant actual. */
   boolean existeConfigActiva(String tipoDocumento);
+
+  /** Retorna el historial de aprobaciones de un documento, ordenado por fecha desc. */
+  List<SgAprobacion> findByDocumento(String tipoDocumento, Integer documentoId);
 }

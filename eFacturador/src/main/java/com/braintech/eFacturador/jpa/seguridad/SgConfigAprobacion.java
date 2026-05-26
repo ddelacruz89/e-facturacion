@@ -25,6 +25,7 @@ import lombok.Setter;
             name = "uq_config_apr_tipo",
             columnNames = {"empresa_id", "tipo_documento"}))
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Getter
 @Setter
 @NoArgsConstructor

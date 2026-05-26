@@ -41,9 +41,9 @@ public class SgConfigAprobacionNivel implements Serializable {
    * Aprobador fijo. Null cuando usaManager = true: en ese caso se resuelve el manager del
    * solicitante en tiempo de ejecución.
    */
-  @ManyToOne(fetch = FetchType.LAZY, optional = true)
+  @ManyToOne(fetch = FetchType.EAGER, optional = true)
   @JoinColumn(name = "aprobador_username", nullable = true)
-  @JsonIgnoreProperties({"sucursalesAsignadas", "password", "manager"})
+  @JsonIgnoreProperties({"sucursalesAsignadas", "password", "manager", "sucursalId"})
   private SgUsuario aprobador;
 
   /**

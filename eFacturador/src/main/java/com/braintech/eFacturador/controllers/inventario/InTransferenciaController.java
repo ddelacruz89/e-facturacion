@@ -32,13 +32,13 @@ public class InTransferenciaController {
     return ResponseEntity.ok(inTransferenciaService.getById(id));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/transferencias", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/transferencias", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<Response<?>> create(@RequestBody InTransferenciaRequestDTO requestDTO) {
     return ResponseEntity.ok(inTransferenciaService.create(requestDTO));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/transferencias", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/transferencias", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<Response<?>> update(
       @PathVariable Integer id, @RequestBody InTransferenciaRequestDTO requestDTO) {

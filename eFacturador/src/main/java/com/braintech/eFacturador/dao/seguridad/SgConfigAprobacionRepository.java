@@ -34,8 +34,8 @@ public interface SgConfigAprobacionRepository extends JpaRepository<SgConfigApro
       FROM SgConfigAprobacion c
       WHERE c.empresaId = :empresaId
         AND c.fechaReg BETWEEN :desde AND :hasta
-        AND (:tipoDocumento IS NULL OR LOWER(c.tipoDocumento) LIKE LOWER(CONCAT('%', :tipoDocumento, '%')))
-        AND (:activo IS NULL OR c.activo = :activo)
+        AND (CAST(:tipoDocumento AS String) IS NULL OR LOWER(c.tipoDocumento) LIKE LOWER(CONCAT('%', CAST(:tipoDocumento AS String), '%')))
+        AND (CAST(:activo AS Boolean) IS NULL OR c.activo = :activo)
       ORDER BY c.nombre ASC
       """)
   List<SgConfigAprobacionResumenDTO> buscar(

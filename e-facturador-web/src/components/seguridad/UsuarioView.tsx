@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { Box, Grid, Button, Chip } from "@mui/material";
+import { Box, Grid, Button, Chip, TextField, IconButton, Tooltip } from "@mui/material";
+import ClearIcon from "@mui/icons-material/Clear";
 import { AlphanumericInput } from "../../customers/CustomMUIComponents";
 import ActionBar from "../../customers/ActionBar";
 import { getUsuario, saveUsuario, updateUsuario } from "../../apis/UsuarioController";
@@ -14,10 +15,12 @@ const defaultValues: SgUsuario = {
     loginEmail: "",
     password: "",
     cambioPassword: true,
+    manager: null,
 };
 
 const UsuarioView = () => {
     const [searchOpen, setSearchOpen] = useState(false);
+    const [managerSearchOpen, setManagerSearchOpen] = useState(false);
     const [isNew, setIsNew] = useState(true);
 
     const {
@@ -25,12 +28,14 @@ const UsuarioView = () => {
         handleSubmit,
         reset,
         watch,
+        setValue,
         formState: { errors },
     } = useForm<SgUsuario>({ defaultValues });
 
     const usernameActual = watch("username");
+    const managerActual = watch("manager");
 
-    // ── Selección desde modal ─────────────────────────────────────────────────
+    // ── Selección de usuario desde modal ─────────────────────────────────────
     const handleSelect = async (resumen: SearchResultItem) => {
         const completo = await getUsuario(resumen.username as string);
         reset({ ...completo, password: "" }); // no cargar hash de password
@@ -38,12 +43,32 @@ const UsuarioView = () => {
         setSearchOpen(false);
     };
 
+    // ── Selección de manager desde modal ─────────────────────────────────────
+    const handleSelectManager = (resumen: SearchResultItem) => {
+        // Evitar que un usuario se asigne a sí mismo como manager
+        if (resumen.username === usernameActual) {
+            alert("Un usuario no puede ser su propio manager.");
+            return;
+        }
+        setValue("manager", { username: resumen.username as string, nombre: resumen.nombre as string });
+        setManagerSearchOpen(false);
+    };
+
+    const handleLimpiarManager = () => {
+        setValue("manager", null);
+    };
+
     // ── Guardar ──────────────────────────────────────────────────────────────
     const onSubmit: SubmitHandler<SgUsuario> = async (data) => {
         try {
+            // Enviar manager solo con username (el backend resuelve la entidad completa)
+            const payload: SgUsuario = {
+                ...data,
+                manager: data.manager?.username ? { username: data.manager.username, nombre: data.manager.nombre } : null,
+            };
             const saved = isNew
-                ? await saveUsuario(data)
-                : await updateUsuario(data.username, data);
+                ? await saveUsuario(payload)
+                : await updateUsuario(data.username, payload);
             reset({ ...saved, password: "" });
             setIsNew(false);
             alert("Usuario guardado correctamente");
@@ -133,14 +158,56 @@ const UsuarioView = () => {
                             }
                         />
                     </Grid>
+
+                    {/* ── Selector de Manager ─────────────────────────────── */}
+                    <Grid container spacing={2} sx={{ px: 2, pt: 2 }}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                                <TextField
+                                    label="Manager"
+                                    size="small"
+                                    fullWidth
+                                    value={managerActual ? `${managerActual.nombre} (${managerActual.username})` : ""}
+                                    placeholder="Sin manager asignado"
+                                    InputProps={{
+                                        readOnly: true,
+                                        endAdornment: managerActual ? (
+                                            <Tooltip title="Quitar manager">
+                                                <IconButton size="small" onClick={handleLimpiarManager}>
+                                                    <ClearIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        ) : null,
+                                    }}
+                                    sx={{ "& .MuiInputBase-input": { cursor: "default" } }}
+                                />
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    onClick={() => setManagerSearchOpen(true)}
+                                    sx={{ whiteSpace: "nowrap", minWidth: 120 }}
+                                >
+                                    Seleccionar
+                                </Button>
+                            </Box>
+                        </Grid>
+                    </Grid>
                 </section>
             </Box>
 
-            {/* Modal de búsqueda */}
+            {/* Modal búsqueda de usuario */}
             <ModalSearch
                 open={searchOpen}
                 onClose={() => setSearchOpen(false)}
                 onSelect={handleSelect}
+                config={SEARCH_CONFIGS.USUARIO}
+            />
+
+            {/* Modal búsqueda de manager */}
+            <ModalSearch
+                open={managerSearchOpen}
+                onClose={() => setManagerSearchOpen(false)}
+                onSelect={handleSelectManager}
                 config={SEARCH_CONFIGS.USUARIO}
             />
         </main>
