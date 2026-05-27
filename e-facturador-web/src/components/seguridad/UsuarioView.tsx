@@ -1,11 +1,17 @@
 import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { Box, Grid, Button, Chip, TextField, IconButton, Tooltip, InputAdornment } from "@mui/material";
+import {
+    Alert,
+    Box, Grid, Button, Chip, TextField, IconButton, Tooltip, InputAdornment,
+    Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText,
+    Snackbar,
+} from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { AlphanumericInput } from "../../customers/CustomMUIComponents";
 import ActionBar from "../../customers/ActionBar";
-import { getUsuario, saveUsuario, updateUsuario } from "../../apis/UsuarioController";
+import { getUsuario, saveUsuario, updateUsuario, resetearPasswordUsuario } from "../../apis/UsuarioController";
 import { SgUsuario } from "../../models/seguridad";
 import { ModalSearch } from "../search/ModalSearch";
 import { SEARCH_CONFIGS, SearchResultItem } from "../../types/modalSearchTypes";
@@ -24,6 +30,16 @@ const UsuarioView = () => {
     const [managerSearchOpen, setManagerSearchOpen] = useState(false);
     const [isNew, setIsNew] = useState(true);
     const [busquedaInput, setBusquedaInput] = useState("");
+    const [confirmResetOpen, setConfirmResetOpen] = useState(false);
+    const [passwordTemporal, setPasswordTemporal] = useState<string | null>(null);
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: "success" | "error" | "warning" | "info";
+    }>({ open: false, message: "", severity: "info" });
+
+    const showSnackbar = (message: string, severity: "success" | "error" | "warning" | "info") =>
+        setSnackbar({ open: true, message, severity });
 
     const {
         control,
@@ -50,7 +66,7 @@ const UsuarioView = () => {
     const handleSelectManager = (resumen: SearchResultItem) => {
         // Evitar que un usuario se asigne a sí mismo como manager
         if (resumen.username === usernameActual) {
-            alert("Un usuario no puede ser su propio manager.");
+            showSnackbar("Un usuario no puede ser su propio manager.", "warning");
             return;
         }
         setValue("manager", { username: resumen.username as string, nombre: resumen.nombre as string });
@@ -74,10 +90,10 @@ const UsuarioView = () => {
                 : await updateUsuario(data.username, payload);
             reset({ ...saved, password: "" });
             setIsNew(false);
-            alert("Usuario guardado correctamente");
+            showSnackbar("Usuario guardado correctamente", "success");
         } catch (error) {
             console.error("Error al guardar usuario:", error);
-            alert("Error al guardar el usuario");
+            showSnackbar("Error al guardar el usuario", "error");
         }
     };
 
@@ -86,14 +102,34 @@ const UsuarioView = () => {
         setIsNew(true);
     };
 
+    const handleConfirmarReset = async () => {
+        setConfirmResetOpen(false);
+        try {
+            const res = await resetearPasswordUsuario(usernameActual);
+            setPasswordTemporal(res.passwordTemporal);
+        } catch {
+            showSnackbar("Error al resetear la contraseña", "error");
+        }
+    };
+
     return (
         <main>
             <Box component="form" onSubmit={handleSubmit(onSubmit)}>
                 <ActionBar title="Usuarios">
-                    <Button size="small" onClick={handleNuevo}>
+                    <Button
+                        size="small"
+                        variant="contained"
+                        onClick={handleNuevo}
+                        sx={{ bgcolor: "#716752", "&:hover": { bgcolor: "#5a5241" } }}
+                    >
                         Nuevo
                     </Button>
-                    <Button size="small" color="primary" variant="contained" type="submit">
+                    <Button
+                        size="small"
+                        variant="contained"
+                        type="submit"
+                        sx={{ bgcolor: "#526671", "&:hover": { bgcolor: "#3d4f58" } }}
+                    >
                         Guardar
                     </Button>
                 </ActionBar>
@@ -168,19 +204,33 @@ const UsuarioView = () => {
                             control={control}
                             error={errors.loginEmail}
                         />
-                        <AlphanumericInput
-                            label={isNew ? "Contraseña" : "Nueva contraseña (dejar vacío para no cambiar)"}
-                            size={6}
-                            name="password"
-                            type="password"
-                            control={control}
-                            error={errors.password}
-                            rules={
-                                isNew
-                                    ? { required: "Campo requerido", minLength: { value: 6, message: "Mínimo 6 caracteres" } }
-                                    : {}
-                            }
-                        />
+                        <Box sx={{ width: "50%", display: "flex", gap: 1, alignItems: "flex-start" }}>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <AlphanumericInput
+                                    label={isNew ? "Contraseña" : "Nueva contraseña (dejar vacío para no cambiar)"}
+                                    size={12}
+                                    name="password"
+                                    type="password"
+                                    control={control}
+                                    error={errors.password}
+                                    rules={{
+                                        required: isNew ? "Campo requerido" : false,
+                                        validate: (value: string) =>
+                                            !value || value.length === 0 || value.length >= 6 || "Mínimo 6 caracteres",
+                                    }}
+                                />
+                            </Box>
+                            {!isNew && usernameActual && (
+                                <Button
+                                    size="small"
+                                    variant="contained"
+                                    onClick={() => setConfirmResetOpen(true)}
+                                    sx={{ bgcolor: "#715D52", "&:hover": { bgcolor: "#5a4a41" }, mt: 0.5, whiteSpace: "nowrap" }}
+                                >
+                                    Resetear
+                                </Button>
+                            )}
+                        </Box>
                     </Grid>
 
                     {/* ── Selector de Manager ─────────────────────────────── */}
@@ -234,6 +284,75 @@ const UsuarioView = () => {
                 onSelect={handleSelectManager}
                 config={SEARCH_CONFIGS.USUARIO}
             />
+
+            {/* Confirmación de reset */}
+            <Dialog open={confirmResetOpen} onClose={() => setConfirmResetOpen(false)}>
+                <DialogTitle>Resetear contraseña</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Se generará una contraseña temporal para <strong>{usernameActual}</strong>.
+                        El usuario deberá cambiarla al próximo inicio de sesión.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmResetOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleConfirmarReset} color="warning" variant="contained">
+                        Confirmar reset
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Mostrar contraseña temporal */}
+            <Dialog open={!!passwordTemporal} onClose={() => setPasswordTemporal(null)}>
+                <DialogTitle>Contraseña temporal generada</DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        Entrega esta contraseña al usuario. No se mostrará de nuevo.
+                    </DialogContentText>
+                    <TextField
+                        fullWidth
+                        size="small"
+                        value={passwordTemporal ?? ""}
+                        inputProps={{ readOnly: true }}
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <Tooltip title="Copiar">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(passwordTemporal ?? "");
+                                                }}
+                                            >
+                                                <ContentCopyIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setPasswordTemporal(null)} variant="contained">
+                        Cerrar
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                anchorOrigin={{ vertical: "top", horizontal: "right" }}>
+                <Alert
+                    onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+                    severity={snackbar.severity}
+                    sx={{ width: "100%" }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </main>
     );
 };

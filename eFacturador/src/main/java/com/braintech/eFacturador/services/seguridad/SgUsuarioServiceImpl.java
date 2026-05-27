@@ -1,12 +1,14 @@
 package com.braintech.eFacturador.services.seguridad;
 
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRepository;
+import com.braintech.eFacturador.dto.seguridad.AdminResetPasswordResponse;
 import com.braintech.eFacturador.dto.seguridad.SgUsuarioResumenDTO;
 import com.braintech.eFacturador.dto.seguridad.SgUsuarioSearchCriteria;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.seguridad.SgUsuarioService;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
 import com.braintech.eFacturador.util.TenantContext;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -89,6 +91,34 @@ public class SgUsuarioServiceImpl implements SgUsuarioService {
     existing.setManager(resolverManager(usuario.getManager(), empresaId));
 
     return usuarioRepository.save(existing);
+  }
+
+  @Override
+  public AdminResetPasswordResponse resetearPassword(String username) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    SgUsuario usuario =
+        usuarioRepository
+            .findByIdAndEmpresaId(username, empresaId)
+            .orElseThrow(() -> new RecordNotFoundException("Usuario no encontrado: " + username));
+
+    String passwordTemporal = generarPasswordTemporal();
+    usuario.setPassword(passwordEncoder.encode(passwordTemporal));
+    usuario.setCambioPassword(true);
+    usuarioRepository.save(usuario);
+
+    return new AdminResetPasswordResponse(passwordTemporal);
+  }
+
+  private static final String CHARS =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%&*";
+
+  private String generarPasswordTemporal() {
+    SecureRandom random = new SecureRandom();
+    StringBuilder sb = new StringBuilder(10);
+    for (int i = 0; i < 10; i++) {
+      sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
+    }
+    return sb.toString();
   }
 
   /**

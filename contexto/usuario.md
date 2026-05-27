@@ -1,6 +1,136 @@
-# Módulo de Usuario — Gestión de Contraseña
+# Módulo de Usuario — Gestión de Contraseña y Administración
 
-## Cambiar contraseña (usuario autenticado)
+## CRUD de usuarios
+
+### Backend
+
+**Entidad:** `SgUsuario` — tabla `seguridad.sg_usuario`.
+Extiende `BaseSucursal` (tiene `empresaId` + `sucursalId`).
+
+**Campos clave:**
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `username` | String (PK, max 20) | Identificador único |
+| `loginEmail` | String (unique, max 100) | Email para login y recuperación |
+| `password` | String | BCrypt-encoded, nunca se serializa al frontend |
+| `cambioPassword` | Boolean | Si `true`, el usuario debe cambiar contraseña al próximo login |
+| `nombre` | String (max 200) | Nombre completo |
+| `manager` | SgUsuario (ManyToOne, self-ref) | Manager directo, puede ser `null` |
+
+**Controller:** `UsuariosController` — base `api/v1/seguridad/usuario`
+```
+GET    /{username}    → getById()
+POST   /              → save()
+PUT    /{username}    → update()
+POST   /buscar        → buscar()
+POST   /{username}/resetear-password → resetearPassword()
+```
+
+**Service:** `SgUsuarioServiceImpl`
+- `save()` y `update()`: solo re-hashean `password` si viene no vacío (deja intacto si llega `""`).
+- `resolverManager()`: recibe el manager como objeto parcial `{username}` del frontend y carga la entidad completa del mismo tenant.
+
+**DTOs:**
+- `SgUsuarioResumenDTO` — campos para la tabla de búsqueda
+- `SgUsuarioSearchCriteria` — filtros de búsqueda
+- `AdminResetPasswordResponse { String passwordTemporal }` — respuesta del reset por admin
+
+---
+
+### Frontend
+
+**Componente:** `src/components/seguridad/UsuarioView.tsx`
+**API client:** `src/apis/UsuarioController.tsx`
+
+**Funciones API:**
+```typescript
+buscarUsuarios(criteria)          // POST /buscar
+getUsuario(username)              // GET /{username}
+saveUsuario(usuario)              // POST /
+updateUsuario(username, usuario)  // PUT /{username}
+resetearPasswordUsuario(username) // POST /{username}/resetear-password
+```
+
+**Notificaciones:** usa `Snackbar` + `Alert` de MUI (estándar del proyecto). No usar `alert()`.
+```typescript
+const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success"|"error"|"warning"|"info" }>(...);
+const showSnackbar = (message, severity) => setSnackbar({ open: true, message, severity });
+```
+
+**Colores de ActionBar** — paleta complementaria de `coloresapp.md`:
+| Botón | Color |
+|-------|-------|
+| Guardar | `#526671` hover `#3d4f58` (verde-azul) |
+| Nuevo | `#716752` hover `#5a5241` (dorado-cálido) |
+| Resetear contraseña | `#715D52` hover `#5a4a41` (naranja-tierra) |
+
+**Bug conocido / fix de validación dinámica:**
+En react-hook-form, pasar `rules={}` (objeto vacío) cuando el campo ya fue registrado con `required` no limpia la regla — el `required` previo persiste en `_f`. Siempre pasar `required: false` explícito:
+```tsx
+rules={{
+    required: isNew ? "Campo requerido" : false,
+    validate: (value) => !value || value.length === 0 || value.length >= 6 || "Mínimo 6 caracteres",
+}}
+```
+
+---
+
+## Reset de contraseña por admin
+
+Método alternativo al flujo de recuperación por correo. El administrador genera una contraseña temporal para un usuario de su empresa.
+
+### Backend
+
+**Endpoint:** `POST /api/v1/seguridad/usuario/{username}/resetear-password` — requiere JWT.
+
+**Flujo en `SgUsuarioServiceImpl.resetearPassword(username)`:**
+1. Filtra por `empresaId` del tenant (no puede resetear usuarios de otra empresa).
+2. Genera contraseña aleatoria de 10 caracteres (`[A-Za-z0-9!@#$%&*]`) con `SecureRandom`.
+3. Hashea con `BCryptPasswordEncoder` y guarda en la entidad.
+4. Pone `cambioPassword = true` — el usuario deberá cambiarla al próximo login.
+5. Devuelve `AdminResetPasswordResponse { passwordTemporal }` — la contraseña en texto claro, visible solo una vez.
+
+**DTO de respuesta:**
+```java
+@Data @AllArgsConstructor
+public class AdminResetPasswordResponse {
+  private String passwordTemporal;
+}
+```
+
+**Archivos clave:**
+- `dto/seguridad/AdminResetPasswordResponse.java`
+- `interfaces/seguridad/SgUsuarioService.java` → método `resetearPassword(String username)`
+- `services/seguridad/SgUsuarioServiceImpl.java` → implementación + `generarPasswordTemporal()`
+- `controllers/seguridad/UsuariosController.java` → endpoint `POST /{username}/resetear-password`
+
+### Frontend
+
+**Botón "Resetear"** — aparece al lado derecho del campo "Nueva contraseña", solo cuando se edita un usuario existente (`!isNew && usernameActual`).
+
+**Flujo UI:**
+1. Admin hace clic en "Resetear" → se abre diálogo de confirmación.
+2. Admin confirma → llamada a `resetearPasswordUsuario(username)`.
+3. Se muestra diálogo con la contraseña temporal (campo read-only + botón copiar al portapapeles).
+4. Admin cierra el diálogo → la contraseña no se puede recuperar nuevamente.
+
+---
+
+## Coexistencia de métodos de reseteo
+
+Ambos flujos son independientes y no interfieren:
+
+| | Recuperación por correo | Reset por admin |
+|---|---|---|
+| Quién activa | El propio usuario | El administrador |
+| Endpoint | `POST /api/auth/recuperar-password/*` (público) | `POST /api/v1/seguridad/usuario/{username}/resetear-password` (JWT) |
+| Resultado | Usuario elige su nueva contraseña | Contraseña temporal, `cambioPassword = true` |
+
+Si el admin resetea mientras hay un token de recuperación pendiente, ese token queda obsoleto automáticamente (la contraseña en BD ya fue cambiada y el token no puede verificarse contra la nueva contraseña).
+
+---
+
+## Cambiar contraseña — usuario autenticado
 
 ### Backend
 
@@ -49,7 +179,7 @@ String passwordNueva;
 
 ---
 
-## Recuperar contraseña (usuario no autenticado)
+## Recuperar contraseña — usuario no autenticado (flujo por correo)
 
 ### Tabla de tokens
 

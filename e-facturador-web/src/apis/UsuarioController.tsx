@@ -18,3 +18,7 @@ export function saveUsuario(usuario: SgUsuario): Promise<SgUsuario> {
 export function updateUsuario(username: string, usuario: SgUsuario): Promise<SgUsuario> {
     return apiClient.put(`${BASE}/${username}`, usuario).then((r) => r.data);
 }
+
+export function resetearPasswordUsuario(username: string): Promise<{ passwordTemporal: string }> {
+    return apiClient.post(`${BASE}/${username}/resetear-password`).then((r) => r.data);
+}
