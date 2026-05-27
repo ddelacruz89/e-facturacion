@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { Box, Grid, Button, Chip, TextField, IconButton, Tooltip } from "@mui/material";
+import { Box, Grid, Button, Chip, TextField, IconButton, Tooltip, InputAdornment } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
+import SearchIcon from "@mui/icons-material/Search";
 import { AlphanumericInput } from "../../customers/CustomMUIComponents";
 import ActionBar from "../../customers/ActionBar";
 import { getUsuario, saveUsuario, updateUsuario } from "../../apis/UsuarioController";
@@ -22,6 +23,7 @@ const UsuarioView = () => {
     const [searchOpen, setSearchOpen] = useState(false);
     const [managerSearchOpen, setManagerSearchOpen] = useState(false);
     const [isNew, setIsNew] = useState(true);
+    const [busquedaInput, setBusquedaInput] = useState("");
 
     const {
         control,
@@ -38,8 +40,9 @@ const UsuarioView = () => {
     // ── Selección de usuario desde modal ─────────────────────────────────────
     const handleSelect = async (resumen: SearchResultItem) => {
         const completo = await getUsuario(resumen.username as string);
-        reset({ ...completo, password: "" }); // no cargar hash de password
+        reset({ ...completo, password: "" });
         setIsNew(false);
+        setBusquedaInput("");
         setSearchOpen(false);
     };
 
@@ -87,9 +90,6 @@ const UsuarioView = () => {
         <main>
             <Box component="form" onSubmit={handleSubmit(onSubmit)}>
                 <ActionBar title="Usuarios">
-                    <Button size="small" variant="outlined" onClick={() => setSearchOpen(true)}>
-                        Buscar
-                    </Button>
                     <Button size="small" onClick={handleNuevo}>
                         Nuevo
                     </Button>
@@ -97,6 +97,30 @@ const UsuarioView = () => {
                         Guardar
                     </Button>
                 </ActionBar>
+
+                <Box sx={{ px: 2, pt: 1.5, pb: 1.5, maxWidth: 360 }}>
+                    <TextField
+                        size="small"
+                        fullWidth
+                        placeholder="Buscar usuario…"
+                        value={busquedaInput}
+                        onChange={(e) => setBusquedaInput(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && setSearchOpen(true)}
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Tooltip title="Buscar usuario">
+                                            <IconButton size="small" onClick={() => setSearchOpen(true)} edge="start">
+                                                <SearchIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                    />
+                </Box>
 
                 {usernameActual && (
                     <Box sx={{ px: 2, pb: 1 }}>
