@@ -250,6 +250,7 @@ Archivos disponibles en `contexto/` — lee solo los relevantes a la tarea:
 - `requisiciones.md` — módulo de requisiciones de transferencia entre almacenes (estados, validaciones, layout, config de búsqueda de almacén con select de sucursal)
 - `transferencia.md` — módulo de transferencia de inventario entre almacenes (lotes, stock en tiempo real, transferencias parciales, integración con requisiciones)
 - `coloresapp.md` — paleta de colores oficial (monocromática, complementaria y tetrádica), reglas de botones en ActionBar
+- `movimiento.md` — trigger `trg_actualiza_inventario`: lógica cr/débito, función `fn_actualiza_inventario_producto`, campos requeridos por movimiento
 
 ---
 
