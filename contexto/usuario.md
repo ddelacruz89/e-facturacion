@@ -166,3 +166,52 @@ AuthService.solicitarRecuperacion(email: string): Promise<void>
 AuthService.verificarRecuperacion(email: string, codigo: string, passwordNueva: string): Promise<void>
 AuthService.cambiarPassword(passwordActual: string, passwordNueva: string): Promise<void>
 ```
+
+---
+
+## Configuración de Brevo (Email API)
+
+### Propiedades requeridas
+
+```properties
+# application.properties (valores vía env vars en producción)
+brevo.api.key=${BREVO_API_KEY}
+brevo.from.email=${BREVO_FROM_EMAIL:noreply@example.com}
+brevo.from.name=eFacturador
+```
+
+```properties
+# application-local.properties (local, excluido de git)
+brevo.api.key=xkeysib-TU_KEY_AQUI
+brevo.from.email=remitente@tudominio.com
+```
+
+> `application-local.properties` está en `.gitignore` — nunca se sube al repo.
+
+### Requisitos en el dashboard de Brevo
+
+1. **API Key con permiso de Transactional Emails** — en app.brevo.com → SMTP & API → API Keys → la key debe tener el scope `transactional-emails` activo.
+2. **Sender verificado** — el email configurado en `brevo.from.email` debe aparecer como verificado en Senders & Domains (check verde). Sin esto Brevo devuelve `401` con body vacío.
+
+### Diagnóstico — logs disponibles
+
+Al arrancar el servidor:
+```
+[Brevo] Config cargada — from: <email> | key length: <n> | key: xkeysib-...xxxx
+```
+- Key válida de Brevo: empieza con `xkeysib-`, longitud ~89 caracteres.
+- Si muestra `${BREVO_...` → la variable de entorno no está definida y hay que poner el valor directamente en `application-local.properties`.
+
+Al enviar un código:
+```
+[Brevo] Enviando código de recuperación a: <email>
+[Brevo] Email enviado correctamente. Status: 201 — Response: {"messageId":"..."}
+```
+
+Errores comunes:
+| Error en log | Causa |
+|---|---|
+| `401 UNAUTHORIZED` cuerpo vacío | API key sin permiso de transactional emails o sender no verificado |
+| `401` con JSON | API key incorrecta / expirada |
+| `400` sender not authorized | Email remitente no verificado en Brevo |
+| No aparece ningún log | `loginEmail` del usuario en BD tiene comillas/espacios extra — limpiar con: `UPDATE seguridad.sg_usuario SET login_email = TRIM(REPLACE(login_email, '"', '')) WHERE username = '...'` |

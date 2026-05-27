@@ -24,10 +24,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -164,17 +166,21 @@ public class AuthController {
 
   @PostMapping("/recuperar-password/solicitar")
   public ResponseEntity<?> solicitarRecuperacion(@RequestBody SolicitarRecuperacionRequest req) {
+    log.info("[RecuperarPassword] Solicitud recibida para email: {}", req.getEmail());
     SgUsuario usuario = usuarioRepository.findByLoginEmail(req.getEmail());
-    // Siempre responder OK para no revelar si el email existe
     if (usuario == null) {
+      log.warn("[RecuperarPassword] No se encontró usuario con loginEmail: {}", req.getEmail());
       return ResponseEntity.ok().build();
     }
+    log.info(
+        "[RecuperarPassword] Usuario encontrado: {} — generando código", usuario.getUsername());
     recuperacionTokenRepository.invalidarTokensDeEmail(req.getEmail());
     String codigo = String.format("%06d", RNG.nextInt(1_000_000));
     SgRecuperacionToken token =
         new SgRecuperacionToken(req.getEmail(), codigo, LocalDateTime.now().plusMinutes(15));
     recuperacionTokenRepository.save(token);
     emailService.enviarCodigoRecuperacion(req.getEmail(), codigo);
+    log.info("[RecuperarPassword] Token guardado — email en cola async");
     return ResponseEntity.ok().build();
   }
 

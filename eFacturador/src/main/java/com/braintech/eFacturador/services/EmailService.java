@@ -1,15 +1,21 @@
 package com.braintech.eFacturador.services;
 
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
+@Slf4j
 @Service
 public class EmailService {
 
@@ -26,21 +32,54 @@ public class EmailService {
   @Value("${brevo.from.name}")
   private String fromName;
 
+  @PostConstruct
+  public void logConfig() {
+    String keyPreview =
+        apiKey != null && apiKey.length() > 8
+            ? apiKey.substring(0, 8) + "..." + apiKey.substring(apiKey.length() - 4)
+            : "(muy corta o nula)";
+    log.info(
+        "[Brevo] Config cargada — from: {} | key length: {} | key: {}",
+        fromEmail,
+        apiKey != null ? apiKey.length() : 0,
+        keyPreview);
+  }
+
   @Async
   public void enviarCodigoRecuperacion(String destinatario, String codigo) {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.set("api-key", apiKey);
+    log.info("[Brevo] Enviando código de recuperación a: {}", destinatario);
 
-    Map<String, Object> body =
-        Map.of(
-            "sender", Map.of("name", fromName, "email", fromEmail),
-            "to", List.of(Map.of("email", destinatario)),
-            "subject", "Recuperación de contraseña — eFacturador",
-            "htmlContent", construirHtml(codigo));
+    try {
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+      headers.set("api-key", apiKey.trim());
 
-    HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-    restTemplate.postForEntity(BREVO_API_URL, request, String.class);
+      Map<String, Object> body =
+          Map.of(
+              "sender", Map.of("name", fromName, "email", fromEmail),
+              "to", List.of(Map.of("email", destinatario)),
+              "subject", "Recuperación de contraseña — eFacturador",
+              "htmlContent", construirHtml(codigo));
+
+      HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+      ResponseEntity<String> response =
+          restTemplate.postForEntity(BREVO_API_URL, request, String.class);
+
+      log.info(
+          "[Brevo] Email enviado correctamente. Status: {} — Response: {}",
+          response.getStatusCode(),
+          response.getBody());
+
+    } catch (HttpClientErrorException e) {
+      log.error(
+          "[Brevo] Error del cliente ({}): {}", e.getStatusCode(), e.getResponseBodyAsString());
+    } catch (HttpServerErrorException e) {
+      log.error(
+          "[Brevo] Error del servidor ({}): {}", e.getStatusCode(), e.getResponseBodyAsString());
+    } catch (Exception e) {
+      log.error(
+          "[Brevo] Error inesperado enviando email a {}: {}", destinatario, e.getMessage(), e);
+    }
   }
 
   private String construirHtml(String codigo) {
