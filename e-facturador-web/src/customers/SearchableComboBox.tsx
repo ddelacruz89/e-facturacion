@@ -157,16 +157,19 @@ export const SearchableComboBox: React.FC<SearchableComboBoxProps> = ({
                     if (multiple) {
                         if (Array.isArray(value)) {
                             return value.map((v) => {
-                                // Handle both new format {id, nombre} and old format
+                                // Handle both new format {id, nombre} and old format.
+                                // Normalise to string (same fix as single-select below).
                                 const searchValue = typeof v === "object" && v?.id !== undefined ? v.id : v;
-                                return memoizedOptions.find((opt) => opt.value === searchValue) || v;
+                                return memoizedOptions.find((opt) => String(opt.value) === String(searchValue)) || v;
                             });
                         }
                         return [];
                     } else {
-                        // Handle both new format {id, nombre} and old format
+                        // Handle both new format {id, nombre} and old format.
+                        // Normalise to string so that numeric IDs from the backend
+                        // (e.g. InAlmacen.id = 1) match string option values ("1").
                         const searchValue = typeof value === "object" && value?.id !== undefined ? value.id : value;
-                        return memoizedOptions.find((opt) => opt.value === searchValue) || null;
+                        return memoizedOptions.find((opt) => String(opt.value) === String(searchValue)) || null;
                     }
                 };
 

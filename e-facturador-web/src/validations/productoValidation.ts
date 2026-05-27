@@ -164,6 +164,41 @@ const productoSchema = Yup.object().shape({
     }),
 
     // -----------------------------------------------------------------------
+    // Límites por almacén — no puede repetirse el mismo almacén
+    // -----------------------------------------------------------------------
+    productosAlmacenesLimites: Yup.array()
+        .nullable()
+        .test(
+            "almacen-unico",
+            "No puede haber dos límites para el mismo almacén",
+            function (limites) {
+                if (!limites || limites.length === 0) return true;
+
+                // almacenId puede llegar como número, string o {id, nombre}
+                const getId = (almacenId: any): string | null => {
+                    if (almacenId === null || almacenId === undefined) return null;
+                    if (typeof almacenId === "object" && almacenId.id !== undefined) {
+                        return String(almacenId.id);
+                    }
+                    return String(almacenId);
+                };
+
+                const seen = new Set<string>();
+                for (let i = 0; i < limites.length; i++) {
+                    const id = getId((limites[i] as any).almacenId);
+                    if (!id || id === "0") continue; // sin almacén seleccionado, ignorar
+                    if (seen.has(id)) {
+                        return this.createError({
+                            message: `El almacén ya tiene un límite configurado (límite #${i + 1})`,
+                        });
+                    }
+                    seen.add(id);
+                }
+                return true;
+            },
+        ),
+
+    // -----------------------------------------------------------------------
     // Opcional: código de barra, descripción, precios de costo
     // -----------------------------------------------------------------------
     codigoBarra: Yup.string()

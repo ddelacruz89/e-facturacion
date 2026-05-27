@@ -133,6 +133,7 @@ export const AlmacenComboBox: React.FC<BaseComboProps> = ({ label = "Almacén", 
     const options: ComboBoxOption[] = almacenes.map((almacen) => ({
         value: almacen.id?.toString() || "",
         label: almacen.nombre,
+        description: almacen.sucursalId?.nombre ?? "",
     }));
 
     return (

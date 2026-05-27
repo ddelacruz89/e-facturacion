@@ -5,6 +5,7 @@ export interface InAlmacen {
     nombre: string;
     descripcion?: string;
     activo?: boolean;
+    sucursalId?: { id?: number; nombre?: string };
     // From BaseEntity
     usuarioReg?: string;
     fechaReg?: Date;
