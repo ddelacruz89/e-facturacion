@@ -16,6 +16,13 @@ public class InStockProductoNodoDTO {
   /** Suma de cantidades en todos los almacenes (sin importar almacén ni lote). */
   private Integer totalCantidad;
 
+  /**
+   * Estado mínimo entre todos los almacenes del producto. {@code "BAJO"} si al menos un almacén
+   * está por debajo de su límite, {@code "SALUDABLE"} si todos están bien, {@code null} si no hay
+   * límite configurado en ningún almacén.
+   */
+  private String estadoStock;
+
   /** Almacenes donde este producto tiene stock. */
   private List<InStockAlmacenNodoDTO> almacenes = new ArrayList<>();
 
@@ -30,6 +37,17 @@ public class InStockProductoNodoDTO {
     this.productoId = productoId;
     this.productoNombre = productoNombre;
     this.totalCantidad = totalCantidad == null ? 0 : totalCantidad.intValue();
+  }
+
+  /**
+   * Constructor JPQL con estado de stock. MIN('BAJO','SALUDABLE')='BAJO' → detecta almacén crítico.
+   */
+  public InStockProductoNodoDTO(
+      Integer productoId, String productoNombre, Long totalCantidad, String estadoStock) {
+    this.productoId = productoId;
+    this.productoNombre = productoNombre;
+    this.totalCantidad = totalCantidad == null ? 0 : totalCantidad.intValue();
+    this.estadoStock = estadoStock;
   }
 
   public void agregarCantidad(Integer cantidad) {

@@ -16,6 +16,12 @@ public class InStockAlmacenNodoDTO {
   /** Suma de cantidades de todos los lotes en este almacén. */
   private Integer totalCantidad;
 
+  /**
+   * Estado de stock vs límite configurado. Valores: {@code "BAJO"}, {@code "SALUDABLE"}, o {@code
+   * null} cuando el producto no tiene límite configurado en este almacén.
+   */
+  private String estadoStock;
+
   /** Lotes disponibles en este almacén. */
   private List<InStockLoteNodoDTO> lotes = new ArrayList<>();
 
@@ -30,6 +36,15 @@ public class InStockAlmacenNodoDTO {
     this.almacenId = almacenId;
     this.almacenNombre = almacenNombre;
     this.totalCantidad = totalCantidad == null ? 0 : totalCantidad.intValue();
+  }
+
+  /** Constructor JPQL con estado de stock. */
+  public InStockAlmacenNodoDTO(
+      Integer almacenId, String almacenNombre, Long totalCantidad, String estadoStock) {
+    this.almacenId = almacenId;
+    this.almacenNombre = almacenNombre;
+    this.totalCantidad = totalCantidad == null ? 0 : totalCantidad.intValue();
+    this.estadoStock = estadoStock;
   }
 
   public void agregarLote(String lote, Integer cantidad) {

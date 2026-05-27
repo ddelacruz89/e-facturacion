@@ -85,13 +85,17 @@ sse/
 - `menuUrlOrigen = "/lotes"` — solo la ven usuarios con acceso al menú Lotes
 - Llama `sseService.push(empresaId, sucursalId)` por cada notificación creada
 
-### `InAlertaInventarioListener` — `@Async("alertasExecutor")` + `@EventListener(InStockBajoEvent)`
-- Crea notificación `STOCK_BAJO` si `cantidadActual < limite`
-- Actualiza el payload si ya existe una activa
-- Cierra la notificación si el stock se recupera
+### `InAlertaInventarioListener` — `@Async("alertasExecutor")` + `@TransactionalEventListener(AFTER_COMMIT)` + `@Transactional(REQUIRES_NEW)`
+- Se dispara con `InStockBajoEvent`, publicado por `InMovimientoServiceImpl` en cada movimiento
+- Corre **después del commit** de la transacción principal (evita race condition con `READ COMMITTED`)
+- Compara el **total de todos los lotes** (`SUM` en `in_inventarios`) contra el límite — nunca el saldo de un lote individual
+- **Caso saludable sin alerta activa → `return` inmediato** (2 queries, sin writes)
+- Primer cruce del límite → `updateEstado='BAJO'` + crear notificación + SSE push
+- Sigue bajo → actualizar payload con nueva cantidad (sin nuevo push)
+- Recuperación → `updateEstado='SALUDABLE'` + cerrar notificación (`CER`)
 - `referenciaKey = "productoId:almacenId"`
 - `menuUrlOrigen = "/almacenes"` — solo la ven usuarios con acceso al menú Almacenes
-- Llama `sseService.push(empresaId, sucursalId)` al crear
+- Actualiza `in_inventarios.estado_producto_inventario` para todos los lotes del producto-almacén
 
 ### `InRequisicionServiceImpl.save()` — al crear una requisición nueva
 - Se dispara en el `save()` del service, después del segundo save (cuando ya tiene `secuencia`)
@@ -203,7 +207,7 @@ Las alertas se filtran automáticamente según los menús a los que tiene acceso
 | Tipo | `menuUrlOrigen` | Quién la ve |
 |---|---|---|
 | `VENCIMIENTO` | `/lotes` | Usuarios con acceso al menú Lotes |
-| `STOCK_BAJO` | `/almacenes` | Usuarios con acceso al menú Almacenes |
+| `STOCK_BAJO` | `/almacenes` | Usuarios con acceso al menú Almacenes. Payload: `{ productoId, productoNombre, almacenId, almacenNombre, cantidadActual, limite }` |
 | `REQUISICION_PENDIENTE` | `/transferencias` | Usuarios con acceso al menú Transferencias |
 | *(global)* | `null` | Todos los usuarios del tenant |
 

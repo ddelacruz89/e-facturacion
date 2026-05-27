@@ -2,12 +2,14 @@ package com.braintech.eFacturador.controllers.inventario;
 
 import com.braintech.eFacturador.dto.inventario.InStockAlmacenNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockArbolSearchCriteria;
+import com.braintech.eFacturador.dto.inventario.InStockCriticoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockLoteNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockProductoNodoDTO;
 import com.braintech.eFacturador.interfaces.inventario.InStockArbolService;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -57,5 +59,15 @@ public class InStockArbolController {
       @RequestBody InStockArbolSearchCriteria criteria) {
     return ResponseEntity.ok(
         stockArbolService.buscarLotesPorProductoAlmacen(productoId, almacenId, criteria));
+  }
+
+  /**
+   * Lista plana de producto-almacén cuyo stock total está por debajo del límite configurado.
+   *
+   * <p>GET /api/v1/inventario/stock-arbol/stock-critico
+   */
+  @GetMapping("/stock-critico")
+  public ResponseEntity<List<InStockCriticoDTO>> stockCritico() {
+    return ResponseEntity.ok(stockArbolService.getStockCritico());
   }
 }

@@ -37,6 +37,7 @@ const ClientesView = lazy(() => import("./components/Cliente/ClientesView"));
 const AjusteInventarioView = lazy(() => import("./components/inventario/AjusteInventarioView"));
 const AlmacenView = lazy(() => import("./components/inventario/AlmacenView"));
 const StockArbolView = lazy(() => import("./components/inventario/StockArbolView"));
+const StockCriticoView = lazy(() => import("./components/inventario/StockCriticoView"));
 const FacturaSuplidorView = lazy(() => import("./components/facturacion/FacturaSuplidorView"));
 const FacturaSuplidorPagosView = lazy(() => import("./components/facturacion/FacturaSuplidorPagosView"));
 const FormaPagoSuplidorView = lazy(() => import("./components/facturacion/FormaPagoSuplidorView"));
@@ -86,6 +87,7 @@ const AppRoutes = () => {
                     <Route path="ajuste-inventario" element={<AjusteInventarioView />} />
                     <Route path="almacenes" element={<AlmacenView />} />
                     <Route path="stock-arbol" element={<StockArbolView />} />
+                    <Route path="stock-critico" element={<StockCriticoView />} />
                     <Route path="factura-suplidor" element={<FacturaSuplidorView />} />
                     <Route path="pagos-suplidor" element={<FacturaSuplidorPagosView />} />
                     <Route path="formas-pago-suplidor" element={<FormaPagoSuplidorView />} />

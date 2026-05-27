@@ -23,6 +23,7 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import Grid from "@mui/material/Grid";
 import SearchIcon from "@mui/icons-material/Search";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
@@ -49,6 +50,26 @@ import {
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 const fmtCantidad = (v: number) => v?.toLocaleString("en-US") ?? "0";
+
+const ChipSalud: React.FC<{ estado?: string | null }> = ({ estado }) => {
+    if (estado !== "BAJO") return null;
+    return (
+        <Chip
+            icon={<WarningAmberIcon style={{ fontSize: 13 }} />}
+            label="Stock bajo"
+            size="small"
+            sx={{
+                bgcolor: "#ffebee",
+                color: "#c62828",
+                border: "1px solid #ef9a9a",
+                fontWeight: 600,
+                height: 20,
+                fontSize: 10,
+                "& .MuiChip-icon": { color: "#c62828" },
+            }}
+        />
+    );
+};
 
 // ── sub-componentes ───────────────────────────────────────────────────────────
 
@@ -80,10 +101,11 @@ interface FilaAlmacenProps {
     productoId: number;
     criteria: InStockArbolSearchCriteria;
     expandAll: boolean;
+    estadoStock?: string | null;
 }
 
 /** Fila nivel 2: almacén (colapsable → lotes cargados lazy al primer expand) */
-const FilaAlmacen: React.FC<FilaAlmacenProps> = ({ almacen, productoId, criteria, expandAll }) => {
+const FilaAlmacen: React.FC<FilaAlmacenProps> = ({ almacen, productoId, criteria, expandAll, estadoStock }) => {
     const [open, setOpen] = useState(false);
     const [lotes, setLotes] = useState<InStockLoteNodoDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -133,7 +155,7 @@ const FilaAlmacen: React.FC<FilaAlmacenProps> = ({ almacen, productoId, criteria
                     </IconButton>
                 </TableCell>
                 <TableCell sx={{ py: 0.8 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                         <WarehouseIcon sx={{ fontSize: 16, color: "#388e3c" }} />
                         <Typography variant="body2" fontWeight={500}>
                             {almacen.almacenNombre}
@@ -147,10 +169,15 @@ const FilaAlmacen: React.FC<FilaAlmacenProps> = ({ almacen, productoId, criteria
                                 sx={{ height: 18, fontSize: 10 }}
                             />
                         )}
+                        <ChipSalud estado={estadoStock ?? almacen.estadoStock} />
                     </Box>
                 </TableCell>
                 <TableCell align="right" sx={{ pr: 3, py: 0.8 }}>
-                    <Typography variant="body2" fontWeight={600} color="#2e7d32">
+                    <Typography
+                        variant="body2"
+                        fontWeight={600}
+                        color={(estadoStock ?? almacen.estadoStock) === "BAJO" ? "#c62828" : "#2e7d32"}
+                    >
                         {fmtCantidad(almacen.totalCantidad)}
                     </Typography>
                 </TableCell>
@@ -245,7 +272,7 @@ const FilaProducto: React.FC<FilaProductoProps> = ({ producto, criteria, expandA
                 </TableCell>
                 <TableCell sx={{ width: 40, border: 0 }} />
                 <TableCell sx={{ py: 1 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
                         <InventoryIcon sx={{ fontSize: 18, color: "#1565c0" }} />
                         <Typography variant="body2" fontWeight={700}>
                             {producto.productoNombre}
@@ -260,10 +287,15 @@ const FilaProducto: React.FC<FilaProductoProps> = ({ producto, criteria, expandA
                                 sx={{ height: 18, fontSize: 10 }}
                             />
                         )}
+                        <ChipSalud estado={producto.estadoStock} />
                     </Box>
                 </TableCell>
                 <TableCell align="right" sx={{ pr: 3, py: 1 }}>
-                    <Typography variant="body2" fontWeight={700} color="primary">
+                    <Typography
+                        variant="body2"
+                        fontWeight={700}
+                        color={producto.estadoStock === "BAJO" ? "#c62828" : "primary"}
+                    >
                         {fmtCantidad(producto.totalCantidad)}
                     </Typography>
                 </TableCell>
@@ -288,6 +320,7 @@ const FilaProducto: React.FC<FilaProductoProps> = ({ producto, criteria, expandA
                                             productoId={producto.productoId}
                                             criteria={criteria}
                                             expandAll={expandAll}
+                                            estadoStock={alm.estadoStock}
                                         />
                                     ))
                                 )}

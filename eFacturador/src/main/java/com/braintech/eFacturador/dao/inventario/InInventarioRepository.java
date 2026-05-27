@@ -7,6 +7,7 @@ import com.braintech.eFacturador.jpa.inventario.InInventario;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -56,6 +57,30 @@ public interface InInventarioRepository extends JpaRepository<InInventario, Inte
    * Lotes disponibles (cantidad > 0) para un producto en un almacén específico. Incluye null como
    * lote cuando el producto tiene stock sin lote asignado.
    */
+  /** Stock total de un producto en un almacén, sumando todos los lotes. */
+  @Query(
+      "SELECT COALESCE(SUM(i.cantidad), 0) FROM InInventario i "
+          + "WHERE i.productoId.id = :productoId "
+          + "AND i.almacenId.id = :almacenId "
+          + "AND i.empresaId = :empresaId")
+  Integer sumCantidadByProductoAndAlmacen(
+      @Param("productoId") Integer productoId,
+      @Param("almacenId") Integer almacenId,
+      @Param("empresaId") Integer empresaId);
+
+  /** Actualiza el estado de stock en todos los lotes del producto-almacén dado. */
+  @Modifying
+  @Query(
+      "UPDATE InInventario i SET i.estadoProductoInventario = :estado "
+          + "WHERE i.productoId.id = :productoId "
+          + "AND i.almacenId.id = :almacenId "
+          + "AND i.empresaId = :empresaId")
+  int updateEstadoByProductoAndAlmacen(
+      @Param("productoId") Integer productoId,
+      @Param("almacenId") Integer almacenId,
+      @Param("empresaId") Integer empresaId,
+      @Param("estado") String estado);
+
   @Query(
       "SELECT i.loteId FROM InInventario i "
           + "WHERE i.productoId.id = :productoId "

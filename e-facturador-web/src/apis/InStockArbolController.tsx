@@ -24,6 +24,8 @@ export interface InStockAlmacenNodoDTO {
     almacenId: number;
     almacenNombre: string;
     totalCantidad: number;
+    /** "BAJO" | "SALUDABLE" | null (sin límite configurado) */
+    estadoStock?: string | null;
 }
 
 /** Nivel 1: producto con cantidad total. almacenes se carga lazy al expandir. */
@@ -31,6 +33,19 @@ export interface InStockProductoNodoDTO {
     productoId: number;
     productoNombre: string;
     totalCantidad: number;
+    /** "BAJO" si al menos un almacén está bajo su límite; "SALUDABLE" si todos bien; null = sin límite */
+    estadoStock?: string | null;
+}
+
+/** Producto-almacén con stock por debajo del límite configurado. */
+export interface InStockCriticoDTO {
+    productoId: number;
+    productoNombre: string;
+    almacenId: number;
+    almacenNombre: string;
+    cantidadActual: number;
+    limite: number;
+    faltante: number;
 }
 
 // ── API ───────────────────────────────────────────────────────────────────
@@ -51,6 +66,13 @@ export function buscarAlmacenesPorProducto(
 ): Promise<InStockAlmacenNodoDTO[]> {
     return apiClient
         .post<InStockAlmacenNodoDTO[]>(`${BASE}/producto/${productoId}/almacenes`, criteria)
+        .then((res) => res.data);
+}
+
+/** Lista plana de productos bajo su límite mínimo de stock. */
+export function getStockCritico(): Promise<InStockCriticoDTO[]> {
+    return apiClient
+        .get<InStockCriticoDTO[]>(`${BASE}/stock-critico`)
         .then((res) => res.data);
 }
 

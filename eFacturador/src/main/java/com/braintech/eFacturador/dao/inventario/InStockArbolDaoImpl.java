@@ -2,11 +2,14 @@ package com.braintech.eFacturador.dao.inventario;
 
 import com.braintech.eFacturador.dto.inventario.InStockAlmacenNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockArbolSearchCriteria;
+import com.braintech.eFacturador.dto.inventario.InStockCriticoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockLoteNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockProductoNodoDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import org.springframework.stereotype.Repository;
@@ -32,7 +35,7 @@ public class InStockArbolDaoImpl implements InStockArbolDao {
 
     String jpql =
         "SELECT new com.braintech.eFacturador.dto.inventario.InStockProductoNodoDTO("
-            + "p.id, p.nombreProducto, SUM(i.cantidad)) "
+            + "p.id, p.nombreProducto, SUM(i.cantidad), MIN(i.estadoProductoInventario)) "
             + "FROM InInventario i JOIN i.productoId p "
             + where
             + "GROUP BY p.id, p.nombreProducto "
@@ -58,7 +61,7 @@ public class InStockArbolDaoImpl implements InStockArbolDao {
 
     String jpql =
         "SELECT new com.braintech.eFacturador.dto.inventario.InStockAlmacenNodoDTO("
-            + "a.id, a.nombre, SUM(i.cantidad)) "
+            + "a.id, a.nombre, SUM(i.cantidad), MAX(i.estadoProductoInventario)) "
             + "FROM InInventario i JOIN i.almacenId a "
             + where
             + "GROUP BY a.id, a.nombre "
@@ -107,6 +110,77 @@ public class InStockArbolDaoImpl implements InStockArbolDao {
     if (criteria.getSucursalId() != null) q.setParameter("sucursalId", criteria.getSucursalId());
 
     return q.getResultList();
+  }
+
+  // ── Stock crítico ─────────────────────────────────────────────────────────
+
+  /**
+   * Lista plana de producto-almacén cuyo stock total está por debajo del límite configurado. Usa
+   * native query para poder hacer el join por mg_producto_unidad_suplidor sin navegación JPQL.
+   */
+  @Override
+  @Transactional(readOnly = true)
+  public List<InStockCriticoDTO> findStockCritico(Integer empresaId) {
+    @SuppressWarnings("unchecked")
+    List<Object[]> rows =
+        em.createNativeQuery(
+                """
+                SELECT
+                    p.id          AS productoId,
+                    p.nombre_producto AS productoNombre,
+                    a.id          AS almacenId,
+                    a.nombre      AS almacenNombre,
+                    COALESCE(SUM(i.cantidad), 0) AS cantidadActual,
+                    MAX(pal.limite) AS limite
+                FROM producto.mg_producto_almacen_limite pal
+                JOIN producto.mg_producto_unidad_suplidor pus
+                    ON pus.id = pal.producto_unidad_suplidor_id
+                JOIN producto.mg_producto p
+                    ON p.id = pus.producto_id
+                JOIN inventario.in_almacen a
+                    ON a.id = pal.almacen_id
+                   AND a.empresa_id = :empresaId
+                LEFT JOIN inventario.in_inventarios i
+                    ON i.producto_id = pus.producto_id
+                   AND i.almacen_id  = pal.almacen_id
+                   AND i.empresa_id  = :empresaId
+                WHERE pal.empresa_id = :empresaId
+                GROUP BY p.id, p.nombre_producto, a.id, a.nombre
+                HAVING COALESCE(SUM(i.cantidad), 0) < MAX(pal.limite)
+                ORDER BY p.nombre_producto, a.nombre
+                """)
+            .setParameter("empresaId", empresaId)
+            .getResultList();
+
+    List<InStockCriticoDTO> result = new ArrayList<>();
+    for (Object[] r : rows) {
+      Integer productoId = toInt(r[0]);
+      String productoNombre = (String) r[1];
+      Integer almacenId = toInt(r[2]);
+      String almacenNombre = (String) r[3];
+      Integer cantidadActual = toInt(r[4]);
+      Integer limite = toInt(r[5]);
+      Integer faltante = (limite != null && cantidadActual != null) ? limite - cantidadActual : 0;
+      result.add(
+          new InStockCriticoDTO(
+              productoId,
+              productoNombre,
+              almacenId,
+              almacenNombre,
+              cantidadActual,
+              limite,
+              faltante));
+    }
+    return result;
+  }
+
+  private static Integer toInt(Object val) {
+    if (val == null) return null;
+    if (val instanceof Integer i) return i;
+    if (val instanceof Long l) return l.intValue();
+    if (val instanceof BigInteger bi) return bi.intValue();
+    if (val instanceof Number n) return n.intValue();
+    return null;
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────

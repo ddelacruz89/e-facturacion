@@ -2,6 +2,7 @@ package com.braintech.eFacturador.interfaces.inventario;
 
 import com.braintech.eFacturador.dto.inventario.InStockAlmacenNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockArbolSearchCriteria;
+import com.braintech.eFacturador.dto.inventario.InStockCriticoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockLoteNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockProductoNodoDTO;
 import java.util.List;
@@ -27,4 +28,7 @@ public interface InStockArbolService {
    */
   List<InStockLoteNodoDTO> buscarLotesPorProductoAlmacen(
       Integer productoId, Integer almacenId, InStockArbolSearchCriteria criteria);
+
+  /** Lista plana de producto-almacén por debajo del límite mínimo. */
+  List<InStockCriticoDTO> getStockCritico();
 }

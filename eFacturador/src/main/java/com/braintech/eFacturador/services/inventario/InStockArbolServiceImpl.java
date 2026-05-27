@@ -3,6 +3,7 @@ package com.braintech.eFacturador.services.inventario;
 import com.braintech.eFacturador.dao.inventario.InStockArbolDao;
 import com.braintech.eFacturador.dto.inventario.InStockAlmacenNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockArbolSearchCriteria;
+import com.braintech.eFacturador.dto.inventario.InStockCriticoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockLoteNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockProductoNodoDTO;
 import com.braintech.eFacturador.interfaces.inventario.InStockArbolService;
@@ -40,5 +41,12 @@ public class InStockArbolServiceImpl implements InStockArbolService {
       Integer productoId, Integer almacenId, InStockArbolSearchCriteria criteria) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     return stockArbolDao.findLotesPorProductoAlmacen(empresaId, productoId, almacenId, criteria);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<InStockCriticoDTO> getStockCritico() {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return stockArbolDao.findStockCritico(empresaId);
   }
 }
