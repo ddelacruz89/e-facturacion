@@ -42,6 +42,8 @@ public class InMovimientoDaoImpl implements InMovimientoDao {
   public InMovimiento save(InMovimiento movimiento) {
     if (movimiento.getId() == null) {
       em.persist(movimiento);
+      em.flush(); // ejecuta el INSERT → el trigger BEFORE INSERT corre y llena cantidad_inventario
+      em.refresh(movimiento); // recarga la fila para tener cantidad_inventario en memoria
       return movimiento;
     }
     return em.merge(movimiento);
@@ -50,16 +52,17 @@ public class InMovimientoDaoImpl implements InMovimientoDao {
   @Override
   @Transactional
   public void saveAll(List<InMovimiento> movimientos) {
-    for (int i = 0; i < movimientos.size(); i++) {
-      InMovimiento m = movimientos.get(i);
+    for (InMovimiento m : movimientos) {
       if (m.getId() == null) {
         em.persist(m);
       } else {
         em.merge(m);
       }
-      if (i % 50 == 0) {
-        em.flush();
-        em.clear();
+    }
+    em.flush(); // un solo flush al final: el trigger corre para cada fila insertada
+    for (InMovimiento m : movimientos) {
+      if (m.getId() != null) {
+        em.refresh(m); // recarga cantidad_inventario desde la DB para cada movimiento
       }
     }
   }

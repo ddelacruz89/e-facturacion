@@ -50,4 +50,9 @@ public class MgProductoUnidadSuplidor extends BaseEntity {
   @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JoinColumn(name = "producto_suplidor_id", referencedColumnName = "id")
   private List<MgProductoSuplidor> productosSuplidores;
+
+  /** Límites de stock por almacén para esta combinación unidad-suplidor. */
+  @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+  @JoinColumn(name = "producto_unidad_suplidor_id", referencedColumnName = "id")
+  private List<MgProductoUnidadSuplidorLimiteAlmacen> limiteAlmacenes;
 }

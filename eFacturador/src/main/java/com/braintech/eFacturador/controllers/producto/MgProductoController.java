@@ -66,7 +66,7 @@ public class MgProductoController {
     return productoService.getAllWorkerProducts();
   }
 
-  @RequierePermiso(menuUrl = "/productos", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/producto", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MgProducto> create(@RequestBody MgProducto producto) {
     MgProducto saved = productoService.create(producto);

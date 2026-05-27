@@ -90,8 +90,12 @@ public class MgProducto extends BaseEntity implements Serializable {
   @JoinColumn(name = "producto_id", referencedColumnName = "id")
   private List<MgProductoModulo> productosModulos;
 
-  @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name = "producto_id", referencedColumnName = "id")
+  @OneToMany
+  @JoinColumn(
+      name = "producto_id",
+      referencedColumnName = "id",
+      insertable = false,
+      updatable = false)
   @JsonView(Views.ConInventarios.class)
   private List<InInventario> inventarios;
 
@@ -100,7 +104,9 @@ public class MgProducto extends BaseEntity implements Serializable {
   @Comment("Lista de etiquetas/tags asociadas al producto")
   private List<MgProductoTag> tags;
 
-  @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name = "producto_unidad_suplidor_id", referencedColumnName = "id")
-  private List<MgProductoUnidadSuplidorLimiteAlmacen> productosAlmacenesLimites;
+  // Los límites pertenecen a mg_producto_almacen_limite cuyo FK apunta a
+  // mg_producto_unidad_suplidor — no a mg_producto. Se gestiona a través de
+  // MgProductoUnidadSuplidor.limiteAlmacenes; aquí es @Transient para que
+  // el frontend pueda enviarlo y recibirlo aplanado a nivel de producto.
+  @Transient private List<MgProductoUnidadSuplidorLimiteAlmacen> productosAlmacenesLimites;
 }

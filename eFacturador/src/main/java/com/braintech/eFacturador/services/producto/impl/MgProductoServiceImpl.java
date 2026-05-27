@@ -12,6 +12,7 @@ import com.braintech.eFacturador.exceptions.ApplicationException;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.jpa.producto.MgProductoUnidadSuplidor;
+import com.braintech.eFacturador.jpa.producto.MgProductoUnidadSuplidorLimiteAlmacen;
 import com.braintech.eFacturador.jpa.producto.ProductoResumen;
 import com.braintech.eFacturador.services.producto.MgProductoService;
 import com.braintech.eFacturador.util.TenantContext;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,9 +47,27 @@ public class MgProductoServiceImpl implements MgProductoService {
 
   @Override
   public MgProducto getById(Integer id) {
-    return productoRepository
-        .findById(id)
-        .orElseThrow(() -> new RecordNotFoundException("Producto no encontrado"));
+    MgProducto producto =
+        productoRepository
+            .findById(id)
+            .orElseThrow(() -> new RecordNotFoundException("Producto no encontrado"));
+    populateLimitesAlmacen(producto);
+    return producto;
+  }
+
+  /**
+   * Los límites viven en MgProductoUnidadSuplidor.limiteAlmacenes (FK correcto hacia
+   * mg_producto_unidad_suplidor). Los aplanamos en producto.productosAlmacenesLimites (@Transient)
+   * para que el frontend los reciba/envíe a nivel de producto como antes.
+   */
+  private void populateLimitesAlmacen(MgProducto producto) {
+    if (producto.getUnidadProductorSuplidor() == null) return;
+    List<MgProductoUnidadSuplidorLimiteAlmacen> todos =
+        producto.getUnidadProductorSuplidor().stream()
+            .filter(u -> u.getLimiteAlmacenes() != null)
+            .flatMap(u -> u.getLimiteAlmacenes().stream())
+            .collect(Collectors.toList());
+    producto.setProductosAlmacenesLimites(todos);
   }
 
   @Override
@@ -107,33 +127,24 @@ public class MgProductoServiceImpl implements MgProductoService {
       }
     }
 
-    if (producto.getProductosAlmacenesLimites() != null) {
-      producto
-          .getProductosAlmacenesLimites()
-          .forEach(
-              limite -> {
-                if (limite.getId() == null || limite.getId() == 0) {
-                  limite.setEmpresaId(empresaId);
-                  limite.setUsuarioReg(username);
-                  limite.setFechaReg(LocalDateTime.now());
-                  // Solo establecer activo si no viene del frontend
-                  if (limite.getActivo() == null) {
-                    limite.setActivo(true);
-                  }
-                }
-              });
-    }
+    // Extraer límites (@Transient) antes de guardar y asignarlos al primer
+    // MgProductoUnidadSuplidor, que es el propietario real del FK en DB.
+    List<MgProductoUnidadSuplidorLimiteAlmacen> limitesPendientes =
+        producto.getProductosAlmacenesLimites() != null
+            ? new ArrayList<>(producto.getProductosAlmacenesLimites())
+            : new ArrayList<>();
+    // El campo @Transient ya no necesita ir al repo; se persiste vía cascade de UnidadSuplidor
+    producto.setProductosAlmacenesLimites(null);
 
     // Set audit fields for unidad fracciones (MgProductoUnidadSuplidor)
+    boolean primeraUnidad = true;
     for (MgProductoUnidadSuplidor unidadSuplidor : producto.getUnidadProductorSuplidor()) {
       unidadSuplidor.setProductoId(producto);
 
       if (unidadSuplidor.getId() == null || unidadSuplidor.getId() == 0) {
-        // Nueva unidad*9
         unidadSuplidor.setEmpresaId(empresaId);
         unidadSuplidor.setUsuarioReg(username);
         unidadSuplidor.setFechaReg(LocalDateTime.now());
-        // Solo establecer activo si no viene del frontend
         if (unidadSuplidor.getActivo() == null) {
           unidadSuplidor.setActivo(true);
         }
@@ -149,7 +160,6 @@ public class MgProductoServiceImpl implements MgProductoService {
                     suplidor.setEmpresaId(empresaId);
                     suplidor.setUsuarioReg(username);
                     suplidor.setFechaReg(LocalDateTime.now());
-                    // Solo establecer activo si no viene del frontend
                     if (suplidor.getActivo() == null) {
                       suplidor.setActivo(true);
                     }
@@ -157,8 +167,23 @@ public class MgProductoServiceImpl implements MgProductoService {
                 });
       }
 
-      // Set audit fields for almacen limites within each unidadSuplidor
-
+      // Los límites de almacén se asocian al primer UnidadSuplidor (FK real en DB).
+      // La alerta usa LIMIT 1 por producto+almacen, así que el índice no importa.
+      if (primeraUnidad && !limitesPendientes.isEmpty()) {
+        limitesPendientes.forEach(
+            limite -> {
+              if (limite.getId() == null || limite.getId() == 0) {
+                limite.setEmpresaId(empresaId);
+                limite.setUsuarioReg(username);
+                limite.setFechaReg(LocalDateTime.now());
+                if (limite.getActivo() == null) {
+                  limite.setActivo(true);
+                }
+              }
+            });
+        unidadSuplidor.setLimiteAlmacenes(limitesPendientes);
+        primeraUnidad = false;
+      }
     }
 
     // Set audit fields for producto modulos
@@ -198,6 +223,9 @@ public class MgProductoServiceImpl implements MgProductoService {
               });
     }
 
+    // Los inventarios son read-only desde el producto; se gestionan por in_movimientos
+    producto.setInventarios(null);
+
     // Guardar el producto
     MgProducto prod = productoRepository.save(producto);
 
@@ -210,6 +238,8 @@ public class MgProductoServiceImpl implements MgProductoService {
       prod.setSecuencia(nuevaSecuencia);
     }
 
+    // Aplanar límites al nivel de producto para que el frontend los reciba correctamente
+    populateLimitesAlmacen(prod);
     return prod;
   }
 
