@@ -29,7 +29,11 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             auth ->
                 auth.requestMatchers(
-                        "/api/auth/login", "/api/auth/validate", "/api/auth/select-sucursal")
+                        "/api/auth/login",
+                        "/api/auth/validate",
+                        "/api/auth/select-sucursal",
+                        "/api/auth/recuperar-password/solicitar",
+                        "/api/auth/recuperar-password/verificar")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

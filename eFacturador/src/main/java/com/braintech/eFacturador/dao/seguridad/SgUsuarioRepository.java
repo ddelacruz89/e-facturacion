@@ -17,6 +17,8 @@ public interface SgUsuarioRepository extends JpaRepository<SgUsuario, String> {
   // For authentication (no filtering - finds user globally)
   SgUsuario findByUsername(String username);
 
+  SgUsuario findByLoginEmail(String loginEmail);
+
   @Query("SELECT u FROM SgUsuario u WHERE u.username = :loginEmail OR u.loginEmail = :loginEmail")
   SgUsuario findByLoginEmailOrUsernameV1(@Param("loginEmail") String loginEmail);
 

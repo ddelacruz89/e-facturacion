@@ -1,13 +1,15 @@
 import { Outlet, useNavigate, NavLink } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import {
-    Badge, Button, Box, Chip, CircularProgress, Divider,
-    IconButton, List, ListItem, ListItemText, Popover, Typography,
+    Alert, Badge, Box, Button, Chip, CircularProgress, Dialog, DialogActions,
+    DialogContent, DialogTitle, Divider, IconButton, InputAdornment,
+    List, ListItem, ListItemText, Menu, MenuItem, Popover, TextField, Typography,
 } from "@mui/material";
-import { ExitToApp, NotificationsOutlined } from "@mui/icons-material";
+import { AccountCircle, ExitToApp, LockReset, NotificationsOutlined, Visibility, VisibilityOff } from "@mui/icons-material";
 import "./menu.css";
 import { useEffect, useRef, useState } from "react";
 import logo from "./assets/logo-braintech.png";
+import { AuthService } from "./services/authService";
 import { useSharedModulos } from "./hooks/useSharedModulos";
 import { ModuloDto } from "./models/seguridad";
 import { SgNotificacionDTO, getNotificaciones, getContadorNoVistas } from "./apis/SgNotificacionController";
@@ -89,7 +91,60 @@ const HomeView = () => {
     // ── layout ─────────────────────────────────────────────────────────────────
     const { data: modulos } = useSharedModulos();
 
+    const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
+
+    // ── cambiar contraseña ─────────────────────────────────────────────────────
+    const [cambioPasswordOpen, setCambioPasswordOpen] = useState(false);
+    const [cpActual, setCpActual] = useState("");
+    const [cpNueva, setCpNueva] = useState("");
+    const [cpConfirm, setCpConfirm] = useState("");
+    const [cpError, setCpError] = useState<string | null>(null);
+    const [cpExito, setCpExito] = useState(false);
+    const [cpCargando, setCpCargando] = useState(false);
+    const [mostrarActual, setMostrarActual] = useState(false);
+    const [mostrarNueva, setMostrarNueva] = useState(false);
+    const [mostrarConfirm, setMostrarConfirm] = useState(false);
+
+    const handleAbrirCambioPassword = () => {
+        setUserMenuAnchor(null);
+        setCpActual(""); setCpNueva(""); setCpConfirm("");
+        setCpError(null); setCpExito(false);
+        setCambioPasswordOpen(true);
+    };
+
+    const handleCerrarCambioPassword = () => {
+        if (cpCargando) return;
+        setCambioPasswordOpen(false);
+    };
+
+    const handleSubmitCambioPassword = async () => {
+        setCpError(null);
+        if (!cpActual || !cpNueva || !cpConfirm) {
+            setCpError("Todos los campos son obligatorios.");
+            return;
+        }
+        if (cpNueva !== cpConfirm) {
+            setCpError("La nueva contraseña y su confirmación no coinciden.");
+            return;
+        }
+        if (cpNueva.length < 6) {
+            setCpError("La nueva contraseña debe tener al menos 6 caracteres.");
+            return;
+        }
+        setCpCargando(true);
+        try {
+            await AuthService.cambiarPassword(cpActual, cpNueva);
+            setCpExito(true);
+        } catch (err: any) {
+            const msg = err?.response?.data ?? err?.message ?? "Error al cambiar la contraseña.";
+            setCpError(typeof msg === "string" ? msg : "Error al cambiar la contraseña.");
+        } finally {
+            setCpCargando(false);
+        }
+    };
+
     const handleLogout = () => {
+        setUserMenuAnchor(null);
         logout();
         navigate("/login");
     };
@@ -202,15 +257,29 @@ const HomeView = () => {
                             </Box>
                         </Popover>
 
-                        <Button
-                            variant="outlined"
+                        <IconButton
                             size="small"
-                            color="error"
-                            startIcon={<ExitToApp />}
-                            onClick={handleLogout}
-                            sx={{ minWidth: "auto" }}>
-                            Cerrar Sesión
-                        </Button>
+                            onClick={(e) => setUserMenuAnchor(e.currentTarget)}
+                        >
+                            <AccountCircle />
+                        </IconButton>
+                        <Menu
+                            anchorEl={userMenuAnchor}
+                            open={Boolean(userMenuAnchor)}
+                            onClose={() => setUserMenuAnchor(null)}
+                            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                            transformOrigin={{ vertical: "top", horizontal: "right" }}
+                        >
+                            <MenuItem onClick={handleAbrirCambioPassword} sx={{ gap: 1 }}>
+                                <LockReset fontSize="small" />
+                                Cambiar Contraseña
+                            </MenuItem>
+                            <Divider />
+                            <MenuItem onClick={handleLogout} sx={{ color: "error.main", gap: 1 }}>
+                                <ExitToApp fontSize="small" />
+                                Cerrar Sesión
+                            </MenuItem>
+                        </Menu>
                     </Box>
                 </Box>
             </div>
@@ -272,6 +341,85 @@ const HomeView = () => {
             <div className="foot">
                 <img src={logo} alt="Braintech" style={{ height: "40px" }} />
             </div>
+
+            {/* ── Modal cambiar contraseña ─────────────────────────────────── */}
+            <Dialog open={cambioPasswordOpen} onClose={handleCerrarCambioPassword} maxWidth="xs" fullWidth>
+                <DialogTitle>Cambiar Contraseña</DialogTitle>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: "16px !important" }}>
+                    {cpExito ? (
+                        <Alert severity="success">Contraseña actualizada correctamente.</Alert>
+                    ) : (
+                        <>
+                            {cpError && <Alert severity="error">{cpError}</Alert>}
+                            <TextField
+                                label="Contraseña actual"
+                                type={mostrarActual ? "text" : "password"}
+                                value={cpActual}
+                                onChange={(e) => setCpActual(e.target.value)}
+                                size="small"
+                                fullWidth
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton size="small" onClick={() => setMostrarActual((v) => !v)}>
+                                                {mostrarActual ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                            <TextField
+                                label="Nueva contraseña"
+                                type={mostrarNueva ? "text" : "password"}
+                                value={cpNueva}
+                                onChange={(e) => setCpNueva(e.target.value)}
+                                size="small"
+                                fullWidth
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton size="small" onClick={() => setMostrarNueva((v) => !v)}>
+                                                {mostrarNueva ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                            <TextField
+                                label="Confirmar nueva contraseña"
+                                type={mostrarConfirm ? "text" : "password"}
+                                value={cpConfirm}
+                                onChange={(e) => setCpConfirm(e.target.value)}
+                                size="small"
+                                fullWidth
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton size="small" onClick={() => setMostrarConfirm((v) => !v)}>
+                                                {mostrarConfirm ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                }}
+                            />
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCerrarCambioPassword} disabled={cpCargando}>
+                        {cpExito ? "Cerrar" : "Cancelar"}
+                    </Button>
+                    {!cpExito && (
+                        <Button
+                            variant="contained"
+                            onClick={handleSubmitCambioPassword}
+                            disabled={cpCargando}
+                        >
+                            {cpCargando ? <CircularProgress size={18} /> : "Guardar"}
+                        </Button>
+                    )}
+                </DialogActions>
+            </Dialog>
         </div>
     );
 };

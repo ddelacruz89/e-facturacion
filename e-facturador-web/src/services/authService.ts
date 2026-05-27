@@ -72,6 +72,23 @@ export class AuthService {
     }
   }
 
+  static async solicitarRecuperacion(email: string): Promise<void> {
+    await authApi.post('/api/auth/recuperar-password/solicitar', { email });
+  }
+
+  static async verificarRecuperacion(email: string, codigo: string, passwordNueva: string): Promise<void> {
+    await authApi.post('/api/auth/recuperar-password/verificar', { email, codigo, passwordNueva });
+  }
+
+  static async cambiarPassword(passwordActual: string, passwordNueva: string): Promise<void> {
+    const token = TokenService.getToken();
+    await authApi.post(
+      '/api/auth/cambiar-password',
+      { passwordActual, passwordNueva },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  }
+
   static logout(): void {
     TokenService.removeToken();
   }

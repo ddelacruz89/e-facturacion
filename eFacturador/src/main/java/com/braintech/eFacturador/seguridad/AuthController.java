@@ -1,17 +1,26 @@
 package com.braintech.eFacturador.seguridad;
 
+import com.braintech.eFacturador.dao.seguridad.SgRecuperacionTokenRepository;
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRepository;
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRolRepository;
+import com.braintech.eFacturador.jpa.seguridad.SgRecuperacionToken;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
+import com.braintech.eFacturador.seguridad.model.CambiarPasswordRequest;
 import com.braintech.eFacturador.seguridad.model.LoginRequest;
 import com.braintech.eFacturador.seguridad.model.LoginResponse;
 import com.braintech.eFacturador.seguridad.model.SelectSucursalRequest;
+import com.braintech.eFacturador.seguridad.model.SolicitarRecuperacionRequest;
 import com.braintech.eFacturador.seguridad.model.SucursalOpcionDTO;
+import com.braintech.eFacturador.seguridad.model.VerificarRecuperacionRequest;
+import com.braintech.eFacturador.services.EmailService;
 import com.braintech.eFacturador.util.JwtUtil;
+import com.braintech.eFacturador.util.TenantContext;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +34,13 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
   private final SgUsuarioRepository usuarioRepository;
   private final SgUsuarioRolRepository usuarioRolRepository;
+  private final SgRecuperacionTokenRepository recuperacionTokenRepository;
   private final JwtUtil jwtUtil;
   private final PasswordEncoder passwordEncoder;
+  private final TenantContext tenantContext;
+  private final EmailService emailService;
+
+  private static final SecureRandom RNG = new SecureRandom();
 
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
@@ -146,6 +160,58 @@ public class AuthController {
     response.setRequiresSucursalSelection(false);
 
     return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/recuperar-password/solicitar")
+  public ResponseEntity<?> solicitarRecuperacion(@RequestBody SolicitarRecuperacionRequest req) {
+    SgUsuario usuario = usuarioRepository.findByLoginEmail(req.getEmail());
+    // Siempre responder OK para no revelar si el email existe
+    if (usuario == null) {
+      return ResponseEntity.ok().build();
+    }
+    recuperacionTokenRepository.invalidarTokensDeEmail(req.getEmail());
+    String codigo = String.format("%06d", RNG.nextInt(1_000_000));
+    SgRecuperacionToken token =
+        new SgRecuperacionToken(req.getEmail(), codigo, LocalDateTime.now().plusMinutes(15));
+    recuperacionTokenRepository.save(token);
+    emailService.enviarCodigoRecuperacion(req.getEmail(), codigo);
+    return ResponseEntity.ok().build();
+  }
+
+  @PostMapping("/recuperar-password/verificar")
+  public ResponseEntity<?> verificarRecuperacion(@RequestBody VerificarRecuperacionRequest req) {
+    if (req.getPasswordNueva() == null || req.getPasswordNueva().length() < 6) {
+      return ResponseEntity.badRequest()
+          .body("La nueva contraseña debe tener al menos 6 caracteres");
+    }
+    SgRecuperacionToken token =
+        recuperacionTokenRepository.findTokenValido(req.getEmail(), req.getCodigo()).orElse(null);
+    if (token == null) {
+      return ResponseEntity.status(400).body("Código inválido o expirado");
+    }
+    SgUsuario usuario = usuarioRepository.findByLoginEmail(req.getEmail());
+    if (usuario == null) {
+      return ResponseEntity.status(404).body("Usuario no encontrado");
+    }
+    usuario.setPassword(passwordEncoder.encode(req.getPasswordNueva()));
+    usuarioRepository.save(usuario);
+    recuperacionTokenRepository.invalidarTokensDeEmail(req.getEmail());
+    return ResponseEntity.ok().build();
+  }
+
+  @PostMapping("/cambiar-password")
+  public ResponseEntity<?> cambiarPassword(@RequestBody CambiarPasswordRequest request) {
+    String username = tenantContext.getCurrentUsername();
+    SgUsuario usuario = usuarioRepository.findByUsername(username);
+    if (usuario == null) {
+      return ResponseEntity.status(404).body("Usuario no encontrado");
+    }
+    if (!passwordEncoder.matches(request.getPasswordActual(), usuario.getPassword())) {
+      return ResponseEntity.status(400).body("La contraseña actual es incorrecta");
+    }
+    usuario.setPassword(passwordEncoder.encode(request.getPasswordNueva()));
+    usuarioRepository.save(usuario);
+    return ResponseEntity.ok().build();
   }
 
   @GetMapping("/validate")
