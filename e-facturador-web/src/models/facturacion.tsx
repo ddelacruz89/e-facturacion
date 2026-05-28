@@ -8,9 +8,10 @@ export interface TipoFactura {
 }
 
 export interface TipoComprobante {
-    id?: string; // opcional si lo generas automáticamente
+    id?: string;
     tipoComprobante: string;
     electronico: boolean;
+    categoria?: string;
 }
 
 export interface MgItbis {

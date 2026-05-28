@@ -17,8 +17,12 @@ public class TipoComprobanteController {
   private final TipoComprobanteServices tipoComprobanteServices;
 
   @GetMapping("all")
-  public ResponseEntity<Response<List<MgTipoComprobante>>> findAll() {
-    Response<List<MgTipoComprobante>> response = tipoComprobanteServices.findAll();
+  public ResponseEntity<Response<List<MgTipoComprobante>>> findAll(
+      @RequestParam(required = false) String categoria) {
+    Response<List<MgTipoComprobante>> response =
+        (categoria != null && !categoria.isBlank())
+            ? tipoComprobanteServices.findByCategoria(categoria)
+            : tipoComprobanteServices.findAll();
     return ResponseEntity.status(response.status()).body(response);
   }
 

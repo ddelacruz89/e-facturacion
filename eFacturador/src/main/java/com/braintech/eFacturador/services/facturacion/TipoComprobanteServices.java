@@ -28,6 +28,18 @@ public class TipoComprobanteServices implements ITipoEntity<MgTipoComprobante> {
     return Response.<List<MgTipoComprobante>>builder().status(HttpStatus.OK).content(tipos).build();
   }
 
+  public Response<List<MgTipoComprobante>> findByCategoria(String categoria) {
+    List<MgTipoComprobante> tipos = tipoComprobanteDao.findAllByCategoria(categoria);
+    if (tipos.isEmpty()) {
+      return Response.<List<MgTipoComprobante>>builder()
+          .status(HttpStatus.NOT_FOUND)
+          .content(List.of())
+          .error(new DataNotFoundDTO("No hay tipos de comprobante para la categoría: " + categoria))
+          .build();
+    }
+    return Response.<List<MgTipoComprobante>>builder().status(HttpStatus.OK).content(tipos).build();
+  }
+
   @Override
   public Response<MgTipoComprobante> save(MgTipoComprobante entity) {
     entity.setFechaReg(LocalDateTime.now());

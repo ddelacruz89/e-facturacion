@@ -252,6 +252,7 @@ Archivos disponibles en `contexto/` — lee solo los relevantes a la tarea:
 - `transferencia.md` — módulo de transferencia de inventario entre almacenes (lotes, stock en tiempo real, transferencias parciales, integración con requisiciones)
 - `coloresapp.md` — paleta de colores oficial (monocromática, complementaria y tetrádica), reglas de botones en ActionBar
 - `movimiento.md` — trigger `trg_actualiza_inventario`: lógica cr/débito, función `fn_actualiza_inventario_producto`, campos requeridos por movimiento
+- `factura-suplidor.md` — módulo de facturas de proveedores: e-CF/NCF, retenciones ISR/ITBIS, descuentos por renglón, pagos, validación QR DGII
 
 ---
 

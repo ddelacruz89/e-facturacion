@@ -3,7 +3,7 @@ import { TipoComprobante, TipoFactura } from "../models/facturacion";
 import { useEffect, useState } from "react";
 import { getTipoFacturas } from "../apis/TipoFacturaController";
 import { Control, Controller, FieldError } from "react-hook-form";
-import { getTipoComprobantes } from "../apis/TipoComprobanteController";
+import { getTipoComprobantes, getTipoComprobantesByCategoria } from "../apis/TipoComprobanteController";
 import { comboBoxStore } from "../store/ComboBoxStore";
 import { getRetenciones } from "../apis/GeneralController";
 
@@ -18,7 +18,8 @@ interface SelectOption {
     error?: FieldError;
     rules?: object;
     size?: Size;
-    handleGetItem?: (selected: any) => void
+    handleGetItem?: (selected: any) => void;
+    categoria?: string;
 }
 
 export function TipoFacturaSelect({ handleGetItem, name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: SelectOption) {
@@ -64,13 +65,19 @@ export function TipoFacturaSelect({ handleGetItem, name, disabled, readOnly, lab
     )
 }
 
-export function TipoComprobanteSelect({ handleGetItem, name, disabled, readOnly, label, control, error, rules, size = 12, ...rest }: SelectOption) {
+export function TipoComprobanteSelect({ handleGetItem, name, disabled, readOnly, label, control, error, rules, size = 12, categoria, ...rest }: SelectOption) {
     const { tipoComprobantes, setTipoComprobantes } = comboBoxStore();
-    useEffect(() => {
-        if (tipoComprobantes.length === 0)
-            getTipoComprobantes().then(x => setTipoComprobantes(x))
+    const [filtrados, setFiltrados] = useState<TipoComprobante[]>([]);
 
-    }, [])
+    useEffect(() => {
+        if (categoria) {
+            getTipoComprobantesByCategoria(categoria).then(x => setFiltrados(x));
+        } else if (tipoComprobantes.length === 0) {
+            getTipoComprobantes().then(x => setTipoComprobantes(x));
+        }
+    }, [categoria])
+
+    const opciones = categoria ? filtrados : tipoComprobantes;
     return (
         <Controller
             name={name}
@@ -89,7 +96,7 @@ export function TipoComprobanteSelect({ handleGetItem, name, disabled, readOnly,
                             {...rest}>
                             <MenuItem value="">Elegir</MenuItem>
                             {
-                                tipoComprobantes.map((option: TipoComprobante) =>
+                                opciones.map((option: TipoComprobante) =>
                                     <MenuItem
                                         onClick={() => handleGetItem && handleGetItem(option)}
                                         key={option.id}

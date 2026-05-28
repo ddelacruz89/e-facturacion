@@ -34,4 +34,7 @@ public class MgTipoComprobante implements Serializable {
 
   @Column(name = "activo")
   private Boolean activo;
+
+  @Column(name = "categoria")
+  private String categoria;
 }

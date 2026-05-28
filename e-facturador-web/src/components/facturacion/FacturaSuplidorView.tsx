@@ -632,7 +632,7 @@ const FacturaSuplidorView: React.FC = () => {
                         </Grid>
 
                         {/* Fila 2 */}
-                        <TipoComprobanteSelect control={control} name="tipoCfId" label="Tipo de Comprobante" size={2} />
+                        <TipoComprobanteSelect control={control} name="tipoCfId" label="Tipo de Comprobante" size={2} categoria="FT" />
 
                         <Grid size={{ xs: 12, md: 2 }}>
                             <TextField fullWidth size="small" label="No. Factura" {...register("numeroFactura")} />
