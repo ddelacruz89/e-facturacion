@@ -25,7 +25,7 @@ public class InAjusteInventarioController {
    * POST /aplicar — Aplica un ajuste de inventario. Body: { almacenId, observacion, detalles: [{
    * productoId, lote, cantidadActual, cantidadNueva }] }
    */
-  @RequierePermiso(menuUrl = "/inventario/ajustes", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/inventario/ajuste-inventario", accion = Accion.ESCRIBIR)
   @PostMapping("/aplicar")
   public ResponseEntity<InAjusteInventario> aplicar(
       @RequestBody InAjusteInventarioRequestDTO request) {
