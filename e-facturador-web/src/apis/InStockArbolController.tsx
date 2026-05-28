@@ -11,6 +11,19 @@ export interface InStockArbolSearchCriteria {
     almacenId?: number | null;
     productoNombre?: string;
     soloConStock?: boolean;
+    /** Página a consultar (0-based). Solo nivel 1. */
+    page?: number;
+    /** Tamaño de página calculado por el frontend según la altura de pantalla. */
+    size?: number;
+}
+
+/** Respuesta paginada de Spring Data. */
+export interface PageResponse<T> {
+    content: T[];
+    totalElements: number;
+    totalPages: number;
+    number: number;
+    size: number;
 }
 
 /** Nivel 3: lote con cantidad */
@@ -50,12 +63,12 @@ export interface InStockCriticoDTO {
 
 // ── API ───────────────────────────────────────────────────────────────────
 
-/** Nivel 1: lista de productos con cantidad total. */
+/** Nivel 1: página de productos con cantidad total. */
 export function buscarStockProductos(
     criteria: InStockArbolSearchCriteria
-): Promise<InStockProductoNodoDTO[]> {
+): Promise<PageResponse<InStockProductoNodoDTO>> {
     return apiClient
-        .post<InStockProductoNodoDTO[]>(`${BASE}/buscar`, criteria)
+        .post<PageResponse<InStockProductoNodoDTO>>(`${BASE}/buscar`, criteria)
         .then((res) => res.data);
 }
 

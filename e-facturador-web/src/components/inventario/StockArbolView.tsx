@@ -18,6 +18,7 @@ import {
     TableCell,
     TableContainer,
     TableHead,
+    TablePagination,
     TableRow,
     TextField,
     Tooltip,
@@ -333,6 +334,17 @@ const FilaProducto: React.FC<FilaProductoProps> = ({ producto, criteria, expandA
     );
 };
 
+/**
+ * Calcula cuántos productos caben en pantalla sin scroll vertical.
+ * Descuenta: ActionBar (~60px), panel filtros (~100px), cabecera tabla (~48px),
+ * paginador (~52px) y padding (~32px). Cada fila producto mide ~41px (MUI size="small").
+ */
+function calcPageSize(): number {
+    const overhead = 292;
+    const rowPx = 41;
+    return Math.max(5, Math.min(50, Math.floor((window.innerHeight - overhead) / rowPx)));
+}
+
 // ── componente principal ──────────────────────────────────────────────────────
 
 const StockArbolView: React.FC = () => {
@@ -347,13 +359,17 @@ const StockArbolView: React.FC = () => {
     const [productoNombre, setProductoNombre] = useState("");
     const [soloConStock, setSoloConStock] = useState(true);
 
-    // Criterios activos usados en la última búsqueda (los mismos se pasan a nivel 2 y 3)
-    const [activeCriteria, setActiveCriteria] = useState<InStockArbolSearchCriteria>({
+    // Criterios de filtro activos — se pasan a los sub-componentes para niveles 2 y 3
+    const [activeFilters, setActiveFilters] = useState<InStockArbolSearchCriteria>({
         soloConStock: true,
     });
 
-    // Datos
+    // Datos y paginación
     const [rows, setRows] = useState<InStockProductoNodoDTO[]>([]);
+    const [page, setPage] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
+    // pageSize se calcula una vez al montar según la altura de pantalla disponible
+    const [pageSize] = useState<number>(calcPageSize);
 
     // UI
     const [loading, setLoading] = useState(false);
@@ -361,22 +377,24 @@ const StockArbolView: React.FC = () => {
     const [snackOpen, setSnackOpen] = useState(false);
     const [expandAll, setExpandAll] = useState(false);
 
-    // ── Buscar (nivel 1) ──────────────────────────────────────────────────
-    const buscar = useCallback(async () => {
+    // ── Función central de búsqueda (nivel 1) ────────────────────────────
+    const doSearch = useCallback(async (targetPage: number) => {
         setLoading(true);
         setErrorMsg("");
         setExpandAll(false);
         try {
-            const criteria: InStockArbolSearchCriteria = {
+            const filters: InStockArbolSearchCriteria = {
                 sucursalId: sucursalId !== "" ? Number(sucursalId) : null,
                 almacenId:  almacenId  !== "" ? Number(almacenId)  : null,
                 productoNombre: productoNombre.trim() || undefined,
                 soloConStock,
             };
-            setActiveCriteria(criteria);
-            const data = await buscarStockProductos(criteria);
-            setRows(data);
-            if (data.length === 0) {
+            setActiveFilters(filters);
+            const result = await buscarStockProductos({ ...filters, page: targetPage, size: pageSize });
+            setRows(result.content);
+            setTotalElements(result.totalElements);
+            setPage(targetPage);
+            if (result.content.length === 0) {
                 setErrorMsg("No se encontraron productos con los filtros aplicados.");
                 setSnackOpen(true);
             }
@@ -386,7 +404,14 @@ const StockArbolView: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [sucursalId, almacenId, productoNombre, soloConStock]);
+    }, [sucursalId, almacenId, productoNombre, soloConStock, pageSize]);
+
+    // Botón Buscar → siempre vuelve a página 0
+    const buscar = useCallback(() => doSearch(0), [doSearch]);
+
+    const handlePageChange = (_: unknown, newPage: number) => {
+        doSearch(newPage);
+    };
 
     // ── Auto-seleccionar sucursal si solo hay una ─────────────────────────
     // useRef evita que StrictMode ejecute la selección dos veces.
@@ -406,7 +431,7 @@ const StockArbolView: React.FC = () => {
     useEffect(() => {
         if (mountSearchDone.current) return;
         mountSearchDone.current = true;
-        buscar();
+        doSearch(0);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -558,7 +583,7 @@ const StockArbolView: React.FC = () => {
                                 <FilaProducto
                                     key={producto.productoId}
                                     producto={producto}
-                                    criteria={activeCriteria}
+                                    criteria={activeFilters}
                                     expandAll={expandAll}
                                 />
                             ))
@@ -566,6 +591,21 @@ const StockArbolView: React.FC = () => {
                     </TableBody>
                 </Table>
             </TableContainer>
+
+            {/* ── Paginación ────────────────────────────────────────────── */}
+            <TablePagination
+                component="div"
+                count={totalElements}
+                page={page}
+                onPageChange={handlePageChange}
+                rowsPerPage={pageSize}
+                rowsPerPageOptions={[pageSize]}
+                labelRowsPerPage="Por página:"
+                labelDisplayedRows={({ from, to, count }) =>
+                    `${from}–${to} de ${count} productos`
+                }
+                disabled={loading}
+            />
 
             {/* ── Snackbar ──────────────────────────────────────────────── */}
             <Snackbar

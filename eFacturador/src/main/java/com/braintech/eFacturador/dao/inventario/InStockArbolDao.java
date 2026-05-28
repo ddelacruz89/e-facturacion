@@ -6,16 +6,17 @@ import com.braintech.eFacturador.dto.inventario.InStockCriticoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockLoteNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockProductoNodoDTO;
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface InStockArbolDao {
 
   /**
-   * Nivel 1: productos con su cantidad total (GROUP BY producto). No trae almacenes ni lotes.
+   * Nivel 1: productos con su cantidad total (GROUP BY producto), paginado server-side.
    *
    * @param empresaId siempre requerido (tenant)
-   * @param criteria filtros opcionales: sucursalId, almacenId, productoNombre, soloConStock
+   * @param criteria filtros + page/size
    */
-  List<InStockProductoNodoDTO> findProductos(
+  Page<InStockProductoNodoDTO> findProductos(
       Integer empresaId, InStockArbolSearchCriteria criteria);
 
   /**

@@ -8,6 +8,7 @@ import com.braintech.eFacturador.dto.inventario.InStockProductoNodoDTO;
 import com.braintech.eFacturador.interfaces.inventario.InStockArbolService;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,7 +30,7 @@ public class InStockArbolController {
    * <p>POST /api/v1/inventario/stock-arbol/buscar
    */
   @PostMapping("/buscar")
-  public ResponseEntity<List<InStockProductoNodoDTO>> buscar(
+  public ResponseEntity<Page<InStockProductoNodoDTO>> buscar(
       @RequestBody InStockArbolSearchCriteria criteria) {
     return ResponseEntity.ok(stockArbolService.buscarProductos(criteria));
   }

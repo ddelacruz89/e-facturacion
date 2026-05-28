@@ -12,6 +12,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +27,7 @@ public class InStockArbolDaoImpl implements InStockArbolDao {
 
   @Override
   @Transactional(readOnly = true)
-  public List<InStockProductoNodoDTO> findProductos(
+  public Page<InStockProductoNodoDTO> findProductos(
       Integer empresaId, InStockArbolSearchCriteria criteria) {
 
     StringBuilder where = new StringBuilder("WHERE i.empresaId = :empresaId ");
@@ -33,6 +36,14 @@ public class InStockArbolDaoImpl implements InStockArbolDao {
     if (criteria.getAlmacenId() != null) where.append("AND i.almacenId.id = :almacenId ");
     if (criteria.isSoloConStock()) where.append("AND i.cantidad > 0 ");
 
+    // Count de productos distintos que coinciden con los filtros
+    String countJpql =
+        "SELECT COUNT(DISTINCT p.id) FROM InInventario i JOIN i.productoId p " + where;
+    TypedQuery<Long> countQ = em.createQuery(countJpql, Long.class);
+    bindCommon(countQ, empresaId, criteria, productoNombre);
+    long total = countQ.getSingleResult();
+
+    // Datos paginados
     String jpql =
         "SELECT new com.braintech.eFacturador.dto.inventario.InStockProductoNodoDTO("
             + "p.id, p.nombreProducto, SUM(i.cantidad), MIN(i.estadoProductoInventario)) "
@@ -42,9 +53,14 @@ public class InStockArbolDaoImpl implements InStockArbolDao {
             + "ORDER BY p.nombreProducto ASC";
 
     TypedQuery<InStockProductoNodoDTO> q = em.createQuery(jpql, InStockProductoNodoDTO.class);
-
     bindCommon(q, empresaId, criteria, productoNombre);
-    return q.getResultList();
+
+    int page = Math.max(0, criteria.getPage());
+    int size = criteria.getSize() > 0 ? criteria.getSize() : 15;
+    q.setFirstResult(page * size);
+    q.setMaxResults(size);
+
+    return new PageImpl<>(q.getResultList(), PageRequest.of(page, size), total);
   }
 
   // ── Nivel 2: almacenes de un producto ─────────────────────────────────────

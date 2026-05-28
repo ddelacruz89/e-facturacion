@@ -10,6 +10,7 @@ import com.braintech.eFacturador.interfaces.inventario.InStockArbolService;
 import com.braintech.eFacturador.util.TenantContext;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +23,7 @@ public class InStockArbolServiceImpl implements InStockArbolService {
 
   @Override
   @Transactional(readOnly = true)
-  public List<InStockProductoNodoDTO> buscarProductos(InStockArbolSearchCriteria criteria) {
+  public Page<InStockProductoNodoDTO> buscarProductos(InStockArbolSearchCriteria criteria) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     return stockArbolDao.findProductos(empresaId, criteria);
   }

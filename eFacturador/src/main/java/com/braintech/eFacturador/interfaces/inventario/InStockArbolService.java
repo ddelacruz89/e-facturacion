@@ -6,14 +6,15 @@ import com.braintech.eFacturador.dto.inventario.InStockCriticoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockLoteNodoDTO;
 import com.braintech.eFacturador.dto.inventario.InStockProductoNodoDTO;
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 public interface InStockArbolService {
 
   /**
-   * Nivel 1: retorna sólo los productos con su cantidad total agregada. No incluye almacenes ni
-   * lotes — se cargan bajo demanda al expandir.
+   * Nivel 1: retorna los productos con su cantidad total, paginado server-side. No incluye
+   * almacenes ni lotes — se cargan bajo demanda al expandir.
    */
-  List<InStockProductoNodoDTO> buscarProductos(InStockArbolSearchCriteria criteria);
+  Page<InStockProductoNodoDTO> buscarProductos(InStockArbolSearchCriteria criteria);
 
   /**
    * Nivel 2: retorna los almacenes (con cantidad total) de un producto concreto. Se llama al

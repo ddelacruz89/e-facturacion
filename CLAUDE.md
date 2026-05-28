@@ -4,6 +4,33 @@
 - **Backend:** Java 17 + Spring Boot + Hibernate 6 + PostgreSQL
 - **Frontend:** React + TypeScript + Material UI
 - **Auth:** JWT via `TenantContext` (empresaId, sucursalId, username)
+- **Infraestructura:** Azure — el tráfico de salida (egress) tiene costo por GB transferido.
+
+---
+
+## Minimizar egreso de Azure — OBLIGATORIO
+
+La aplicación corre en Azure. El **tráfico saliente** (respuestas del backend al frontend) se factura por GB. Cada byte innecesario en una respuesta tiene costo directo. Toda decisión de diseño de API debe minimizar el payload.
+
+### Reglas de payload
+
+- **Nunca retornar la entidad completa en endpoints de listado.** Usar siempre un `ResumenDTO` con solo los campos visibles en la tabla. Ver patrón `POST /buscar` más abajo.
+- **Nunca retornar colecciones anidadas en búsquedas.** Los detalles, lotes y sub-entidades se cargan solo cuando el usuario los solicita explícitamente (GET /{id} o lazy expand).
+- **Siempre paginar en el servidor.** Ningún endpoint de listado retorna filas ilimitadas. Los criteria de búsqueda siempre incluyen `page` y `size`. El DAO usa `setFirstResult` / `setMaxResults` o `Pageable`. El frontend calcula `size` según la altura de pantalla disponible.
+- **JPQL con proyección explícita.** Usar `SELECT new com.braintech.dto.MiResumenDTO(...)` para que Hibernate solo lea las columnas necesarias — nunca `SELECT i FROM Entidad i` cuando solo se necesitan 3 campos.
+- **Lazy expand en árbol.** Patrones de árbol de 3 niveles (ej. StockArbolView): nivel 1 paginado, niveles 2 y 3 se cargan solo al expandir la fila. Nunca traer toda la jerarquía en una sola llamada.
+- **Endpoints `getAll()` sin paginación solo para catálogos pequeños** (< 200 registros estables, ej. sucursales, tipos de movimiento). Para cualquier tabla de negocio, usar `POST /buscar` con paginación.
+- **No incluir campos `null` obvios.** Configurar Jackson con `@JsonInclude(JsonInclude.Include.NON_NULL)` en DTOs que tengan muchos campos opcionales.
+
+### Resumen de decisión
+
+| Situación | Correcto | Incorrecto |
+|---|---|---|
+| Listar registros de negocio | `POST /buscar` paginado → `ResumenDTO` | `GET /` sin paginación → entidad completa |
+| Abrir un registro para editar | `GET /{id}` → entidad completa | Reutilizar el resumen del listado |
+| Ver sub-entidades (detalles) | Expandir lazy al hacer click | Incluirlos en el resumen del listado |
+| Árbol producto → almacén → lote | Cargar cada nivel al expandir | Traer todo el árbol en una sola llamada |
+| Catálogos (sucursales, tipos…) | `GET /` sin paginar (estables, < 200) | Paginarlos innecesariamente |
 
 ---
 

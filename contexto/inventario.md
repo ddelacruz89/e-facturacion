@@ -27,7 +27,7 @@ El módulo de inventario gestiona el stock de productos en múltiples almacenes 
 | Transferencias | `InTransferencia` | `in_transferencias` | `/transferencias` |
 | Requisiciones | `InRequisicion` | `in_requisicion` | `/requisiciones` |
 | Movimientos | `InMovimiento` | `in_movimientos` | `/movimientos` |
-| Stock árbol | — | `in_inventarios` | `/stock-arbol` |
+| Stock árbol (paginado) | — | `in_inventarios` | `/stock-arbol` |
 | Alertas | `InAlertaInventario` | `in_alerta_inventario` | `/alertas` |
 | Dashboard | — | — | `/dashboard` |
 | Reportes | — | — | `/reportes` |
@@ -416,18 +416,51 @@ Cotizaciones de precio a suplidores antes de emitir la orden de compra.
 Endpoint de 3 niveles para navegar stock de manera drill-down:
 
 ```
-POST /stock-arbol/productos                              → Lista de productos con stock
-POST /stock-arbol/productos/{id}/almacenes              → Almacenes donde ese producto tiene stock
-POST /stock-arbol/productos/{id}/almacenes/{aid}/lotes  → Lotes en ese almacén
+POST /stock-arbol/buscar                                → Página de productos con stock (nivel 1, paginado)
+POST /stock-arbol/producto/{id}/almacenes               → Almacenes donde ese producto tiene stock (nivel 2)
+POST /stock-arbol/producto/{id}/almacen/{aid}/lotes     → Lotes en ese almacén (nivel 3)
 GET  /stock-arbol/stock-critico                         → Productos bajo límite mínimo
 ```
 
-**DTOs del árbol:**
-- `InStockProductoNodoDTO`: `{ productoId, productoNombre, cantidadTotal, estadoStock }`. `estadoStock = MIN(estado)` de todos los almacenes → si cualquier almacén está BAJO, el producto muestra BAJO.
-- `InStockAlmacenNodoDTO`: `{ almacenId, almacenNombre, cantidad, estadoStock }`. `estadoStock = MAX(estado)` — todos los lotes del mismo producto-almacén tienen el mismo valor.
-- `InStockLoteNodoDTO`: `{ lote, cantidad, fechaVencimiento }`.
+**Nivel 1 — paginado server-side.** El endpoint `POST /buscar` retorna `Page<InStockProductoNodoDTO>`. El frontend calcula el `size` según la altura de pantalla disponible (ver `calcPageSize()` en `StockArbolView.tsx`) y lo envía en el body. Al navegar páginas o hacer nueva búsqueda, solo se traen los registros de esa página.
 
-**Criterios:** `InStockArbolSearchCriteria { sucursalId, almacenId, productoNombre, soloConStock }`.
+**DTOs del árbol:**
+- `InStockProductoNodoDTO`: `{ productoId, productoNombre, totalCantidad, estadoStock }`. `estadoStock = MIN(estado)` de todos los almacenes → si cualquier almacén está BAJO, el producto muestra BAJO.
+- `InStockAlmacenNodoDTO`: `{ almacenId, almacenNombre, totalCantidad, estadoStock }`. `estadoStock = MAX(estado)` — todos los lotes del mismo producto-almacén tienen el mismo valor.
+- `InStockLoteNodoDTO`: `{ lote, cantidad }`.
+
+**Criterios:** `InStockArbolSearchCriteria { sucursalId, almacenId, productoNombre, soloConStock, page, size }`.
+- `page` y `size` solo aplican al nivel 1 (`POST /buscar`). Los niveles 2 y 3 no están paginados (un producto tiene pocos almacenes; un almacén tiene pocos lotes).
+- El frontend mantiene `activeFilters` (sin page/size) para pasarle a los sub-componentes de nivel 2 y 3.
+
+**Implementación backend — count query:**
+El DAO construye el `WHERE` una sola vez y lo reutiliza en dos queries:
+1. `SELECT COUNT(DISTINCT p.id) FROM InInventario i JOIN i.productoId p WHERE ...` → total de páginas.
+2. La query original con `setFirstResult(page * size)` y `setMaxResults(size)` → datos de la página.
+Retorna `PageImpl<>(content, PageRequest.of(page, size), total)`.
+
+**Implementación frontend — `calcPageSize()`:**
+```typescript
+function calcPageSize(): number {
+    // Resta overhead fijo: ActionBar(60) + filtros(100) + cabecera tabla(48)
+    //                    + paginador(52) + padding(32) = 292px
+    const overhead = 292;
+    const rowPx = 41; // altura de fila MUI size="small"
+    return Math.max(5, Math.min(50, Math.floor((window.innerHeight - overhead) / rowPx)));
+}
+```
+Se calcula una sola vez al montar (`useState<number>(calcPageSize)`). Ejemplos: 768px → ~11 filas, 1080px → ~19 filas, 1440px → ~28 filas.
+
+**`StockArbolView.tsx` — estados de paginación:**
+```typescript
+const [page, setPage] = useState(0);               // página actual (0-based)
+const [totalElements, setTotalElements] = useState(0);
+const [pageSize] = useState<number>(calcPageSize); // fijo por sesión
+const [activeFilters, setActiveFilters] = useState<InStockArbolSearchCriteria>(...);
+```
+- `doSearch(targetPage)` es la función central; el botón Buscar llama `doSearch(0)`.
+- `handlePageChange` llama `doSearch(newPage)`.
+- `TablePagination` con `rowsPerPageOptions={[pageSize]}` (selector deshabilitado — el size lo decide la pantalla).
 
 **Stock crítico:** Native SQL, join `mg_producto_almacen_limite → mg_producto_unidad_suplidor → mg_producto + in_almacen LEFT JOIN in_inventarios`, filtra `HAVING SUM(cantidad) < MAX(limite)`. Severidad en frontend: Crítico si faltante ≥ 50% del límite, Bajo si menor.
 

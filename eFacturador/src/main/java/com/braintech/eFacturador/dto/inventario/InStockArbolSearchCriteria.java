@@ -25,4 +25,10 @@ public class InStockArbolSearchCriteria {
    * incluyendo stock en cero.
    */
   private boolean soloConStock = true;
+
+  /** Página a retornar (0-based). Solo aplica al nivel 1 (productos). */
+  private int page = 0;
+
+  /** Cantidad de productos por página. El frontend calcula el valor según la altura de pantalla. */
+  private int size = 15;
 }
