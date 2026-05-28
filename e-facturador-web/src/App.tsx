@@ -45,6 +45,7 @@ const MfItbisView = lazy(() => import("./components/facturacion/MfItbisView"));
 const NotificacionesView = lazy(() => import("./components/notificaciones/NotificacionesView"));
 const RequisicionView = lazy(() => import("./components/inventario/RequisicionView"));
 const ReportesInventarioView = lazy(() => import("./components/inventario/ReportesInventarioView"));
+const DashboardView = lazy(() => import("./components/shared/DashboardView"));
 
 // Routes component that uses authentication context
 const AppRoutes = () => {
@@ -65,6 +66,7 @@ const AppRoutes = () => {
                             <HomeView />
                         </ProtectedRoute>
                     }>
+                    <Route index element={<DashboardView />} />
                     <Route path="empresa" element={<EmpresaView />} />
                     <Route path="usuario" element={<UsuarioView />} />
                     <Route path="roles" element={<RolView />} />
@@ -78,14 +80,14 @@ const AppRoutes = () => {
                     <Route path="unidad" element={<UnidadView />} />
                     <Route path="paquete" element={<PaqueteView />} />
                     <Route path="suplidores" element={<SuplidorView />} />
-                    <Route path="cotizacion" element={<CotizacionView />} />
-                    <Route path="orden-compra" element={<OrdenCompraView />} />
-                    <Route path="orden-entrada" element={<OrdenEntradaView />} />
-                    <Route path="transferencias" element={<TransferenciaView />} />
-                    <Route path="lotes" element={<LoteView />} />
-                    <Route path="movimientos" element={<MovimientoView />} />
+                    <Route path="/inventario/cotizacion" element={<CotizacionView />} />
+                    <Route path="/inventario/orden-compra" element={<OrdenCompraView />} />
+                    <Route path="/inventario/orden-entrada" element={<OrdenEntradaView />} />
+                    <Route path="/inventario/transferencias" element={<TransferenciaView />} />
+                    <Route path="/inventario/lotes" element={<LoteView />} />
+                    <Route path="/inventario/movimientos" element={<MovimientoView />} />
                     <Route path="clientes" element={<ClientesView />} />
-                    <Route path="ajuste-inventario" element={<AjusteInventarioView />} />
+                    <Route path="/inventario/ajuste-inventario" element={<AjusteInventarioView />} />
                     <Route path="almacenes" element={<AlmacenView />} />
                     <Route path="stock-arbol" element={<StockArbolView />} />
                     <Route path="stock-critico" element={<StockCriticoView />} />

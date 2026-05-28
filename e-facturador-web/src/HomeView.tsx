@@ -5,7 +5,7 @@ import {
     DialogContent, DialogTitle, Divider, IconButton, InputAdornment,
     List, ListItem, ListItemText, Menu, MenuItem, Popover, TextField, Typography,
 } from "@mui/material";
-import { AccountCircle, ExitToApp, LockReset, NotificationsOutlined, Visibility, VisibilityOff } from "@mui/icons-material";
+import { AccountCircle, ExitToApp, Home, LockReset, NotificationsOutlined, Visibility, VisibilityOff } from "@mui/icons-material";
 import "./menu.css";
 import { useEffect, useRef, useState } from "react";
 import logo from "./assets/logo-braintech.png";
@@ -161,13 +161,18 @@ const HomeView = () => {
                         backgroundColor: "#f5f5f5",
                         borderBottom: "1px solid #ddd",
                     }}>
-                    <Typography variant="body2" color="text.secondary">
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <IconButton size="small" onClick={() => navigate("/")} title="Inicio">
+                            <Home fontSize="small" />
+                        </IconButton>
+                        <Typography variant="body2" color="text.secondary">
                         Bienvenido, <strong>{user?.username}</strong>
                         {" | "}<strong>{user?.empresaNombre ?? `Empresa #${user?.empresaId}`}</strong>
                         {(user?.sucursalNombre ?? user?.sucursalId) && (
                             <> {" — "}<strong>{user?.sucursalNombre ?? `Sucursal #${user?.sucursalId}`}</strong></>
                         )}
                     </Typography>
+                    </Box>
 
                     <Box display="flex" alignItems="center" gap={1}>
                         {/* Campana */}

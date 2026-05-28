@@ -68,7 +68,7 @@ public class InOrdenesComprasController {
     return ResponseEntity.ok(inOrdenesComprasService.searchByCriteria(criteria));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/ordenes-compras", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/inventario/orden-entrada", accion = Accion.ESCRIBIR)
   @PostMapping("/{id}/convertir-orden-entrada")
   public ResponseEntity<Response<?>> convertirAOrdenEntrada(
       @PathVariable Integer id, @RequestParam Integer almacenId) {

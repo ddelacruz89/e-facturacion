@@ -247,6 +247,7 @@ NOMBRE_MODULO: {
 ## Documentación de referencia por módulo
 Archivos disponibles en `contexto/` — lee solo los relevantes a la tarea:
 - `alertas.md` — módulo de notificaciones, SSE, deduplicación, productores
+- `dashboard.md` — pantalla de inicio: KPI cards, sparkline 7 días, filtro por sucursal, módulos soportados, cómo extender
 - `requisiciones.md` — módulo de requisiciones de transferencia entre almacenes (estados, validaciones, layout, config de búsqueda de almacén con select de sucursal)
 - `transferencia.md` — módulo de transferencia de inventario entre almacenes (lotes, stock en tiempo real, transferencias parciales, integración con requisiciones)
 - `coloresapp.md` — paleta de colores oficial (monocromática, complementaria y tetrádica), reglas de botones en ActionBar

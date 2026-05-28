@@ -46,4 +46,17 @@ public interface SgUsuarioRolRepository extends JpaRepository<SgUsuarioRol, Inte
         AND ur.activo = true
       """)
   List<SgSucursal> findSucursalesActivasByUsername(@Param("username") String username);
+
+  /**
+   * Igual que el anterior pero filtrado por empresa — para el selector de sucursales del dashboard.
+   */
+  @Query(
+      """
+      SELECT DISTINCT ur.sucursalId FROM SgUsuarioRol ur
+      WHERE ur.usuario.username = :username
+        AND ur.empresaId        = :empresaId
+        AND ur.activo           = true
+      """)
+  List<SgSucursal> findSucursalesByUsernameAndEmpresa(
+      @Param("username") String username, @Param("empresaId") Integer empresaId);
 }
