@@ -485,10 +485,10 @@ export const OrdenCompraView: React.FC = () => {
         <>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <ActionBar title="Órdenes de Compra">
-                    <Button variant="contained" color="primary" type="submit">
+                    <Button variant="contained" type="submit" sx={{ bgcolor: "#527158", "&:hover": { bgcolor: "#3d5241" } }}>
                         Guardar
                     </Button>
-                    <Button variant="contained" color="primary" type="button" onClick={() => reset(initialOrdenCompra)}>
+                    <Button variant="contained" type="button" onClick={() => reset(initialOrdenCompra)} sx={{ bgcolor: "#5F5271", "&:hover": { bgcolor: "#3d3450" } }}>
                         Nuevo
                     </Button>
                 </ActionBar>
@@ -512,10 +512,15 @@ export const OrdenCompraView: React.FC = () => {
                         <Button
                             type="button"
                             fullWidth
-                            variant={estadoId === "PEN" ? "contained" : "outlined"}
-                            color={estadoId === "PEN" ? "warning" : "primary"}
+                            variant="contained"
                             onClick={handleToggleEnviarEntrada}
-                            sx={{ height: "40px", textTransform: "none", fontWeight: 700 }}>
+                            sx={{
+                                height: "40px",
+                                textTransform: "none",
+                                fontWeight: 700,
+                                bgcolor: estadoId === "PEN" ? "#716752" : "#526671",
+                                "&:hover": { bgcolor: estadoId === "PEN" ? "#58503f" : "#3d4d56" },
+                            }}>
                             {estadoId === "PEN" ? "Enviado a entrada" : "Enviar a entrada"}
                         </Button>
                     </Grid>
@@ -677,13 +682,11 @@ export const OrdenCompraView: React.FC = () => {
                                         onClick={handleAddDetalle}
                                         sx={{
                                             height: "40px",
-                                            backgroundColor: "#00897b",
+                                            bgcolor: "#526671",
                                             color: "#ffffff",
                                             fontWeight: 700,
                                             textTransform: "none",
-                                            "&:hover": {
-                                                backgroundColor: "#00695c",
-                                            },
+                                            "&:hover": { bgcolor: "#3d4d56" },
                                         }}>
                                         Agregar
                                     </Button>
@@ -697,7 +700,7 @@ export const OrdenCompraView: React.FC = () => {
                 <Box style={{ padding: 20 }}>
                     <Box
                         sx={{
-                            background: "linear-gradient(90deg, #00897b 0%, #00695c 100%)",
+                            background: "linear-gradient(90deg, #526671 0%, #527158 100%)",
                             color: "#ffffff",
                             px: 2,
                             py: 1.25,
@@ -715,7 +718,7 @@ export const OrdenCompraView: React.FC = () => {
                         <Table size="small">
                             <TableHead
                                 sx={{
-                                    backgroundColor: "#00695c",
+                                    backgroundColor: "#527158",
                                     "& .MuiTableCell-root": {
                                         color: "#ffffff",
                                         fontWeight: 700,
