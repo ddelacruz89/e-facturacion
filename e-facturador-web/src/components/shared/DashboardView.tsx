@@ -22,12 +22,19 @@ import MoveToInboxIcon from "@mui/icons-material/MoveToInbox";
 import {
     Area,
     AreaChart,
+    Bar,
+    BarChart,
+    Cell,
     ResponsiveContainer,
     Tooltip as ChartTooltip,
+    XAxis,
+    YAxis,
 } from "recharts";
 import {
+    getDashboardAjustes,
     getDashboardKpis,
     getDashboardSucursales,
+    DashboardAjusteBarDTO,
     DashboardKpiDTO,
     DashboardSucursalDTO,
 } from "../../apis/DashboardController";
@@ -213,12 +220,87 @@ const KpiCard: React.FC<KpiCardProps> = ({ kpi }) => {
     );
 };
 
+// ── Ajustes de inventario — bar chart horizontal ──────────────────────────────
+
+const AJUSTE_COLORS = ["#525C71", "#3D4453", "#67748F", "#848EA5"];
+
+interface AjustesBarChartProps {
+    data: DashboardAjusteBarDTO[];
+}
+
+const AjustesBarChart: React.FC<AjustesBarChartProps> = ({ data }) => {
+    const totalSemana = data.reduce((s, d) => s + d.total, 0);
+
+    return (
+        <Paper
+            elevation={0}
+            variant="outlined"
+            sx={{ borderRadius: 2, p: 2.5, borderColor: "#E2E5EA", height: "100%" }}
+        >
+            <Box sx={{ mb: 1.5 }}>
+                <Typography
+                    variant="caption"
+                    fontWeight={600}
+                    color="text.secondary"
+                    sx={{ textTransform: "uppercase", letterSpacing: 0.8, fontSize: 11 }}
+                >
+                    Ajustes de inventario
+                </Typography>
+                <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, mt: 0.5 }}>
+                    <Typography variant="h3" fontWeight={700} color={C.dark} sx={{ lineHeight: 1 }}>
+                        {totalSemana.toLocaleString()}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        últimos 7 días
+                    </Typography>
+                </Box>
+            </Box>
+
+            <ResponsiveContainer width="100%" height={140}>
+                <BarChart
+                    layout="vertical"
+                    data={data}
+                    margin={{ top: 4, right: 32, left: 0, bottom: 4 }}
+                    barCategoryGap="28%"
+                >
+                    <XAxis
+                        type="number"
+                        allowDecimals={false}
+                        tick={{ fontSize: 11, fill: "#848EA5" }}
+                        axisLine={false}
+                        tickLine={false}
+                    />
+                    <YAxis
+                        type="category"
+                        dataKey="tipoNombre"
+                        width={130}
+                        tick={{ fontSize: 11, fill: C.dark }}
+                        axisLine={false}
+                        tickLine={false}
+                    />
+                    <ChartTooltip
+                        cursor={{ fill: "#F4F5F7" }}
+                        contentStyle={{ fontSize: 11, padding: "4px 8px", borderRadius: 6 }}
+                        formatter={(v: any) => [v, "ajustes"]}
+                    />
+                    <Bar dataKey="total" radius={[0, 4, 4, 0]}>
+                        {data.map((_entry, i) => (
+                            <Cell key={i} fill={AJUSTE_COLORS[i % AJUSTE_COLORS.length]} />
+                        ))}
+                    </Bar>
+                </BarChart>
+            </ResponsiveContainer>
+        </Paper>
+    );
+};
+
 // ── Dashboard principal ───────────────────────────────────────────────────────
 
 const TODAS = "TODAS";   // valor centinela para "todas las sucursales"
 
 const DashboardView: React.FC = () => {
     const [kpis, setKpis]               = useState<DashboardKpiDTO[]>([]);
+    const [ajustes, setAjustes]         = useState<DashboardAjusteBarDTO[]>([]);
     const [sucursales, setSucursales]   = useState<DashboardSucursalDTO[]>([]);
     const [sucursalSel, setSucursalSel] = useState<string>(TODAS);
     const [loading, setLoading]         = useState(true);
@@ -234,7 +316,12 @@ const DashboardView: React.FC = () => {
     const cargar = useCallback(async (sucId?: number) => {
         setLoading(true);
         try {
-            setKpis(await getDashboardKpis(sucId));
+            const [kpiData, ajusteData] = await Promise.all([
+                getDashboardKpis(sucId),
+                getDashboardAjustes(sucId),
+            ]);
+            setKpis(kpiData);
+            setAjustes(ajusteData);
         } catch {
             // Sin datos — no romper la pantalla
         } finally {
@@ -317,6 +404,11 @@ const DashboardView: React.FC = () => {
                             <KpiCard kpi={kpi} />
                         </Grid>
                     ))}
+                    {ajustes.length > 0 && (
+                        <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
+                            <AjustesBarChart data={ajustes} />
+                        </Grid>
+                    )}
                 </Grid>
             )}
         </Box>

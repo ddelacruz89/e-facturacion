@@ -3,6 +3,7 @@ package com.braintech.eFacturador.services.inventario;
 import com.braintech.eFacturador.dao.inventario.DashboardDao;
 import com.braintech.eFacturador.dao.seguridad.SgPermisoRepository;
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRolRepository;
+import com.braintech.eFacturador.dto.inventario.DashboardAjusteBarDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardKpiDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardSucursalDTO;
 import com.braintech.eFacturador.interfaces.inventario.DashboardService;
@@ -49,6 +50,12 @@ public class DashboardServiceImpl implements DashboardService {
       result.add(dashboardDao.kpiTransferencia(empresaId, sucursalId));
 
     return result;
+  }
+
+  @Override
+  public List<DashboardAjusteBarDTO> getAjustesPorTipo(Integer sucursalId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    return dashboardDao.kpiAjustesPorTipo(empresaId, sucursalId);
   }
 
   @Override

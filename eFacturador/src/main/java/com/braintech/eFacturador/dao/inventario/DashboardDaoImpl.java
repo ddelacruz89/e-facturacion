@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.dao.inventario;
 
+import com.braintech.eFacturador.dto.inventario.DashboardAjusteBarDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardKpiDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardTendenciaDTO;
 import jakarta.persistence.EntityManager;
@@ -75,6 +76,46 @@ public class DashboardDaoImpl implements DashboardDao {
     if (sucursalId != null) q.setParameter("sucursalId", sucursalId);
 
     return ((Number) q.getSingleResult()).longValue();
+  }
+
+  // ── Ajustes de inventario por tipo (últimos 7 días) ─────────────────────────
+
+  @Override
+  public List<DashboardAjusteBarDTO> kpiAjustesPorTipo(Integer empresaId, Integer sucursalId) {
+    String sucFilter = sucursalId != null ? " AND a.sucursal_id = :sucursalId " : "";
+
+    String sql =
+        "WITH tipos AS ( "
+            + "  SELECT unnest(ARRAY[4, 5, 9, 20]) AS tipo_id "
+            + "), "
+            + "conteos AS ( "
+            + "  SELECT a.movimiento_tipo_id, COUNT(*) AS total "
+            + "  FROM inventario.in_ajuste_inventario a "
+            + "  WHERE a.empresa_id = :empresaId "
+            + sucFilter
+            + "    AND a.movimiento_tipo_id IN (4, 5, 9, 20) "
+            + "    AND a.fecha_reg >= CURRENT_DATE - INTERVAL '6 days' "
+            + "    AND a.estado_id != 'ANU' "
+            + "  GROUP BY a.movimiento_tipo_id "
+            + ") "
+            + "SELECT t.tipo_id, mt.tipo_movimiento, COALESCE(c.total, 0) AS total "
+            + "FROM tipos t "
+            + "JOIN inventario.in_movimientos_tipos mt ON mt.id = t.tipo_id "
+            + "LEFT JOIN conteos c ON c.movimiento_tipo_id = t.tipo_id "
+            + "ORDER BY t.tipo_id";
+
+    Query q = em.createNativeQuery(sql).setParameter("empresaId", empresaId);
+    if (sucursalId != null) q.setParameter("sucursalId", sucursalId);
+
+    @SuppressWarnings("unchecked")
+    List<Object[]> rows = q.getResultList();
+
+    return rows.stream()
+        .map(
+            r ->
+                new DashboardAjusteBarDTO(
+                    ((Number) r[0]).intValue(), (String) r[1], ((Number) r[2]).longValue()))
+        .collect(Collectors.toList());
   }
 
   // ── Orden de Entrada ─────────────────────────────────────────────────────────

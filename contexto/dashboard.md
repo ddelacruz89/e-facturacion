@@ -131,6 +131,74 @@ WHERE empresa_id = :empresaId
 
 ---
 
+## Gráfica de ajustes de inventario (bar chart horizontal)
+
+Sección independiente del grid de KPI cards. Muestra el conteo de ajustes de los últimos 7 días agrupado por tipo de movimiento.
+
+### Tipos incluidos
+| `movimiento_tipo_id` | Descripción (de `in_movimientos_tipos`) |
+|---|---|
+| 4 | (según catálogo) |
+| 5 | (según catálogo) |
+| 9 | (según catálogo) |
+| 20 | (según catálogo) |
+
+- Excluye ajustes con `estado_id = 'ANU'`.
+- Siempre retorna los 4 tipos aunque tengan 0 (LEFT JOIN vía CTE `unnest`).
+- Respeta el filtro de sucursal del selector existente.
+
+### Endpoint
+`GET /api/v1/dashboard/ajustes?sucursalId=N` (sucursalId opcional)
+
+Devuelve `List<DashboardAjusteBarDTO>`:
+```java
+@Data @NoArgsConstructor @AllArgsConstructor
+public class DashboardAjusteBarDTO {
+  private Integer tipoId;
+  private String tipoNombre;   // leído de in_movimientos_tipos.tipo_movimiento
+  private long total;
+}
+```
+
+### Query SQL (nativa)
+```sql
+WITH tipos AS (
+  SELECT unnest(ARRAY[4, 5, 9, 20]) AS tipo_id
+),
+conteos AS (
+  SELECT a.movimiento_tipo_id, COUNT(*) AS total
+  FROM inventario.in_ajuste_inventario a
+  WHERE a.empresa_id = :empresaId
+    [AND a.sucursal_id = :sucursalId]
+    AND a.movimiento_tipo_id IN (4, 5, 9, 20)
+    AND a.fecha_reg >= CURRENT_DATE - INTERVAL '6 days'
+    AND a.estado_id != 'ANU'
+  GROUP BY a.movimiento_tipo_id
+)
+SELECT t.tipo_id, mt.tipo_movimiento, COALESCE(c.total, 0) AS total
+FROM tipos t
+JOIN inventario.in_movimientos_tipos mt ON mt.id = t.tipo_id
+LEFT JOIN conteos c ON c.movimiento_tipo_id = t.tipo_id
+ORDER BY t.tipo_id
+```
+
+### Archivos involucrados
+```
+dto/inventario/DashboardAjusteBarDTO.java
+dao/inventario/DashboardDao.java              — método kpiAjustesPorTipo()
+dao/inventario/DashboardDaoImpl.java          — implementación SQL nativo
+interfaces/inventario/DashboardService.java   — método getAjustesPorTipo()
+services/inventario/DashboardServiceImpl.java — lee TenantContext, delega al DAO
+controllers/inventario/DashboardController.java — GET /ajustes
+```
+
+### Frontend
+- `DashboardController.tsx`: interface `DashboardAjusteBarDTO` + función `getDashboardAjustes(sucursalId?)`
+- `DashboardView.tsx`: componente `AjustesBarChart` — `BarChart layout="vertical"` de recharts con `Cell` por tipo usando la paleta monocromática. Se oculta si no hay datos. Carga junto a los KPIs con `Promise.all`.
+- Paleta de barras: `["#525C71", "#3D4453", "#67748F", "#848EA5"]` (índice por posición en el array).
+
+---
+
 ## Extensibilidad
 
 Para agregar un nuevo módulo KPI:

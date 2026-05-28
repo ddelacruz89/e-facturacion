@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.controllers.inventario;
 
+import com.braintech.eFacturador.dto.inventario.DashboardAjusteBarDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardKpiDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardSucursalDTO;
 import com.braintech.eFacturador.interfaces.inventario.DashboardService;
@@ -39,5 +40,17 @@ public class DashboardController {
   @GetMapping("/sucursales")
   public ResponseEntity<List<DashboardSucursalDTO>> getSucursales() {
     return ResponseEntity.ok(dashboardService.getSucursales());
+  }
+
+  /**
+   * GET /api/v1/dashboard/ajustes
+   *
+   * <p>Conteo de ajustes de inventario (tipos 4, 5, 9, 20) de los últimos 7 días. {@code
+   * sucursalId} opcional; omitir = toda la empresa.
+   */
+  @GetMapping("/ajustes")
+  public ResponseEntity<List<DashboardAjusteBarDTO>> getAjustes(
+      @RequestParam(required = false) Integer sucursalId) {
+    return ResponseEntity.ok(dashboardService.getAjustesPorTipo(sucursalId));
   }
 }

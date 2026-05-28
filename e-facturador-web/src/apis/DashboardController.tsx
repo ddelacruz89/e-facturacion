@@ -24,6 +24,12 @@ export interface DashboardSucursalDTO {
     nombre: string;
 }
 
+export interface DashboardAjusteBarDTO {
+    tipoId: number;
+    tipoNombre: string;
+    total: number;
+}
+
 /** Retorna los KPIs del dashboard. Si sucursalId es undefined, trae datos de toda la empresa. */
 export async function getDashboardKpis(sucursalId?: number): Promise<DashboardKpiDTO[]> {
     const params = sucursalId !== undefined ? { sucursalId } : {};
@@ -34,5 +40,12 @@ export async function getDashboardKpis(sucursalId?: number): Promise<DashboardKp
 /** Retorna las sucursales a las que el usuario tiene acceso (para el selector del dashboard). */
 export async function getDashboardSucursales(): Promise<DashboardSucursalDTO[]> {
     const res = await apiClient.get(`${BASE}/sucursales`);
+    return res.data;
+}
+
+/** Conteo de ajustes de inventario por tipo (últimos 7 días). */
+export async function getDashboardAjustes(sucursalId?: number): Promise<DashboardAjusteBarDTO[]> {
+    const params = sucursalId !== undefined ? { sucursalId } : {};
+    const res = await apiClient.get(`${BASE}/ajustes`, { params });
     return res.data;
 }
