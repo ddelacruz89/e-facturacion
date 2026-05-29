@@ -6,6 +6,7 @@ import com.braintech.eFacturador.dao.seguridad.SgUsuarioRolRepository;
 import com.braintech.eFacturador.dto.inventario.DashboardAjusteBarDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardKpiDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardSucursalDTO;
+import com.braintech.eFacturador.dto.inventario.OrdenCompraEntregaHoyDTO;
 import com.braintech.eFacturador.interfaces.inventario.DashboardService;
 import com.braintech.eFacturador.util.TenantContext;
 import java.util.ArrayList;
@@ -56,6 +57,28 @@ public class DashboardServiceImpl implements DashboardService {
   public List<DashboardAjusteBarDTO> getAjustesPorTipo(Integer sucursalId) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     return dashboardDao.kpiAjustesPorTipo(empresaId, sucursalId);
+  }
+
+  @Override
+  public List<OrdenCompraEntregaHoyDTO> getPedidosEntregaHoy(Integer sucursalId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    if (!tienePermisoOrdenCompra()) return List.of();
+    return dashboardDao.pedidosEntregaHoy(empresaId, sucursalId);
+  }
+
+  @Override
+  public List<OrdenCompraEntregaHoyDTO> getPedidosEntregaManana(Integer sucursalId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    if (!tienePermisoOrdenCompra()) return List.of();
+    return dashboardDao.pedidosEntregaManana(empresaId, sucursalId);
+  }
+
+  private boolean tienePermisoOrdenCompra() {
+    String username = tenantContext.getCurrentUsername();
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Integer defSucursalId = tenantContext.getCurrentSucursalId();
+    Set<String> urls = permisoRepository.findMenuUrlsPermitidas(username, empresaId, defSucursalId);
+    return urls.contains("/inventario/orden-compra");
   }
 
   @Override

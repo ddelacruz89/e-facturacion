@@ -51,7 +51,8 @@ public class InOrdenesComprasDaoImpl implements InOrdenesComprasDao {
             root.get("suplidorId").get("nombre"),
             root.get("suplidorId").get("rnc"),
             root.get("estadoId"),
-            root.get("fechaReg")));
+            root.get("fechaReg"),
+            root.get("fechaEntregaTentativa")));
 
     List<Predicate> predicates = buildPredicates(cb, root, criteria, empresaId);
 

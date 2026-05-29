@@ -38,20 +38,20 @@ public class InOrdenesComprasController {
     return ResponseEntity.ok(inOrdenesComprasService.getByIdDebug(id));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/ordenes-compras", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/inventario/orden-compra", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<Response<?>> create(@RequestBody InOrdenesComprasRequestDTO requestDTO) {
     return ResponseEntity.ok(inOrdenesComprasService.create(requestDTO));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/ordenes-compras", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/inventario/orden-compra", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<Response<?>> update(
       @PathVariable Integer id, @RequestBody InOrdenesCompras ordenCompra) {
     return ResponseEntity.ok(inOrdenesComprasService.update(id, ordenCompra));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/ordenes-compras", accion = Accion.ELIMINAR)
+  @RequierePermiso(menuUrl = "/inventario/orden-compra", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Response<?>> disable(@PathVariable Integer id) {
     return ResponseEntity.ok(inOrdenesComprasService.disable(id));

@@ -26,7 +26,7 @@ import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import CheckIcon from "@mui/icons-material/Check";
-import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
+import { useForm, SubmitHandler, useFieldArray, Controller } from "react-hook-form";
 import { TextInputPk, ConfirmationModal } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
 import { InOrdenCompraFormDTO, InOrdenCompraDetalleFormDTO } from "../../models/inventario";
@@ -49,6 +49,7 @@ const initialOrdenCompra: InOrdenCompraFormDTO = {
     descuento: 0,
     suplidorId: undefined,
     estadoId: "ACT",
+    fechaEntregaTentativa: "",
     detalles: [],
 };
 
@@ -258,6 +259,7 @@ export const OrdenCompraView: React.FC = () => {
                 descuento: ordenData.descuento || 0,
                 suplidorId: ordenData.suplidorId,
                 estadoId: ordenData.estadoId || "ACT",
+                fechaEntregaTentativa: ordenData.fechaEntregaTentativa || "",
                 detalles: detallesOrden,
             });
 
@@ -523,6 +525,26 @@ export const OrdenCompraView: React.FC = () => {
                             }}>
                             {estadoId === "PEN" ? "Enviado a entrada" : "Enviar a entrada"}
                         </Button>
+                    </Grid>
+                </Grid>
+
+                {/* Fecha tentativa de entrega */}
+                <Grid container spacing={2} style={{ padding: "0 20px 4px" }}>
+                    <Grid size={{ xs: 12, md: 3 }}>
+                        <Controller
+                            control={control}
+                            name="fechaEntregaTentativa"
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    label="Entrega tentativa"
+                                    type="date"
+                                    size="small"
+                                    fullWidth
+                                    InputLabelProps={{ shrink: true }}
+                                />
+                            )}
+                        />
                     </Grid>
                 </Grid>
 

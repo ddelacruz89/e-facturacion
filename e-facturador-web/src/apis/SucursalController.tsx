@@ -33,6 +33,28 @@ export function getSucursales(): Promise<SgSucursal[]> {
         });
 }
 
+export function getSucursalById(id: number): Promise<SgSucursal> {
+    return apiClient
+        .get(`${api}/${id}`)
+        .then((x: { data: ApiResponse<SgSucursal> }) => x.data.content);
+}
+
+export function saveSucursal(sucursal: SgSucursal): Promise<SgSucursal> {
+    return apiClient
+        .post(api, sucursal)
+        .then((x: { data: ApiResponse<SgSucursal> }) => x.data.content);
+}
+
+export function updateSucursal(id: number, sucursal: SgSucursal): Promise<SgSucursal> {
+    return apiClient
+        .put(`${api}/${id}`, sucursal)
+        .then((x: { data: ApiResponse<SgSucursal> }) => x.data.content);
+}
+
+export function disableSucursal(id: number): Promise<void> {
+    return apiClient.delete(`${api}/${id}`).then(() => {});
+}
+
 /**
  * Hook compartido (singleton) para getSucursalesActivas.
  * Sin importar cuántos componentes lo usen, el API se llama una sola vez.

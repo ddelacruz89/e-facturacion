@@ -3,9 +3,11 @@ package com.braintech.eFacturador.dao.inventario;
 import com.braintech.eFacturador.dto.inventario.DashboardAjusteBarDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardKpiDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardTendenciaDTO;
+import com.braintech.eFacturador.dto.inventario.OrdenCompraEntregaHoyDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
@@ -208,6 +210,73 @@ public class DashboardDaoImpl implements DashboardDao {
         .labelCompletadas("completadas")
         .tendencia(tendencia7Dias("inventario", "in_requisicion", empresaId, sucursalId))
         .build();
+  }
+
+  // ── Pedidos con entrega hoy ───────────────────────────────────────────────────
+
+  @Override
+  public List<OrdenCompraEntregaHoyDTO> pedidosEntregaHoy(Integer empresaId, Integer sucursalId) {
+    String sucFilter = sucursalId != null ? " AND oc.sucursal_id = :sucursalId " : "";
+
+    String sql =
+        "SELECT oc.id, s.nombre, oc.total, oc.estado_id, oc.fecha_reg "
+            + "FROM inventario.in_ordenes_compras oc "
+            + "JOIN inventario.in_suplidor s ON s.id = oc.suplidor_id "
+            + "WHERE oc.empresa_id = :empresaId "
+            + sucFilter
+            + "  AND oc.fecha_entrega_tentativa = CURRENT_DATE "
+            + "  AND oc.estado_id != 'INA' "
+            + "ORDER BY oc.id DESC";
+
+    Query q = em.createNativeQuery(sql).setParameter("empresaId", empresaId);
+    if (sucursalId != null) q.setParameter("sucursalId", sucursalId);
+
+    @SuppressWarnings("unchecked")
+    List<Object[]> rows = q.getResultList();
+
+    return rows.stream()
+        .map(
+            r ->
+                new OrdenCompraEntregaHoyDTO(
+                    ((Number) r[0]).intValue(),
+                    (String) r[1],
+                    r[2] != null ? (BigDecimal) r[2] : BigDecimal.ZERO,
+                    (String) r[3],
+                    r[4] != null ? ((java.sql.Timestamp) r[4]).toLocalDateTime() : null))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<OrdenCompraEntregaHoyDTO> pedidosEntregaManana(
+      Integer empresaId, Integer sucursalId) {
+    String sucFilter = sucursalId != null ? " AND oc.sucursal_id = :sucursalId " : "";
+
+    String sql =
+        "SELECT oc.id, s.nombre, oc.total, oc.estado_id, oc.fecha_reg "
+            + "FROM inventario.in_ordenes_compras oc "
+            + "JOIN inventario.in_suplidor s ON s.id = oc.suplidor_id "
+            + "WHERE oc.empresa_id = :empresaId "
+            + sucFilter
+            + "  AND oc.fecha_entrega_tentativa = CURRENT_DATE + 1 "
+            + "  AND oc.estado_id != 'INA' "
+            + "ORDER BY oc.id DESC";
+
+    Query q = em.createNativeQuery(sql).setParameter("empresaId", empresaId);
+    if (sucursalId != null) q.setParameter("sucursalId", sucursalId);
+
+    @SuppressWarnings("unchecked")
+    List<Object[]> rows = q.getResultList();
+
+    return rows.stream()
+        .map(
+            r ->
+                new OrdenCompraEntregaHoyDTO(
+                    ((Number) r[0]).intValue(),
+                    (String) r[1],
+                    r[2] != null ? (BigDecimal) r[2] : BigDecimal.ZERO,
+                    (String) r[3],
+                    r[4] != null ? ((java.sql.Timestamp) r[4]).toLocalDateTime() : null))
+        .collect(Collectors.toList());
   }
 
   // ── Transferencias ───────────────────────────────────────────────────────────

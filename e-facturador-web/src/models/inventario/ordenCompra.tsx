@@ -13,6 +13,7 @@ export interface InOrdenCompra {
     suplidorId?: number | InSuplidor;
     estadoId?: string;
     cotizacionId?: number;
+    fechaEntregaTentativa?: string; // ISO date YYYY-MM-DD
     // Relationships
     inOrdenesComprasDetallesList?: InOrdenCompraDetalle[];
 }
@@ -46,6 +47,7 @@ export interface InOrdenCompraFormDTO {
     suplidorId?: number;
     estadoId?: string;
     cotizacionId?: number;
+    fechaEntregaTentativa?: string; // ISO date YYYY-MM-DD
     detalles?: InOrdenCompraDetalleFormDTO[];
 }
 

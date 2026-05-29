@@ -4,6 +4,7 @@ import com.braintech.eFacturador.dao.inventario.InOrdenesComprasDao;
 import com.braintech.eFacturador.dao.inventario.InOrdenesComprasRepository;
 import com.braintech.eFacturador.dao.inventario.InSuplidorRepository;
 import com.braintech.eFacturador.dao.producto.MgProductoRepository;
+import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.dto.inventario.InOrdenesComprasDetalleRequestDTO;
 import com.braintech.eFacturador.dto.inventario.InOrdenesComprasRequestDTO;
 import com.braintech.eFacturador.dto.inventario.InOrdenesComprasResumenDTO;
@@ -18,6 +19,7 @@ import com.braintech.eFacturador.jpa.inventario.InOrdenesCompras;
 import com.braintech.eFacturador.jpa.inventario.InOrdenesComprasDetalles;
 import com.braintech.eFacturador.jpa.inventario.InSuplidor;
 import com.braintech.eFacturador.jpa.producto.MgProducto;
+import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.models.Response;
 import com.braintech.eFacturador.util.TenantContext;
 import jakarta.annotation.Nonnull;
@@ -38,13 +40,18 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
   private final InOrdenesComprasDao inOrdenesComprasDao;
   private final InSuplidorRepository inSuplidorRepository;
   private final MgProductoRepository mgProductoRepository;
+  private final SgSucursalRepository sgSucursalRepository;
   private final TenantContext tenantContext;
 
   @Override
   @Transactional
   public Response<?> create(InOrdenesComprasRequestDTO requestDTO) {
-    String username = tenantContext.getCurrentUsername();
+    String username   = tenantContext.getCurrentUsername();
     Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Integer sucursalId = tenantContext.getCurrentSucursalId();
+
+    SgSucursal sucursal = sgSucursalRepository.findById(sucursalId)
+        .orElseThrow(() -> new RecordNotFoundException("Sucursal no encontrada"));
 
     // Fetch suplidor
     InSuplidor suplidor =
@@ -52,8 +59,10 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
             .findByIdAndEmpresaId(requestDTO.getSuplidorId(), empresaId)
             .orElseThrow(() -> new RecordNotFoundException("Suplidor no encontrado"));
 
-    // Create orden compra entity
+    // Create orden compra entity — tenant siempre del JWT, nunca del cliente
     InOrdenesCompras ordenCompra = new InOrdenesCompras();
+    ordenCompra.setEmpresaId(empresaId);
+    ordenCompra.setSucursalId(sucursal);
     ordenCompra.setSubTotal(requestDTO.getSubTotal());
     ordenCompra.setItbis(requestDTO.getItbis());
     ordenCompra.setTotal(requestDTO.getTotal());
@@ -61,6 +70,7 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
     ordenCompra.setSuplidorId(suplidor);
     ordenCompra.setEstadoId(requestDTO.getEstadoId() != null ? requestDTO.getEstadoId() : "ACT");
     ordenCompra.setCotizacionId(requestDTO.getCotizacionId());
+    ordenCompra.setFechaEntregaTentativa(requestDTO.getFechaEntregaTentativa());
     ordenCompra.setUsuarioReg(username);
     ordenCompra.setFechaReg(LocalDateTime.now());
 
@@ -100,18 +110,29 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
   @Override
   @Transactional
   public Response<?> update(Integer id, InOrdenesCompras ordenCompra) {
-    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Integer empresaId  = tenantContext.getCurrentEmpresaId();
+    Integer sucursalId = tenantContext.getCurrentSucursalId();
+
+    // Busca por id solo; re-aplica tenant para corregir registros legacy con NULL
     InOrdenesCompras existing =
         inOrdenesComprasRepository
-            .findByIdAndEmpresaId(id, empresaId)
+            .findById(id)
+            .filter(o -> o.getEmpresaId() == null || o.getEmpresaId().equals(empresaId))
             .orElseThrow(() -> new RecordNotFoundException("Orden de compra no encontrada"));
 
+    SgSucursal sucursal = sgSucursalRepository.findById(sucursalId)
+        .orElseThrow(() -> new RecordNotFoundException("Sucursal no encontrada"));
+
+    // Tenant siempre del JWT
+    existing.setEmpresaId(empresaId);
+    existing.setSucursalId(sucursal);
     existing.setSubTotal(ordenCompra.getSubTotal());
     existing.setItbis(ordenCompra.getItbis());
     existing.setTotal(ordenCompra.getTotal());
     existing.setDescuento(ordenCompra.getDescuento());
     existing.setSuplidorId(ordenCompra.getSuplidorId());
     existing.setCotizacionId(ordenCompra.getCotizacionId());
+    existing.setFechaEntregaTentativa(ordenCompra.getFechaEntregaTentativa());
 
     // Sync detalles
     if (ordenCompra.getDetalles() != null) {

@@ -3,6 +3,7 @@ package com.braintech.eFacturador.controllers.inventario;
 import com.braintech.eFacturador.dto.inventario.DashboardAjusteBarDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardKpiDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardSucursalDTO;
+import com.braintech.eFacturador.dto.inventario.OrdenCompraEntregaHoyDTO;
 import com.braintech.eFacturador.interfaces.inventario.DashboardService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -52,5 +53,23 @@ public class DashboardController {
   public ResponseEntity<List<DashboardAjusteBarDTO>> getAjustes(
       @RequestParam(required = false) Integer sucursalId) {
     return ResponseEntity.ok(dashboardService.getAjustesPorTipo(sucursalId));
+  }
+
+  /**
+   * GET /api/v1/dashboard/pedidos-hoy
+   *
+   * <p>Órdenes de compra cuya fecha_entrega_tentativa es hoy. Retorna lista vacía si el usuario no
+   * tiene permiso sobre el módulo de órdenes de compra.
+   */
+  @GetMapping("/pedidos-hoy")
+  public ResponseEntity<List<OrdenCompraEntregaHoyDTO>> getPedidosHoy(
+      @RequestParam(required = false) Integer sucursalId) {
+    return ResponseEntity.ok(dashboardService.getPedidosEntregaHoy(sucursalId));
+  }
+
+  @GetMapping("/pedidos-manana")
+  public ResponseEntity<List<OrdenCompraEntregaHoyDTO>> getPedidosManana(
+      @RequestParam(required = false) Integer sucursalId) {
+    return ResponseEntity.ok(dashboardService.getPedidosEntregaManana(sucursalId));
   }
 }

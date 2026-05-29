@@ -3,6 +3,7 @@ package com.braintech.eFacturador.interfaces.inventario;
 import com.braintech.eFacturador.dto.inventario.DashboardAjusteBarDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardKpiDTO;
 import com.braintech.eFacturador.dto.inventario.DashboardSucursalDTO;
+import com.braintech.eFacturador.dto.inventario.OrdenCompraEntregaHoyDTO;
 import java.util.List;
 
 public interface DashboardService {
@@ -24,4 +25,10 @@ public interface DashboardService {
    * 9, 20). {@code sucursalId} opcional; {@code null} = toda la empresa.
    */
   List<DashboardAjusteBarDTO> getAjustesPorTipo(Integer sucursalId);
+
+  /** Órdenes con entrega tentativa hoy (permiso orden-compra requerido). */
+  List<OrdenCompraEntregaHoyDTO> getPedidosEntregaHoy(Integer sucursalId);
+
+  /** Órdenes con entrega tentativa mañana (permiso orden-compra requerido). */
+  List<OrdenCompraEntregaHoyDTO> getPedidosEntregaManana(Integer sucursalId);
 }

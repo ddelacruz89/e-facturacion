@@ -49,3 +49,25 @@ export async function getDashboardAjustes(sucursalId?: number): Promise<Dashboar
     const res = await apiClient.get(`${BASE}/ajustes`, { params });
     return res.data;
 }
+
+export interface OrdenCompraEntregaHoyDTO {
+    id: number;
+    suplidorNombre: string;
+    total: number;
+    estadoId: string;
+    fechaReg: string;
+}
+
+/** Órdenes de compra con entrega tentativa para hoy. */
+export async function getDashboardPedidosHoy(sucursalId?: number): Promise<OrdenCompraEntregaHoyDTO[]> {
+    const params = sucursalId !== undefined ? { sucursalId } : {};
+    const res = await apiClient.get(`${BASE}/pedidos-hoy`, { params });
+    return res.data ?? [];
+}
+
+/** Órdenes de compra con entrega tentativa para mañana. */
+export async function getDashboardPedidosManana(sucursalId?: number): Promise<OrdenCompraEntregaHoyDTO[]> {
+    const params = sucursalId !== undefined ? { sucursalId } : {};
+    const res = await apiClient.get(`${BASE}/pedidos-manana`, { params });
+    return res.data ?? [];
+}

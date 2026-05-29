@@ -6,6 +6,7 @@ import {
     Divider,
     FormControl,
     Grid,
+    IconButton,
     InputLabel,
     MenuItem,
     Paper,
@@ -14,6 +15,7 @@ import {
     Tooltip,
     Typography,
 } from "@mui/material";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import AssignmentIcon from "@mui/icons-material/Assignment";
@@ -22,6 +24,7 @@ import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import CompareArrowsIcon from "@mui/icons-material/CompareArrows";
 import MoveToInboxIcon from "@mui/icons-material/MoveToInbox";
 import PendingActionsIcon from "@mui/icons-material/PendingActions";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import {
     Area,
     AreaChart,
@@ -37,9 +40,12 @@ import {
     getDashboardAjustes,
     getDashboardKpis,
     getDashboardSucursales,
+    getDashboardPedidosHoy,
+    getDashboardPedidosManana,
     DashboardAjusteBarDTO,
     DashboardKpiDTO,
     DashboardSucursalDTO,
+    OrdenCompraEntregaHoyDTO,
 } from "../../apis/DashboardController";
 import { getMisPendientes } from "../../apis/AprobacionController";
 import {
@@ -471,6 +477,138 @@ const PendientesAprobacionCard: React.FC<PendientesAprobacionProps> = ({ items }
     );
 };
 
+// ── Entregas pendientes (hoy + mañana) ───────────────────────────────────────
+
+const ESTADO_LABEL: Record<string, string> = {
+    ACT: "Activo",
+    PEN: "Pendiente",
+    COM: "Completado",
+    INA: "Inactivo",
+};
+
+const ESTADO_COLOR: Record<string, string> = {
+    ACT: "#525C71",
+    PEN: "#716752",
+    COM: "#527158",
+    INA: "#848EA5",
+};
+
+function formatTotal(v: number) {
+    return v.toLocaleString("es-DO", { style: "currency", currency: "DOP", minimumFractionDigits: 2 });
+}
+
+interface PedidoRowProps { item: OrdenCompraEntregaHoyDTO; last: boolean }
+
+const PedidoRow: React.FC<PedidoRowProps> = ({ item, last }) => (
+    <>
+        <Box sx={{ display: "flex", alignItems: "center", px: 2.5, py: 0.9, gap: 1.5, "&:hover": { bgcolor: "#F9FAFB" } }}>
+            <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: ESTADO_COLOR[item.estadoId] ?? C.mid, flexShrink: 0 }} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="body2" fontWeight={600} color={C.dark} noWrap>
+                    {item.suplidorNombre}{" "}
+                    <Typography component="span" variant="body2" color="text.secondary" fontWeight={400}>
+                        #{item.id}
+                    </Typography>
+                </Typography>
+                <Typography variant="caption" color="text.secondary">{formatTotal(item.total)}</Typography>
+            </Box>
+            <Chip
+                label={ESTADO_LABEL[item.estadoId] ?? item.estadoId}
+                size="small"
+                sx={{ fontSize: 10, height: 20, bgcolor: ESTADO_COLOR[item.estadoId] ?? C.mid, color: "#fff", fontWeight: 600, flexShrink: 0 }}
+            />
+        </Box>
+        {!last && <Divider sx={{ mx: 2.5 }} />}
+    </>
+);
+
+interface PedidosEntregaCardProps {
+    hoy: OrdenCompraEntregaHoyDTO[];
+    manana: OrdenCompraEntregaHoyDTO[];
+}
+
+const MAX_ROWS = 4;
+
+const PedidosEntregaCard: React.FC<PedidosEntregaCardProps> = ({ hoy, manana }) => (
+    <Paper elevation={0} variant="outlined"
+        sx={{ borderRadius: 2, overflow: "hidden", borderColor: "#E2E5EA", height: "100%" }}>
+
+        {/* ── Header ─────────────────────────────────────────────────────── */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, px: 2.5, pt: 2, pb: 1.5, borderBottom: "1px solid #E2E5EA" }}>
+            <Box sx={{ width: 40, height: 40, borderRadius: 1.5, bgcolor: "#525C71",
+                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <LocalShippingIcon sx={{ fontSize: 22, color: "#fff" }} />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+                <Typography variant="caption" fontWeight={600} color="text.secondary"
+                    sx={{ textTransform: "uppercase", letterSpacing: 0.8, fontSize: 11 }}>
+                    Entregas pendientes
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2, mt: 0.3 }}>
+                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                        <Typography variant="h5" fontWeight={700} color={C.dark} sx={{ lineHeight: 1 }}>{hoy.length}</Typography>
+                        <Typography variant="caption" color="text.secondary">hoy</Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 0.5 }}>
+                        <Typography variant="h5" fontWeight={700} color={C.d4} sx={{ lineHeight: 1 }}>{manana.length}</Typography>
+                        <Typography variant="caption" color="text.secondary">mañana</Typography>
+                    </Box>
+                </Box>
+            </Box>
+        </Box>
+
+        {/* ── Sección HOY ────────────────────────────────────────────────── */}
+        <Box sx={{ px: 2.5, pt: 1.2, pb: 0.5 }}>
+            <Typography variant="caption" fontWeight={700} color={C.dark}
+                sx={{ textTransform: "uppercase", letterSpacing: 0.6, fontSize: 10 }}>
+                Hoy
+            </Typography>
+        </Box>
+        {hoy.length === 0 ? (
+            <Box sx={{ px: 2.5, pb: 1.2 }}>
+                <Typography variant="caption" color="text.secondary">Sin entregas para hoy</Typography>
+            </Box>
+        ) : (
+            <>
+                {hoy.slice(0, MAX_ROWS).map((item, idx) => (
+                    <PedidoRow key={item.id} item={item} last={idx === Math.min(hoy.length, MAX_ROWS) - 1} />
+                ))}
+                {hoy.length > MAX_ROWS && (
+                    <Box sx={{ px: 2.5, py: 0.8 }}>
+                        <Typography variant="caption" color="text.secondary">+{hoy.length - MAX_ROWS} más</Typography>
+                    </Box>
+                )}
+            </>
+        )}
+
+        <Divider sx={{ my: 0.5 }} />
+
+        {/* ── Sección MAÑANA ─────────────────────────────────────────────── */}
+        <Box sx={{ px: 2.5, pt: 1, pb: 0.5 }}>
+            <Typography variant="caption" fontWeight={700} color={C.d4}
+                sx={{ textTransform: "uppercase", letterSpacing: 0.6, fontSize: 10 }}>
+                Mañana
+            </Typography>
+        </Box>
+        {manana.length === 0 ? (
+            <Box sx={{ px: 2.5, pb: 1.5 }}>
+                <Typography variant="caption" color="text.secondary">Sin entregas para mañana</Typography>
+            </Box>
+        ) : (
+            <>
+                {manana.slice(0, MAX_ROWS).map((item, idx) => (
+                    <PedidoRow key={item.id} item={item} last={idx === Math.min(manana.length, MAX_ROWS) - 1} />
+                ))}
+                {manana.length > MAX_ROWS && (
+                    <Box sx={{ px: 2.5, py: 0.8 }}>
+                        <Typography variant="caption" color="text.secondary">+{manana.length - MAX_ROWS} más</Typography>
+                    </Box>
+                )}
+            </>
+        )}
+    </Paper>
+);
+
 // ── Dashboard principal ───────────────────────────────────────────────────────
 
 const TODAS = "TODAS";   // valor centinela para "todas las sucursales"
@@ -479,9 +617,12 @@ const DashboardView: React.FC = () => {
     const [kpis, setKpis]                   = useState<DashboardKpiDTO[]>([]);
     const [ajustes, setAjustes]             = useState<DashboardAjusteBarDTO[]>([]);
     const [aprobaciones, setAprobaciones]   = useState<SgAprobacionResumenDTO[]>([]);
+    const [pedidosHoy, setPedidosHoy]       = useState<OrdenCompraEntregaHoyDTO[]>([]);
+    const [pedidosManana, setPedidosManana] = useState<OrdenCompraEntregaHoyDTO[]>([]);
     const [sucursales, setSucursales]       = useState<DashboardSucursalDTO[]>([]);
     const [sucursalSel, setSucursalSel]     = useState<string>(TODAS);
     const [loading, setLoading]             = useState(true);
+    const [lastUpdate, setLastUpdate]       = useState<Date>(new Date());
     const mountDone                         = useRef(false);
 
     // Carga las sucursales accesibles una sola vez
@@ -494,14 +635,19 @@ const DashboardView: React.FC = () => {
     const cargar = useCallback(async (sucId?: number) => {
         setLoading(true);
         try {
-            const [kpiData, ajusteData, aprobData] = await Promise.all([
+            const [kpiData, ajusteData, aprobData, pedidosHoyData, pedidosMananaData] = await Promise.all([
                 getDashboardKpis(sucId),
                 getDashboardAjustes(sucId),
                 getMisPendientes(),
+                getDashboardPedidosHoy(sucId),
+                getDashboardPedidosManana(sucId),
             ]);
             setKpis(kpiData);
             setAjustes(ajusteData);
             setAprobaciones(aprobData);
+            setPedidosHoy(pedidosHoyData);
+            setPedidosManana(pedidosMananaData);
+            setLastUpdate(new Date());
         } catch {
             // Sin datos — no romper la pantalla
         } finally {
@@ -515,6 +661,14 @@ const DashboardView: React.FC = () => {
         mountDone.current = true;
         cargar();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Recarga automática al volver al tab/ventana
+    useEffect(() => {
+        const sucId = sucursalSel === TODAS ? undefined : Number(sucursalSel);
+        const onFocus = () => cargar(sucId);
+        window.addEventListener("focus", onFocus);
+        return () => window.removeEventListener("focus", onFocus);
+    }, [sucursalSel, cargar]);
 
     const handleSucursalChange = (e: SelectChangeEvent) => {
         const val = e.target.value;
@@ -539,9 +693,21 @@ const DashboardView: React.FC = () => {
                     <Typography variant="h5" fontWeight={700} color={C.dark}>
                         Resumen de operaciones
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Actividad de los últimos 7 días · actualizado al iniciar sesión
-                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Actualizado: {lastUpdate.toLocaleTimeString("es-DO", { hour: "2-digit", minute: "2-digit" })}
+                        </Typography>
+                        <Tooltip title="Actualizar datos">
+                            <IconButton
+                                size="small"
+                                disabled={loading}
+                                onClick={() => cargar(sucursalSel === TODAS ? undefined : Number(sucursalSel))}
+                                sx={{ color: C.d4, p: 0.4 }}
+                            >
+                                <RefreshIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
                 </Box>
 
                 {/* Selector de sucursal — solo visible si el usuario tiene más de una */}
@@ -584,12 +750,20 @@ const DashboardView: React.FC = () => {
                             <KpiCard kpi={kpi} />
                         </Grid>
                     ))}
+                    {/* Entregas hoy + mañana — siempre visible, primera posición */}
+                    <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
+                        <PedidosEntregaCard hoy={pedidosHoy} manana={pedidosManana} />
+                    </Grid>
+
+                    {/* Ajustes de inventario */}
                     {ajustes.length > 0 && (
                         <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
                             <AjustesBarChart data={ajustes} />
                         </Grid>
                     )}
-                    <Grid size={{ xs: 12, sm: ajustes.length > 0 ? 6 : 12, lg: ajustes.length > 0 ? 8 : 12 }}>
+
+                    {/* Aprobaciones — ocupa el espacio restante, reducida cuando hay ajustes */}
+                    <Grid size={{ xs: 12, sm: 6, lg: ajustes.length > 0 ? 4 : 8 }}>
                         <PendientesAprobacionCard items={aprobaciones} />
                     </Grid>
                 </Grid>

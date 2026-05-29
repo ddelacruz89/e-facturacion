@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.dto.inventario;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.Data;
 
@@ -13,5 +14,6 @@ public class InOrdenesComprasRequestDTO {
   private Integer suplidorId;
   private String estadoId;
   private Integer cotizacionId;
+  private LocalDate fechaEntregaTentativa;
   private List<InOrdenesComprasDetalleRequestDTO> detalles;
 }

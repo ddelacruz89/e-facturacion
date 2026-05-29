@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Getter;
@@ -52,6 +53,9 @@ public class InOrdenesCompras extends BaseSucursal implements Serializable {
 
   @Column(name = "cotizacion_id")
   private Integer cotizacionId;
+
+  @Column(name = "fecha_entrega_tentativa")
+  private LocalDate fechaEntregaTentativa;
 
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "ordenCompraId", fetch = FetchType.EAGER)
   private List<InOrdenesComprasDetalles> detalles;
