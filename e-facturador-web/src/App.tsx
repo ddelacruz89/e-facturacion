@@ -5,6 +5,7 @@ import { createTheme, ThemeProvider } from "@mui/material";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginView from "./components/auth/LoginView";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import MenuRoute from "./components/auth/MenuRoute";
 
 // Import debug utility
 import "./utils/debugAuth";
@@ -105,11 +106,11 @@ const AppRoutes = () => {
                     <Route path="inventario/reportes" element={<ReportesInventarioView />} />
                     <Route path="aprobaciones-config"  element={<AprobacionConfigView />} />
                     <Route path="aprobaciones-bandeja" element={<AprobacionBandejaView />} />
-                    <Route path="despacho/tipo-vehiculo" element={<DeTipoVehiculoView />} />
-                    <Route path="despacho/vehiculos"    element={<DeVehiculoView />} />
-                    <Route path="despacho/ordenes"      element={<DeOrdenDespachoView />} />
-                    <Route path="despacho/rutas"        element={<DeRutaEntregaView />} />
-                    <Route path="despacho/mis-entregas" element={<MisEntregasView />} />
+                    <Route path="despacho/tipo-vehiculo" element={<MenuRoute menuUrl="/despacho/tipo-vehiculo"><DeTipoVehiculoView /></MenuRoute>} />
+                    <Route path="despacho/vehiculos"    element={<MenuRoute menuUrl="/despacho/vehiculos"><DeVehiculoView /></MenuRoute>} />
+                    <Route path="despacho/ordenes"      element={<MenuRoute menuUrl="/despacho/ordenes"><DeOrdenDespachoView /></MenuRoute>} />
+                    <Route path="despacho/rutas"        element={<MenuRoute menuUrl="/despacho/rutas"><DeRutaEntregaView /></MenuRoute>} />
+                    <Route path="despacho/mis-entregas" element={<MenuRoute menuUrl="/despacho/mis-entregas"><MisEntregasView /></MenuRoute>} />
                 </Route>
 
                 {/* Catch all route */}
