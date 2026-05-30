@@ -136,7 +136,33 @@ public class DeOrdenDespachoServiceImpl implements DeOrdenDespachoService {
       orden.setUsuarioEntrego(username);
     }
 
-    return ordenDespachoDao.save(orden);
+    DeOrdenDespacho saved = ordenDespachoDao.save(orden);
+
+    if ("ENTREGADO".equals(estadoId) && saved.getRutaId() != null) {
+      autoCompletarRuta(saved.getRutaId(), empresaId);
+    }
+
+    return saved;
+  }
+
+  private void autoCompletarRuta(Integer rutaId, Integer empresaId) {
+    List<DeOrdenDespacho> ordenes = ordenDespachoDao.findByRutaId(rutaId, empresaId);
+    long activas = ordenes.stream().filter(o -> !"ANU".equals(o.getEstadoId())).count();
+    boolean todasEntregadas =
+        activas > 0
+            && ordenes.stream()
+                .filter(o -> !"ANU".equals(o.getEstadoId()))
+                .allMatch(o -> "ENTREGADO".equals(o.getEstadoId()));
+    if (todasEntregadas) {
+      rutaEntregaDao
+          .findById(rutaId, empresaId)
+          .filter(r -> "EN_CURSO".equals(r.getEstadoId()))
+          .ifPresent(
+              r -> {
+                r.setEstadoId("COMPLETADA");
+                rutaEntregaDao.save(r);
+              });
+    }
   }
 
   @Override

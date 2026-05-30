@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, IconButton, Tooltip, TextField, InputAdornment, Box } from "@mui/material";
+import { Button, IconButton, Tooltip, TextField, InputAdornment, SxProps, Theme } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { SearchConfig, SearchParams } from "../../types/modalSearchTypes";
 
@@ -8,10 +8,12 @@ interface SearchButtonProps {
     onOpenSearch: (config: SearchConfig, initialValues?: SearchParams) => void;
     initialValues?: SearchParams;
     variant?: "button" | "icon" | "input";
+    buttonVariant?: "contained" | "outlined" | "text";
     size?: "small" | "medium";
     disabled?: boolean;
     tooltip?: string;
     children?: React.ReactNode;
+    sx?: SxProps<Theme>;
     // New props for input variant
     displayValue?: string | number;
     placeholder?: string;
@@ -58,10 +60,12 @@ export const SearchButton: React.FC<SearchButtonProps> = ({
     onOpenSearch,
     initialValues = {},
     variant = "button",
+    buttonVariant = "outlined",
     size = "small",
     disabled = false,
     tooltip,
     children,
+    sx,
     displayValue = "",
     placeholder = "Seleccione...",
     label,
@@ -113,7 +117,7 @@ export const SearchButton: React.FC<SearchButtonProps> = ({
     }
 
     return (
-        <Button onClick={handleClick} disabled={disabled} size={size} variant="outlined" startIcon={<SearchIcon />}>
+        <Button onClick={handleClick} disabled={disabled} size={size} variant={buttonVariant} startIcon={<SearchIcon />} sx={sx}>
             {children || config.title}
         </Button>
     );

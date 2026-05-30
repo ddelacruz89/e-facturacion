@@ -190,6 +190,7 @@ export const DeRutaEntregaView: React.FC = () => {
 
     const estadoRuta = selectedRuta?.estadoId ?? "";
     const isEditable = !selectedRuta || estadoRuta === "PLANIFICADA";
+    const tieneEntregadas = ordenesAsignadas.some((o) => o.estadoId === "ENTREGADO");
 
     return (
         <Box sx={{ flexGrow: 1 }}>
@@ -198,14 +199,16 @@ export const DeRutaEntregaView: React.FC = () => {
                     config={SEARCH_CONFIGS.RUTA_ENTREGA}
                     onOpenSearch={rutaSearch.openModal}
                     variant="button"
+                    buttonVariant="contained"
                     label="Buscar Ruta"
+                    sx={{ bgcolor: "#526671", "&:hover": { bgcolor: "#3d4e56" } }}
                 />
                 <Button
                     variant="contained"
                     size="small"
                     startIcon={<AddIcon />}
                     onClick={handleNueva}
-                    sx={{ backgroundColor: "#272C36", "&:hover": { backgroundColor: "#3d4452" } }}
+                    sx={{ bgcolor: "#715D52", "&:hover": { bgcolor: "#55463e" } }}
                 >
                     Nueva Ruta
                 </Button>
@@ -226,22 +229,44 @@ export const DeRutaEntregaView: React.FC = () => {
                                     size="small"
                                 />
                                 {estadoRuta === "PLANIFICADA" && (
-                                    <Button size="small" color="primary" onClick={() => handleCambiarEstado("EN_CURSO")}>
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={() => handleCambiarEstado("EN_CURSO")}
+                                        sx={{ bgcolor: "#527158", "&:hover": { bgcolor: "#3c5541" } }}
+                                    >
                                         Iniciar Ruta
                                     </Button>
                                 )}
                                 {estadoRuta === "EN_CURSO" && (
                                     <>
-                                        <Button size="small" color="success" onClick={() => handleCambiarEstado("COMPLETADA")}>
+                                        <Button
+                                            size="small"
+                                            variant="contained"
+                                            onClick={() => handleCambiarEstado("COMPLETADA")}
+                                            sx={{ bgcolor: "#527158", "&:hover": { bgcolor: "#3c5541" } }}
+                                        >
                                             Completar Ruta
                                         </Button>
-                                        <Button size="small" color="warning" onClick={() => handleCambiarEstado("PLANIFICADA")}>
-                                            Regresar a Planificada
-                                        </Button>
+                                        {!tieneEntregadas && (
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                onClick={() => handleCambiarEstado("PLANIFICADA")}
+                                                sx={{ bgcolor: "#716752", "&:hover": { bgcolor: "#554e3d" } }}
+                                            >
+                                                Regresar a Planificada
+                                            </Button>
+                                        )}
                                     </>
                                 )}
                                 {(estadoRuta === "PLANIFICADA" || estadoRuta === "EN_CURSO") && (
-                                    <Button size="small" color="error" onClick={handleAnular}>
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        onClick={handleAnular}
+                                        sx={{ bgcolor: "#71526B", "&:hover": { bgcolor: "#553f51" } }}
+                                    >
                                         Anular
                                     </Button>
                                 )}
@@ -393,7 +418,7 @@ export const DeRutaEntregaView: React.FC = () => {
                                         startIcon={<AssignmentIcon />}
                                         onClick={handleAsignarFacturas}
                                         disabled={loading || facturasSeleccionadas.size === 0}
-                                        sx={{ backgroundColor: "#525C71", "&:hover": { backgroundColor: "#272C36" } }}
+                                        sx={{ bgcolor: "#5F5271", "&:hover": { bgcolor: "#483e56" } }}
                                     >
                                         Asignar ({facturasSeleccionadas.size})
                                     </Button>

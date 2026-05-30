@@ -238,6 +238,16 @@ public class DeRutaEntregaServiceImpl implements DeRutaEntregaService {
             .findById(rutaId, empresaId)
             .orElseThrow(() -> new RecordNotFoundException("Ruta no encontrada: " + rutaId));
 
+    if ("PLANIFICADA".equals(estadoId)) {
+      boolean tieneEntregadas =
+          ordenDespachoDao.findByRutaId(rutaId, empresaId).stream()
+              .anyMatch(o -> "ENTREGADO".equals(o.getEstadoId()));
+      if (tieneEntregadas) {
+        throw new IllegalStateException(
+            "No se puede regresar a Planificada: ya hay órdenes entregadas en esta ruta.");
+      }
+    }
+
     ruta.setEstadoId(estadoId);
     return rutaEntregaDao.save(ruta);
   }

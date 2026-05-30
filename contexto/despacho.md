@@ -7,7 +7,9 @@ Gestiona el ciclo de vida de entregas a clientes desde la factura hasta la confi
 Flujo orden: `PEN → EN_RUTA → EN_CAMINO → ENTREGADO | DEVUELTO | ANU`  
 Flujo ruta:  `PLANIFICADA ↔ EN_CURSO → COMPLETADA | ANU`
 
-> `EN_CURSO → PLANIFICADA` es válido (revertir inicio accidental). Solo `COMPLETADA` es terminal — no se puede anular.
+> `EN_CURSO → PLANIFICADA` **solo es válido si ninguna orden de la ruta está en estado `ENTREGADO`**. Si ya hay entregas registradas, el backend lanza `IllegalStateException`.  
+> Cuando se marca la última orden activa (no-ANU) como `ENTREGADO`, el backend auto-completa la ruta (`EN_CURSO → COMPLETADA`) automáticamente dentro de la misma transacción.  
+> Solo `COMPLETADA` es terminal — no se puede anular.
 
 ---
 
@@ -197,7 +199,7 @@ List<MfFacturaParaDespachoDTO> findFacturasParaDespacho(
 
 **`DeOrdenDespachoServiceImpl`**
 - `save`: verifica `existsByFacturaId` antes de crear; estado inicial `PEN`; llama `secuenciasDao.getNextSecuencia(empresaId, "DEORDENDESPACHO")` en el segundo save.
-- `marcarEstado`: valida transiciones (ANU es terminal; ENTREGADO solo permite → DEVUELTO); al marcar ENTREGADO llena `fechaEntrega` + `usuarioEntrego`.
+- `marcarEstado`: valida transiciones (ANU es terminal; ENTREGADO solo permite → DEVUELTO); al marcar ENTREGADO llena `fechaEntrega` + `usuarioEntrego`. **Tras guardar, si la orden pertenece a una ruta, llama `autoCompletarRuta`**: si todas las órdenes no-ANU de la ruta son ENTREGADO, pasa la ruta de `EN_CURSO` a `COMPLETADA` en la misma transacción.
 - `getMisEntregas(fecha)`: carga rutas del conductor (por JWT username + fecha) + vehículo + órdenes asignadas.
 
 **`DeRutaEntregaServiceImpl`**
@@ -208,7 +210,7 @@ List<MfFacturaParaDespachoDTO> findFacturasParaDespacho(
   - Si no existe → crea `DeOrdenDespacho` con datos denormalizados de la factura, `fechaCompromiso = ruta.fecha.atTime(23,59)`, `estadoId = EN_RUTA`, genera secuencia.
   - Bloquea si la ruta está `ANU` o `COMPLETADA`.
 - `disableById`: devuelve órdenes no entregadas a `PEN`. **Solo bloquea si `COMPLETADA`** — sí permite anular `EN_CURSO`.
-- `cambiarEstado`: acepta cualquier transición incluyendo `EN_CURSO → PLANIFICADA` (revertir inicio accidental).
+- `cambiarEstado`: valida `EN_CURSO → PLANIFICADA` — **lanza excepción si alguna orden de la ruta tiene `estadoId = ENTREGADO`**. Las demás transiciones se aceptan sin restricción adicional.
 
 **`FacturacionServices`**
 - `getFacturasParaDespacho()`: lee `empresaId`/`sucursalId` del `TenantContext`, delega a `FacturaDao.findFacturasParaDespacho`.
@@ -295,6 +297,10 @@ Tiene el campo `envio?: boolean` agregado al interface `Factura`.
 - Props: `value: string` (username), `onChange: (username: string) => void`, `label?`, `disabled?`, `size?`, `fullWidth?`.
 - Usar en cualquier campo que requiera seleccionar un usuario del sistema.
 
+**`components/search/SearchButton.tsx`** — Props adicionales disponibles en `variant="button"`:
+- `buttonVariant?: "contained" | "outlined" | "text"` — default `"outlined"`. Pasar `"contained"` para botones de ActionBar con color de fondo.
+- `sx?: SxProps<Theme>` — estilos MUI adicionales, útil para aplicar colores de paleta.
+
 **`components/despacho/`**
 
 | Componente | Ruta frontend | Descripción |
@@ -315,11 +321,27 @@ Tiene el campo `envio?: boolean` agregado al interface `Factura`.
 | Estado ruta | Botones disponibles |
 |---|---|
 | `PLANIFICADA` | Iniciar Ruta → EN_CURSO \| Guardar \| Anular |
-| `EN_CURSO` | Completar Ruta → COMPLETADA \| **Regresar a Planificada** → PLANIFICADA \| Anular |
+| `EN_CURSO` | Completar Ruta → COMPLETADA \| **Regresar a Planificada** (solo si no hay ENTREGADAS) \| Anular |
 | `COMPLETADA` | — (solo lectura) |
 | `ANU` | — (solo lectura) |
 
-Panel **"Facturas para Despacho"** visible para `PLANIFICADA` y `EN_CURSO`: lista facturas elegibles con checkbox, se refresca al guardar, asignar o anular.
+> "Regresar a Planificada" se oculta en el frontend si `ordenesAsignadas.some(o => o.estadoId === 'ENTREGADO')`. El backend también lo rechaza con error.
+
+Panel **"Órdenes Asignadas a esta Ruta"**: visible siempre que haya una ruta cargada (todos los estados). Muestra tabla con No. Orden, Factura No., Cliente, Compromiso y Estado (chip con color). Se carga al seleccionar la ruta y se refresca tras cada asignación. Usa `buscarOrdenesDespacho({ rutaId, page: 0, size: 100 })` — el resultado ya viene como array (unwrapContent extrae `.content`).
+
+Panel **"Facturas para Despacho"** (asignar nuevas): visible solo para `PLANIFICADA` y `EN_CURSO`. Lista facturas elegibles con checkbox, se refresca al guardar, asignar o anular.
+
+### Colores de botones en `DeRutaEntregaView`
+
+Botones de ActionBar — paleta **complementaria**:
+- "Buscar Ruta": `#526671` verde-azul (teal), hover `#3d4e56`
+- "Nueva Ruta": `#715D52` naranja-tierra, hover `#55463e`
+
+Botones de estado — paleta **tetrádica**:
+- Iniciar Ruta / Completar Ruta: `#527158` verde-salvia, hover `#3c5541`
+- Regresar a Planificada: `#716752` dorado-cálido, hover `#554e3d`
+- Anular: `#71526B` violeta-rosa, hover `#553f51`
+- Asignar (N): `#5F5271` violeta-azul, hover `#483e56`
 
 ### Búsquedas modales (`types/modalSearchTypes.ts`)
 
