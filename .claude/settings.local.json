@@ -16,7 +16,17 @@
       "Bash(npx tsc *)",
       "Bash(npx react-scripts *)",
       "Bash(xargs cat -n)",
-      "Bash(xargs ls)"
+      "Bash(xargs ls)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(grep -E \"\\\\.\\(java|sql\\)$\")",
+      "Bash(grep \"\\\\.java$\")",
+      "Bash(./gradlew compileJava)",
+      "Bash(./gradlew compileJava -q)",
+      "Bash(mvn compile *)",
+      "Bash(./mvnw compile *)",
+      "Bash(git -C /Users/anersantana/Documents/GitHub/e-facturacion status)",
+      "Bash(grep -E \"\\\\.\\(md|java|sql|ts|tsx\\)$\")"
     ]
   }
 }

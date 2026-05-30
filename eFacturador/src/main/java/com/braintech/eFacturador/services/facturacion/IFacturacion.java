@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.services.facturacion;
 
 import com.braintech.eFacturador.dto.facturacion.IFacturaResumen;
+import com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
 import com.braintech.eFacturador.models.IProductoVenta;
 import com.braintech.eFacturador.models.PagesResult;
@@ -25,4 +26,6 @@ public interface IFacturacion {
 
   void updateEfcSenderId(
       Integer id, String fechaFirma, String secuityCode, String qrUrl, String trackId);
+
+  List<MfFacturaParaDespachoDTO> getFacturasParaDespacho();
 }

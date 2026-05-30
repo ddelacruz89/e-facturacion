@@ -62,6 +62,9 @@ public class MfFactura extends BaseDgII implements Serializable {
   @Column(name = "total")
   private BigDecimal total;
 
+  @Column(name = "envio")
+  private Boolean envio = false;
+
   @OneToMany(cascade = CascadeType.ALL, mappedBy = "facturaId", fetch = FetchType.LAZY)
   @OrderBy("id asc")
   private List<MfFacturaDetalle> detalles;

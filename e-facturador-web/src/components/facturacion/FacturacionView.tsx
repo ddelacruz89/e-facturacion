@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
 import { Factura, FacturaDetalle, IFacturaResumen, MgRetencion, TipoFactura } from "../../models/facturacion";
-import { Button, Divider } from "@mui/material";
+import { Button, Checkbox, Divider, FormControlLabel } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { TextInput, GridRow, TableComponentFacturacion } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
@@ -45,6 +45,7 @@ export default function FacturacionView() {
             retencionIsr: 0,
             total: 0,
             detalles: [],
+            envio: false,
         },
     });
 
@@ -142,6 +143,7 @@ export default function FacturacionView() {
         // setValue("recibo", { efectivo: 0, tarjeta: null, cheque: 0, transferencia: 0, otros: 0, notaCredito: 0, total: 0, cambio: 0 });
         setValue("activo", true);
         setValue("detalles", []);
+        setValue("envio", false);
         setSave(false)
     };
 
@@ -224,6 +226,7 @@ export default function FacturacionView() {
             setValue("retencionIsr", response?.retencionIsr || 0);
             setValue("total", response?.total || 0);
             setValue("detalles", response?.detalles || []);
+            setValue("envio", response?.envio || false);
         });
     }
 
@@ -383,6 +386,19 @@ export default function FacturacionView() {
                                 }}
                                 size={2}
                             />
+                            <Grid size={2} sx={{ display: "flex", alignItems: "center" }}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={!!watch("envio")}
+                                            onChange={(e) => setValue("envio", e.target.checked)}
+                                            disabled={save}
+                                            color="primary"
+                                        />
+                                    }
+                                    label="Para Envío"
+                                />
+                            </Grid>
                         </GridRow>
                     </Grid>
                     <Divider>Listado</Divider>

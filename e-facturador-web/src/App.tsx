@@ -46,6 +46,11 @@ const NotificacionesView = lazy(() => import("./components/notificaciones/Notifi
 const RequisicionView = lazy(() => import("./components/inventario/RequisicionView"));
 const ReportesInventarioView = lazy(() => import("./components/inventario/ReportesInventarioView"));
 const DashboardView = lazy(() => import("./components/shared/DashboardView"));
+const DeTipoVehiculoView = lazy(() => import("./components/despacho/DeTipoVehiculoView"));
+const DeVehiculoView = lazy(() => import("./components/despacho/DeVehiculoView"));
+const DeOrdenDespachoView = lazy(() => import("./components/despacho/DeOrdenDespachoView"));
+const DeRutaEntregaView = lazy(() => import("./components/despacho/DeRutaEntregaView"));
+const MisEntregasView = lazy(() => import("./components/despacho/MisEntregasView"));
 
 // Routes component that uses authentication context
 const AppRoutes = () => {
@@ -100,6 +105,11 @@ const AppRoutes = () => {
                     <Route path="inventario/reportes" element={<ReportesInventarioView />} />
                     <Route path="aprobaciones-config"  element={<AprobacionConfigView />} />
                     <Route path="aprobaciones-bandeja" element={<AprobacionBandejaView />} />
+                    <Route path="despacho/tipo-vehiculo" element={<DeTipoVehiculoView />} />
+                    <Route path="despacho/vehiculos"    element={<DeVehiculoView />} />
+                    <Route path="despacho/ordenes"      element={<DeOrdenDespachoView />} />
+                    <Route path="despacho/rutas"        element={<DeRutaEntregaView />} />
+                    <Route path="despacho/mis-entregas" element={<MisEntregasView />} />
                 </Route>
 
                 {/* Catch all route */}

@@ -1,6 +1,7 @@
 package com.braintech.eFacturador.dao.facturacion;
 
 import com.braintech.eFacturador.dto.facturacion.IFacturaResumen;
+import com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
 import com.braintech.eFacturador.models.IProductoVenta;
 import java.util.List;
@@ -54,6 +55,25 @@ public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
 
   @Query("SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId order by f.fechaReg desc")
   Page<IFacturaResumen> findAllByEmpresaPage(Pageable pageable, Integer empresaId);
+
+  @Query(
+      """
+      SELECT new com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO(
+          f.id, f.secuencia, f.razonSocial, f.clienteId, f.total, f.fechaReg)
+      FROM MfFactura f
+      WHERE f.empresaId = :empresaId
+        AND f.sucursalId = :sucursalId
+        AND f.estadoId = 'PAG'
+        AND f.envio = true
+        AND NOT EXISTS (
+            SELECT o FROM DeOrdenDespacho o
+            WHERE o.facturaId = f.id
+              AND o.empresaId = :empresaId
+              AND o.estadoId <> 'ANU')
+      ORDER BY f.fechaReg DESC
+      """)
+  List<MfFacturaParaDespachoDTO> findFacturasParaDespacho(
+      @Param("empresaId") Integer empresaId, @Param("sucursalId") Integer sucursalId);
 
   @Transactional
   @Modifying(clearAutomatically = true)

@@ -988,7 +988,97 @@ export const SEARCH_CONFIGS = {
             },
             { key: "modulo", label: "Módulo", width: "25%" }
         ]
-    } as SearchConfig
+    } as SearchConfig,
+
+    ORDEN_DESPACHO: {
+        title: "Buscar Orden de Despacho",
+        endpoint: "/api/v1/despacho/ordenes/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: { enabled: true, pageSize: 10 },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace30 = new Date(); hace30.setDate(hoy.getDate() - 30);
+            return {
+                fechaInicio: hace30.toISOString().split("T")[0],
+                fechaFin: hoy.toISOString().split("T")[0],
+            };
+        })(),
+        fields: [
+            { key: "fechaInicio", label: "Fecha Inicio", type: "date" as const },
+            { key: "fechaFin", label: "Fecha Fin", type: "date" as const },
+            { key: "clienteNombre", label: "Cliente", type: "text" as const, placeholder: "Nombre del cliente" },
+            { key: "facturaSecuencia", label: "No. Factura", type: "number" as const },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "PEN", label: "Pendiente" },
+                    { value: "EN_RUTA", label: "En Ruta" },
+                    { value: "EN_CAMINO", label: "En Camino" },
+                    { value: "ENTREGADO", label: "Entregado" },
+                    { value: "DEVUELTO", label: "Devuelto" },
+                    { value: "ANU", label: "Anulado" },
+                ],
+            },
+        ],
+        displayColumns: [
+            { key: "secuencia", label: "No.", width: "7%" },
+            { key: "fechaReg", label: "Fecha", width: "18%", render: (v: any) => formatDateTimeForUi(v) },
+            { key: "facturaSecuencia", label: "Factura", width: "9%" },
+            { key: "clienteNombre", label: "Cliente", width: "26%" },
+            { key: "fechaCompromiso", label: "Compromiso", width: "18%", render: (v: any) => formatDateTimeForUi(v) },
+            { key: "estadoId", label: "Estado", width: "12%" },
+            { key: "usuarioReg", label: "Usuario", width: "10%" },
+        ],
+    } as SearchConfig,
+
+    RUTA_ENTREGA: {
+        title: "Buscar Ruta de Entrega",
+        endpoint: "/api/v1/despacho/rutas/buscar",
+        method: "POST" as const,
+        keyField: "id",
+        searchOnLoad: true,
+        pagination: { enabled: true, pageSize: 10 },
+        defaultParams: (() => {
+            const hoy = new Date();
+            const hace30 = new Date(); hace30.setDate(hoy.getDate() - 30);
+            return {
+                fechaInicio: hace30.toISOString().split("T")[0],
+                fechaFin: hoy.toISOString().split("T")[0],
+            };
+        })(),
+        fields: [
+            { key: "fechaInicio", label: "Fecha Inicio", type: "date" as const },
+            { key: "fechaFin", label: "Fecha Fin", type: "date" as const },
+            { key: "conductorUsername", label: "Conductor", type: "text" as const, placeholder: "Usuario conductor" },
+            {
+                key: "estadoId",
+                label: "Estado",
+                type: "select" as const,
+                options: [
+                    { value: "", label: "Todos" },
+                    { value: "PLANIFICADA", label: "Planificada" },
+                    { value: "EN_CURSO", label: "En Curso" },
+                    { value: "COMPLETADA", label: "Completada" },
+                    { value: "ANU", label: "Anulada" },
+                ],
+            },
+        ],
+        displayColumns: [
+            { key: "secuencia", label: "No.", width: "7%" },
+            { key: "fecha", label: "Fecha", width: "12%" },
+            { key: "vehiculoDescripcion", label: "Vehículo", width: "22%" },
+            { key: "vehiculoPlaca", label: "Placa", width: "10%" },
+            { key: "conductorUsername", label: "Conductor", width: "18%" },
+            { key: "totalOrdenes", label: "Órdenes", width: "10%" },
+            { key: "estadoId", label: "Estado", width: "12%" },
+            { key: "usuarioReg", label: "Creado por", width: "9%" },
+        ],
+    } as SearchConfig,
 };
 
 export default SEARCH_CONFIGS;

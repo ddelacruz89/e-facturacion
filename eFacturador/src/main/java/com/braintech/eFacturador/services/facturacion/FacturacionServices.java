@@ -3,6 +3,7 @@ package com.braintech.eFacturador.services.facturacion;
 import com.braintech.eFacturador.dao.facturacion.FacturaDao;
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.dto.facturacion.IFacturaResumen;
+import com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.facturacionelectronica.services.ECFServices;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
@@ -165,5 +166,12 @@ public class FacturacionServices implements IFacturacion {
       Integer id, String fechaFirma, String secuityCode, String qrUrl, String trackId) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     facturaDao.updateFirmaAndQr(id, empresaId, fechaFirma, secuityCode, qrUrl, trackId);
+  }
+
+  @Override
+  public List<MfFacturaParaDespachoDTO> getFacturasParaDespacho() {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Integer sucursalId = tenantContext.getCurrentSucursalId();
+    return facturaDao.findFacturasParaDespacho(empresaId, sucursalId);
   }
 }

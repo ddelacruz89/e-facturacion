@@ -73,6 +73,7 @@ export interface Factura {
     total: number;
     detalles: FacturaDetalle[];
     recibo?: Recibo;
+    envio?: boolean;
 }
 
 export interface FacturaDetalle {

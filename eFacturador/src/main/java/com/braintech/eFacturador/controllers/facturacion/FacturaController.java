@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.controllers.facturacion;
 
+import com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
 import com.braintech.eFacturador.models.IProductoVenta;
 import com.braintech.eFacturador.security.Accion;
@@ -68,5 +69,10 @@ public class FacturaController {
   public ResponseEntity<List<IProductoVenta>> getProductosVentas() {
     List<IProductoVenta> productoVenta = facturacionServices.getProductoVenta();
     return ResponseEntity.ok(productoVenta);
+  }
+
+  @GetMapping("/para-despacho")
+  public ResponseEntity<List<MfFacturaParaDespachoDTO>> getFacturasParaDespacho() {
+    return ResponseEntity.ok(facturacionServices.getFacturasParaDespacho());
   }
 }

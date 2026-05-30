@@ -36,6 +36,18 @@ public class MgCliente extends BaseEntityPk {
   @Column(name = "direccion")
   private String direccion;
 
+  @Column(name = "direccion_entrega")
+  private String direccionEntrega;
+
+  @Column(name = "sector")
+  private String sector;
+
+  @Column(name = "ciudad")
+  private String ciudad;
+
+  @Column(name = "referencia")
+  private String referencia;
+
   @Column(name = "email")
   private String email;
 

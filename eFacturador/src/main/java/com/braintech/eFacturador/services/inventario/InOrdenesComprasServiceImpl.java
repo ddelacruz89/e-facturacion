@@ -46,12 +46,14 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
   @Override
   @Transactional
   public Response<?> create(InOrdenesComprasRequestDTO requestDTO) {
-    String username   = tenantContext.getCurrentUsername();
+    String username = tenantContext.getCurrentUsername();
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     Integer sucursalId = tenantContext.getCurrentSucursalId();
 
-    SgSucursal sucursal = sgSucursalRepository.findById(sucursalId)
-        .orElseThrow(() -> new RecordNotFoundException("Sucursal no encontrada"));
+    SgSucursal sucursal =
+        sgSucursalRepository
+            .findById(sucursalId)
+            .orElseThrow(() -> new RecordNotFoundException("Sucursal no encontrada"));
 
     // Fetch suplidor
     InSuplidor suplidor =
@@ -110,7 +112,7 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
   @Override
   @Transactional
   public Response<?> update(Integer id, InOrdenesCompras ordenCompra) {
-    Integer empresaId  = tenantContext.getCurrentEmpresaId();
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
     Integer sucursalId = tenantContext.getCurrentSucursalId();
 
     // Busca por id solo; re-aplica tenant para corregir registros legacy con NULL
@@ -120,8 +122,10 @@ public class InOrdenesComprasServiceImpl implements InOrdenesComprasService {
             .filter(o -> o.getEmpresaId() == null || o.getEmpresaId().equals(empresaId))
             .orElseThrow(() -> new RecordNotFoundException("Orden de compra no encontrada"));
 
-    SgSucursal sucursal = sgSucursalRepository.findById(sucursalId)
-        .orElseThrow(() -> new RecordNotFoundException("Sucursal no encontrada"));
+    SgSucursal sucursal =
+        sgSucursalRepository
+            .findById(sucursalId)
+            .orElseThrow(() -> new RecordNotFoundException("Sucursal no encontrada"));
 
     // Tenant siempre del JWT
     existing.setEmpresaId(empresaId);

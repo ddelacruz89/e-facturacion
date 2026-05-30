@@ -3,6 +3,7 @@ import { ProductoVenta } from "../models/producto/productoVenta";
 import { Factura, IFacturaResumen } from "../models/facturacion";
 import { PagesResult } from "../models/PageResults";
 import { DataNotFound } from "../models/ServerErros";
+import { MfFacturaParaDespacho } from "../models/despacho/DespachoModels";
 
 const api = "/api/v1/facturacion/facturas";
 export function getProductosVentas(): Promise<ProductoVenta[]> {
@@ -21,6 +22,21 @@ export function getFacturaById(id: number): Promise<Factura | null> {
             console.error("Mensaje:", response.message);
             return null;
         });
+}
+
+export function getByNumeroFactura(numero: number): Promise<Factura | null> {
+    return apiClient
+        .get(`${api}/numero/${numero}`)
+        .then((x: { data: Factura }) => x.data)
+        .catch((error) => {
+            const response: DataNotFound = error.response?.data?.error;
+            console.error("Mensaje:", response?.message);
+            return null;
+        });
+}
+
+export function getFacturasParaDespacho(): Promise<MfFacturaParaDespacho[]> {
+    return apiClient.get(`${api}/para-despacho`).then((r) => r.data);
 }
 
 export function getFacturas(page: number, size: number): Promise<PagesResult<IFacturaResumen[]> | null> {
