@@ -282,6 +282,7 @@ Archivos disponibles en `contexto/` — lee solo los relevantes a la tarea:
 - `movimiento.md` — trigger `trg_actualiza_inventario`: lógica cr/débito, función `fn_actualiza_inventario_producto`, campos requeridos por movimiento, sistema de alertas por límite mínimo
 - `factura-suplidor.md` — módulo de facturas de proveedores: e-CF/NCF, retenciones ISR/ITBIS, descuentos por renglón, pagos, validación QR DGII
 - `despacho.md` — módulo de despacho y entrega: tipos de vehículo, vehículos, órdenes desde factura, rutas, vista conductor, flujos de estado, reglas de apiClient vs axios
+- `ubicacion-delivery.md` — catálogo División Territorial RD 2021 (ONE): jerarquía provincia→municipio→sección→barrio→sub-barrio, schema SQL, backend Java, componente DireccionSelector, regla de precio en barrio_paraje
 
 ---
 

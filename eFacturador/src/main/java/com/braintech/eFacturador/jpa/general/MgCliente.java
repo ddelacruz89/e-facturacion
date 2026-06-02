@@ -33,20 +33,9 @@ public class MgCliente extends BaseEntityPk {
   @Column(name = "telefono")
   private String telefono;
 
+  /** Dirección fiscal (texto libre) */
   @Column(name = "direccion")
   private String direccion;
-
-  @Column(name = "direccion_entrega")
-  private String direccionEntrega;
-
-  @Column(name = "sector")
-  private String sector;
-
-  @Column(name = "ciudad")
-  private String ciudad;
-
-  @Column(name = "referencia")
-  private String referencia;
 
   @Column(name = "email")
   private String email;
@@ -62,4 +51,29 @@ public class MgCliente extends BaseEntityPk {
 
   @Column(name = "porciento_descuento")
   private BigDecimal porcientoDescuento;
+
+  // ── Ubicación de entrega (nuevo schema) ───────────────────────────────────
+
+  @Column(name = "cod_provincia", length = 2)
+  private String codProvincia;
+
+  /** FK → mg_municipio.id */
+  @Column(name = "municipio_id")
+  private Integer municipioId;
+
+  /** FK → mg_barrio_paraje.id */
+  @Column(name = "barrio_id")
+  private Integer barrioId;
+
+  /** FK → mg_sub_barrio.id (opcional) */
+  @Column(name = "sub_barrio_id")
+  private Integer subBarrioId;
+
+  /** Calle y número */
+  @Column(name = "calle")
+  private String calle;
+
+  /** Referencia / indicaciones al conductor */
+  @Column(name = "referencia")
+  private String referencia;
 }

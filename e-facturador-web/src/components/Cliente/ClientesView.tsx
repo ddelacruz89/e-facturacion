@@ -1,5 +1,6 @@
-import { Controller, useForm } from "react-hook-form"
-import { Cliente } from "../../models/cliente/Cliente"
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { Cliente } from "../../models/cliente/Cliente";
 import { saveCliente } from "../../apis/ClienteController";
 import ActionBar from "../../customers/ActionBar";
 import {
@@ -10,16 +11,25 @@ import {
     FormControl,
     Grid,
     TextField,
-    Typography
+    Typography,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { EmailInput, GridRow, MoneyInput, NumberInput, SwitchInput, TextInput } from "../../customers/CustomComponents";
+import {
+    EmailInput,
+    GridRow,
+    MoneyInput,
+    NumberInput,
+    SwitchInput,
+    TextInput,
+} from "../../customers/CustomComponents";
 import { TipoComprobanteSelect, TipoIdentificacionSelect } from "../../customers/ComboBox";
 import { toast } from "react-toastify";
 import ModalSearchClientes from "../../customers/search/ModalSearchClientes";
+import DireccionSelector from "../general/DireccionSelector";
+import { DireccionValue } from "../../apis/UbicacionController";
 
 export default function ClientesView() {
-    const { control, handleSubmit, setValue, watch, formState: { errors } } = useForm<Cliente>({
+    const { control, handleSubmit, setValue, watch } = useForm<Cliente>({
         defaultValues: {
             id: 0,
             empresaId: 0,
@@ -29,32 +39,42 @@ export default function ClientesView() {
             razonSocial: "",
             telefono: "",
             direccion: "",
-            direccionEntrega: "",
-            sector: "",
-            ciudad: "",
-            referencia: "",
             email: "",
             credito: 0,
             activo: true,
             aplicaCredito: false,
             porcientoDescuento: 0,
-            tipoComprobanteId: 0
-        }
+            tipoComprobanteId: 0,
+        },
     });
 
+    // Estado de dirección de entrega (manejado por DireccionSelector)
+    const [direccion, setDireccion] = useState<DireccionValue>({});
+
+    // ── submit ────────────────────────────────────────────────────────────────
+
     const onSubmit = (data: Cliente) => {
-        saveCliente(data).then((data) => {
-            if (data) {
-                if (data.id > 0) {
+        const payload: Cliente = {
+            ...data,
+            codProvincia:  direccion.codProvincia,
+            municipioId:   direccion.municipioId,
+            barrioId:      direccion.barrioId,
+            subBarrioId:   direccion.subBarrioId,
+            calle:         direccion.calle,
+            referencia:    direccion.referencia,
+        };
+        saveCliente(payload)
+            .then((saved) => {
+                if (saved && saved.id > 0) {
                     toast.success("Cliente guardado correctamente");
-                    setValue("id", data.id);
-                    setValue("secuencia", data.secuencia);
+                    setValue("id", saved.id);
+                    setValue("secuencia", saved.secuencia);
                 }
-            }
-        }).catch((error) => {
-            toast.error("Error al guardar el cliente");
-        });
-    }
+            })
+            .catch(() => toast.error("Error al guardar el cliente"));
+    };
+
+    // ── limpiar formulario ────────────────────────────────────────────────────
 
     function handleClean() {
         setValue("id", 0);
@@ -65,37 +85,44 @@ export default function ClientesView() {
         setValue("razonSocial", "");
         setValue("telefono", "");
         setValue("direccion", "");
-        setValue("direccionEntrega", "");
-        setValue("sector", "");
-        setValue("ciudad", "");
-        setValue("referencia", "");
         setValue("email", "");
         setValue("credito", 0);
         setValue("activo", true);
         setValue("aplicaCredito", false);
         setValue("porcientoDescuento", 0);
+        setDireccion({});
     }
 
+    // ── cargar cliente seleccionado ───────────────────────────────────────────
+
     function handleSelectCliente(cliente: Cliente): void {
-        setValue("id", cliente.id);
-        setValue("empresaId", cliente.empresaId);
-        setValue("secuencia", cliente.secuencia);
-        setValue("tipoIdentificacion", cliente.tipoIdentificacion);
-        setValue("numeroIdentificacion", cliente.numeroIdentificacion);
-        setValue("razonSocial", cliente.razonSocial);
-        setValue("telefono", cliente.telefono);
-        setValue("direccion", cliente.direccion);
-        setValue("direccionEntrega", cliente.direccionEntrega ?? "");
-        setValue("sector", cliente.sector ?? "");
-        setValue("ciudad", cliente.ciudad ?? "");
-        setValue("referencia", cliente.referencia ?? "");
-        setValue("email", cliente.email);
-        setValue("credito", cliente.credito);
-        setValue("activo", cliente.activo);
-        setValue("aplicaCredito", cliente.aplicaCredito);
-        setValue("porcientoDescuento", cliente.porcientoDescuento);
-        setValue("tipoComprobanteId", cliente.tipoComprobanteId);
+        setValue("id",                    cliente.id);
+        setValue("empresaId",             cliente.empresaId);
+        setValue("secuencia",             cliente.secuencia);
+        setValue("tipoIdentificacion",    cliente.tipoIdentificacion);
+        setValue("numeroIdentificacion",  cliente.numeroIdentificacion);
+        setValue("razonSocial",           cliente.razonSocial);
+        setValue("telefono",              cliente.telefono);
+        setValue("direccion",             cliente.direccion);
+        setValue("email",                 cliente.email);
+        setValue("credito",               cliente.credito);
+        setValue("activo",                cliente.activo);
+        setValue("aplicaCredito",         cliente.aplicaCredito);
+        setValue("porcientoDescuento",    cliente.porcientoDescuento);
+        setValue("tipoComprobanteId",     cliente.tipoComprobanteId);
+
+        // Restaurar dirección de entrega en el selector
+        setDireccion({
+            codProvincia: cliente.codProvincia,
+            municipioId:  cliente.municipioId,
+            barrioId:     cliente.barrioId,
+            subBarrioId:  cliente.subBarrioId,
+            calle:        cliente.calle,
+            referencia:   cliente.referencia,
+        });
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     return (
         <main>
@@ -111,7 +138,13 @@ export default function ClientesView() {
 
                 <Grid container spacing={2} className="p-2">
                     <GridRow>
-                        <ModalSearchClientes control={control} name="secuencia" label="Secuencia" size={2} onSelect={handleSelectCliente} />
+                        <ModalSearchClientes
+                            control={control}
+                            name="secuencia"
+                            label="Secuencia"
+                            size={2}
+                            onSelect={handleSelectCliente}
+                        />
                     </GridRow>
                     <GridRow>
                         <TipoIdentificacionSelect control={control} name="tipoIdentificacion" label="Tipo Identificacion" size={4} />
@@ -137,7 +170,7 @@ export default function ClientesView() {
                         <SwitchInput control={control} name="aplicaCredito" label="Aplica Credito" size={4} />
                     </GridRow>
 
-                    {/* Sección colapsable: Dirección de Entrega */}
+                    {/* ── Dirección de Entrega ─────────────────────────────── */}
                     <Grid size={{ xs: 12 }}>
                         <Accordion>
                             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -149,56 +182,16 @@ export default function ClientesView() {
                                 </Typography>
                             </AccordionSummary>
                             <AccordionDetails>
-                                <Grid container spacing={2}>
-                                    <GridRow>
-                                        <TextInput
-                                            control={control}
-                                            name="direccionEntrega"
-                                            label="Dirección de Entrega"
-                                            size={8}
-                                        />
-                                    </GridRow>
-                                    <GridRow>
-                                        <TextInput
-                                            control={control}
-                                            name="sector"
-                                            label="Sector / Barrio"
-                                            size={4}
-                                        />
-                                        <TextInput
-                                            control={control}
-                                            name="ciudad"
-                                            label="Ciudad"
-                                            size={4}
-                                        />
-                                    </GridRow>
-                                    <GridRow>
-                                        <Grid size={{ xs: 12, sm: 8 }}>
-                                            <Controller
-                                                name="referencia"
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <FormControl fullWidth>
-                                                        <TextField
-                                                            {...field}
-                                                            label="Referencia / Indicaciones al conductor"
-                                                            variant="outlined"
-                                                            size="small"
-                                                            multiline
-                                                            rows={2}
-                                                            fullWidth
-                                                        />
-                                                    </FormControl>
-                                                )}
-                                            />
-                                        </Grid>
-                                    </GridRow>
-                                </Grid>
+                                <DireccionSelector
+                                    value={direccion}
+                                    onChange={setDireccion}
+                                    showDireccionTextual={true}
+                                />
                             </AccordionDetails>
                         </Accordion>
                     </Grid>
                 </Grid>
             </form>
         </main>
-    )
+    );
 }

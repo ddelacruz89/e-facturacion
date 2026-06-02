@@ -209,21 +209,18 @@ public class DeRutaEntregaServiceImpl implements DeRutaEntregaService {
 
   /**
    * Construye la cadena de dirección de entrega a partir de los campos estructurados del cliente.
-   * Usa direccionEntrega si está disponible; si no, cae a la dirección fiscal. Concatena sector y
-   * ciudad si están presentes para facilitar la organización de rutas.
+   * Usa calle si está disponible; si no, cae a la dirección fiscal. Agrega referencia al final si
+   * existe.
    */
   private String buildDireccionEntrega(MgCliente cliente) {
     StringBuilder sb = new StringBuilder();
     String base =
-        (cliente.getDireccionEntrega() != null && !cliente.getDireccionEntrega().isBlank())
-            ? cliente.getDireccionEntrega()
+        (cliente.getCalle() != null && !cliente.getCalle().isBlank())
+            ? cliente.getCalle()
             : cliente.getDireccion();
     if (base != null && !base.isBlank()) sb.append(base);
-    if (cliente.getSector() != null && !cliente.getSector().isBlank()) {
-      sb.append(sb.isEmpty() ? "" : ", ").append(cliente.getSector());
-    }
-    if (cliente.getCiudad() != null && !cliente.getCiudad().isBlank()) {
-      sb.append(sb.isEmpty() ? "" : ", ").append(cliente.getCiudad());
+    if (cliente.getReferencia() != null && !cliente.getReferencia().isBlank()) {
+      sb.append(sb.isEmpty() ? "" : " — ").append(cliente.getReferencia());
     }
     return sb.isEmpty() ? null : sb.toString();
   }
