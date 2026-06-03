@@ -64,7 +64,9 @@ public class SecuenciasDao {
           Motivo.COMPROBANTES_AGOTADOS,
           "No hay comprobantes disponibles para el tipo " + tipoComprobante + ".");
     }
+    String ncf =
+            "E" + tipoComprobante+ String.format("%010d",secuencia);
 
-    return new SecuenciaEcfResult(secuencia, fechaValida);
+    return new SecuenciaEcfResult(ncf, fechaValida);
   }
 }
