@@ -1,0 +1,5 @@
+-- SUPERADO: los precios de envío son ahora por tenant en despacho.de_precio_envio
+-- Ver: create_precio_envio.sql
+--
+-- Si esta migración fue ejecutada antes de ser revertida, correr:
+-- ALTER TABLE general.mg_sub_barrio DROP COLUMN IF EXISTS precio_envio;

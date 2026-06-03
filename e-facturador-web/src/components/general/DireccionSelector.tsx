@@ -194,11 +194,6 @@ export default function DireccionSelector({
               {...params}
               label="Barrio / Paraje"
               size="small"
-              helperText={
-                selectedBarrio?.precioEnvio != null
-                  ? `Envío: RD$${selectedBarrio.precioEnvio.toFixed(2)}`
-                  : undefined
-              }
               InputProps={{
                 ...params.InputProps,
                 endAdornment: (
