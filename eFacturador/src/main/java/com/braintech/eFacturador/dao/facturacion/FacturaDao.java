@@ -2,8 +2,8 @@ package com.braintech.eFacturador.dao.facturacion;
 
 import com.braintech.eFacturador.dto.facturacion.IFacturaResumen;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO;
+import com.braintech.eFacturador.dto.facturacion.PrecioVentaDto;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
-import com.braintech.eFacturador.models.IProductoVenta;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -49,9 +49,9 @@ public interface FacturaDao extends JpaRepository<MfFactura, Integer> {
 
   @Query(
       """
-            select p from MgProducto p where p.activo=true
+            select new com.braintech.eFacturador.dto.facturacion.PrecioVentaDto(p.id, p.secuencia,p.codigoBarra,p.nombreProducto,p.descripcion,p.itbisId,p.precioVenta,p.precioCostoAvg) from MgProducto p where p.activo=true
             """)
-  List<IProductoVenta> findProductoVenta();
+  List<PrecioVentaDto> findProductoVenta();
 
   @Query("SELECT f FROM MfFactura f WHERE f.empresaId = :empresaId order by f.fechaReg desc")
   Page<IFacturaResumen> findAllByEmpresaPage(Pageable pageable, Integer empresaId);
