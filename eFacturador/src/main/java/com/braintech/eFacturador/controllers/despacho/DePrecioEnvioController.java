@@ -5,6 +5,7 @@ import com.braintech.eFacturador.dto.despacho.DePrecioRequestDTO;
 import com.braintech.eFacturador.interfaces.despacho.DePrecioEnvioService;
 import com.braintech.eFacturador.security.Accion;
 import com.braintech.eFacturador.security.RequierePermiso;
+import java.math.BigDecimal;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +30,16 @@ public class DePrecioEnvioController {
   @GetMapping("/por-barrio/{barrioId}")
   public ResponseEntity<List<DePrecioEnvioDTO>> getPorBarrio(@PathVariable Integer barrioId) {
     return ResponseEntity.ok(service.getPorBarrio(barrioId));
+  }
+
+  /**
+   * Precio efectivo de entrega para una dirección concreta. Prioridad: precio del sub-barrio >
+   * precio del barrio > 0.
+   */
+  @GetMapping("/efectivo")
+  public ResponseEntity<BigDecimal> getPrecioEfectivo(
+      @RequestParam Integer barrioId, @RequestParam(required = false) Integer subBarrioId) {
+    return ResponseEntity.ok(service.getPrecioEfectivo(barrioId, subBarrioId));
   }
 
   @RequierePermiso(menuUrl = "/despacho/precios-envio", accion = Accion.ESCRIBIR)

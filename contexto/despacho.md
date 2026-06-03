@@ -520,6 +520,7 @@ Restricciones de unicidad con índices parciales:
 Endpoints:
 - `GET /por-municipio/{municipioId}` — precios configurados del tenant para los barrios de un municipio
 - `GET /por-barrio/{barrioId}` — precio del barrio + sub-barrios (para DireccionSelector)
+- `GET /efectivo?barrioId=X&subBarrioId=Y` — **precio efectivo en una sola llamada**: sub-barrio si tiene precio propio → barrio como fallback → `0` si ninguno. `subBarrioId` es opcional.
 - `PUT /barrio/{barrioId}` → body `{ precio }` — upsert precio base del barrio
 - `PUT /sub-barrio/{subBarrioId}` → body `{ precio }` — upsert precio específico del sub-barrio
 - `DELETE /barrio/{barrioId}` — elimina precio del barrio

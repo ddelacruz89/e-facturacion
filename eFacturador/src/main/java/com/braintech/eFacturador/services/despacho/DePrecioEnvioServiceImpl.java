@@ -96,6 +96,19 @@ public class DePrecioEnvioServiceImpl implements DePrecioEnvioService {
     repository.findByEmpresaIdAndSubBarrioId(empresaId, subBarrioId).ifPresent(repository::delete);
   }
 
+  @Override
+  public BigDecimal getPrecioEfectivo(Integer barrioId, Integer subBarrioId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    if (subBarrioId != null) {
+      var subPrecio = repository.findByEmpresaIdAndSubBarrioId(empresaId, subBarrioId);
+      if (subPrecio.isPresent()) return subPrecio.get().getPrecio();
+    }
+    return repository
+        .findByEmpresaIdAndBarrioIdAndSubBarrioIdIsNull(empresaId, barrioId)
+        .map(DePrecioEnvio::getPrecio)
+        .orElse(BigDecimal.ZERO);
+  }
+
   private DePrecioEnvio buildNew(Integer empresaId, Integer barrioId, Integer subBarrioId) {
     DePrecioEnvio e = new DePrecioEnvio();
     e.setEmpresaId(empresaId);

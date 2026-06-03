@@ -56,3 +56,15 @@ export function deletePrecioBarrio(barrioId: number): Promise<void> {
 export function deletePrecioSubBarrio(subBarrioId: number): Promise<void> {
   return apiClient.delete(`${BASE}/sub-barrio/${subBarrioId}`).then(() => undefined);
 }
+
+/**
+ * Precio efectivo de entrega para una dirección.
+ * Prioridad: precio del sub-barrio > precio del barrio > 0.
+ */
+export function getPrecioEfectivo(barrioId: number, subBarrioId?: number): Promise<number> {
+  const params = new URLSearchParams({ barrioId: String(barrioId) });
+  if (subBarrioId != null) params.append("subBarrioId", String(subBarrioId));
+  return apiClient
+    .get(`${BASE}/efectivo?${params}`)
+    .then((x: { data: number }) => x.data);
+}

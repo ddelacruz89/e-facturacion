@@ -23,4 +23,10 @@ public interface DePrecioEnvioService {
 
   /** Elimina el precio específico del sub-barrio (quedará con el precio del barrio). */
   void deleteSubBarrio(Integer subBarrioId);
+
+  /**
+   * Precio efectivo de entrega: sub-barrio si tiene precio propio, barrio como fallback, o
+   * BigDecimal.ZERO si ninguno tiene precio configurado.
+   */
+  BigDecimal getPrecioEfectivo(Integer barrioId, Integer subBarrioId);
 }
