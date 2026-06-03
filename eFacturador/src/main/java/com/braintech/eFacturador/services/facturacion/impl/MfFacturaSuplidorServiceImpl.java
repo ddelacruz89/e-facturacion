@@ -99,9 +99,8 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
     saved.setSecuencia(seq);
     SecuenciaEcfResult ecfResult =
         secuenciasDao.getNextSecuenciaEcfValidada(empresaId, entity.getTipoComprobanteId());
-    String ncf =
-        "E" + entity.getTipoComprobanteId() + String.format("%010d", ecfResult.secuencia());
-    saved.setNcf(ncf);
+
+    saved.setNcf(ecfResult.secuencia());
     if (ecfResult.fechaValida() != null) {
       saved.setFechaValido(ecfResult.fechaValida().atStartOfDay());
     }

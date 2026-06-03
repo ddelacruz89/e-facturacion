@@ -363,8 +363,10 @@ Tiene el campo `envio?: boolean` agregado al interface `Factura`.
 | `DeTipoVehiculoView` | `/despacho/tipo-vehiculo` | CRUD catálogo tipos de vehículo |
 | `DeVehiculoView` | `/despacho/vehiculos` | CRUD vehículos — dropdown carga tipos del catálogo |
 | `DeOrdenDespachoView` | `/despacho/ordenes` | Buscar/ver órdenes; botón "Facturas para Despacho" abre diálogo de selección manual |
-| `DeRutaEntregaView` | `/despacho/rutas` | **Flujo principal**: crear ruta → seleccionar facturas con checkbox → asignar; conductor usa `UserSelectorField` |
-| `MisEntregasView` | `/despacho/mis-entregas` | Vista conductor responsive (mobile-first, iPhone 14 Pro Max): rutas del día + marcar EN_CAMINO/ENTREGADO/DEVUELTO |
+| `DeRutaEntregaView` | `/despacho/rutas` | **Flujo principal**: crear ruta → seleccionar facturas con checkbox → asignar; tabla de órdenes con columna Recibo (ícono 🧾 abre `ReciboViewer`) |
+| `MisEntregasView` | `/despacho/mis-entregas` | Vista conductor responsive (mobile-first): rutas del día + marcar EN_CAMINO/ENTREGADO/DEVUELTO + modal cámara para recibo |
+| `ReciboEntregaConfigView` | `/despacho/config/recibo` | Empresa activa el feature y configura storage (AWS S3 / Azure Blob / Local) |
+| `ReciboViewer` | compartido | Visor a pantalla completa del recibo; resuelve URL según storage tipo; exporta `resolveReciboUrl()` |
 
 **`components/facturacion/FacturacionView.tsx`**
 - Tiene checkbox **"Para Envío"** (`FormControlLabel` + `Checkbox`) controlado por `watch("envio")` / `setValue("envio", ...)`.
@@ -457,15 +459,17 @@ Botones de estado — paleta **tetrádica**:
 
 ## Seguridad (`seguridad.sg_menu` / `seguridad.sg_permiso`)
 
-Módulo `DE` — 5 menús registrados:
+Módulo `DE` — 7 menús registrados:
 
-| `url` | `menu` | `orden` | `tipo_menu_id` |
-|---|---|---|---|
-| `/despacho/tipo-vehiculo` | Tipos de Vehículo | 5 | `P` |
-| `/despacho/vehiculos` | Vehículos | 1 | `P` |
-| `/despacho/ordenes` | Órdenes de Despacho | 2 | `A` |
-| `/despacho/rutas` | Rutas de Entrega | 3 | `A` |
-| `/despacho/mis-entregas` | Mis Entregas | 4 | `A` |
+| `url` | `menu` | `orden` | `tipo_menu_id` | Empresas |
+|---|---|---|---|---|
+| `/despacho/vehiculos` | Vehículos | 1 | `P` | todas |
+| `/despacho/ordenes` | Órdenes de Despacho | 2 | `A` | todas |
+| `/despacho/rutas` | Rutas de Entrega | 3 | `A` | todas |
+| `/despacho/mis-entregas` | Mis Entregas | 4 | `A` | todas |
+| `/despacho/tipo-vehiculo` | Tipos de Vehículo | 5 | `P` | todas |
+| `/despacho/config/recibo` | Config. Recibo | 6 | `P` | todas |
+| `/admin/feature-plan` | Admin Features | 7 | `P` | solo empresa_id = 1 |
 
 Scripts de migración:
 - `db-migrations/create_despacho_module.sql` — schema + tablas despacho
