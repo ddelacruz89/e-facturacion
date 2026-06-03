@@ -22,4 +22,12 @@ public interface DeOrdenDespachoService {
   List<MisEntregasRutaDTO> getMisEntregas(LocalDate fecha);
 
   List<DeOrdenDespacho> findPendientes();
+
+  /**
+   * Sube la imagen del recibo de entrega al storage configurado por la empresa y guarda la URL en
+   * la orden.
+   *
+   * @return URL donde quedó almacenado el archivo
+   */
+  String uploadRecibo(Integer ordenId, byte[] data, String originalFilename, String contentType);
 }

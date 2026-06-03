@@ -47,6 +47,8 @@ public class SecurityConfig {
     CorsConfiguration config = new CorsConfiguration();
     config.addAllowedOrigin("http://localhost:3000");
     config.addAllowedOrigin("http://localhost:3001");
+    // Acceso desde red local (celular, tablet) — ajustar si cambia la IP de la máquina
+    config.addAllowedOrigin("http://192.168.0.145:3000");
     config.addAllowedHeader("*");
     config.addAllowedMethod("*");
     config.setAllowCredentials(true);

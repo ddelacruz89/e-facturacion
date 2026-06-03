@@ -2,23 +2,40 @@ package com.braintech.eFacturador.services.despacho;
 
 import com.braintech.eFacturador.dao.despacho.DeOrdenDespachoDao;
 import com.braintech.eFacturador.dao.despacho.DeRutaEntregaDao;
+import com.braintech.eFacturador.dao.despacho.DeRutaZonaDaoImpl;
+import com.braintech.eFacturador.dao.despacho.DeRutaZonaRepository;
 import com.braintech.eFacturador.dao.facturacion.FacturaDao;
 import com.braintech.eFacturador.dao.general.ClienteDao;
+import com.braintech.eFacturador.dao.general.MgBarrioParajeRepository;
+import com.braintech.eFacturador.dao.general.MgMunicipioRepository;
+import com.braintech.eFacturador.dao.general.MgProvinciaDao;
+import com.braintech.eFacturador.dao.general.MgSubBarrioRepository;
 import com.braintech.eFacturador.dao.general.SecuenciasDao;
 import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.dto.despacho.DeRutaEntregaResumenDTO;
 import com.braintech.eFacturador.dto.despacho.DeRutaEntregaSearchCriteria;
+import com.braintech.eFacturador.dto.despacho.DeRutaZonaResumenDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.despacho.DeRutaEntregaService;
 import com.braintech.eFacturador.jpa.despacho.DeOrdenDespacho;
 import com.braintech.eFacturador.jpa.despacho.DeRutaEntrega;
+import com.braintech.eFacturador.jpa.despacho.DeRutaZona;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
+import com.braintech.eFacturador.jpa.general.MgBarrioParaje;
 import com.braintech.eFacturador.jpa.general.MgCliente;
+import com.braintech.eFacturador.jpa.general.MgMunicipio;
+import com.braintech.eFacturador.jpa.general.MgProvincia;
+import com.braintech.eFacturador.jpa.general.MgSubBarrio;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -35,6 +52,12 @@ public class DeRutaEntregaServiceImpl implements DeRutaEntregaService {
   private final SgSucursalRepository sucursalRepository;
   private final SecuenciasDao secuenciasDao;
   private final TenantContext tenantContext;
+  private final DeRutaZonaRepository rutaZonaRepository;
+  private final DeRutaZonaDaoImpl rutaZonaDao;
+  private final MgProvinciaDao provinciaDao;
+  private final MgMunicipioRepository municipioRepository;
+  private final MgBarrioParajeRepository barrioRepository;
+  private final MgSubBarrioRepository subBarrioRepository;
 
   @Override
   @Transactional
@@ -163,6 +186,49 @@ public class DeRutaEntregaServiceImpl implements DeRutaEntregaService {
             .findById(sucursalId)
             .orElseThrow(() -> new RecordNotFoundException("Sucursal no encontrada"));
 
+    // Cargar catálogos geográficos en batch para construir la dirección completa
+    List<Integer> clienteIds =
+        facturaIds.stream()
+            .map(fid -> facturaDao.findById(fid).map(MfFactura::getClienteId).orElse(null))
+            .filter(Objects::nonNull)
+            .distinct()
+            .collect(Collectors.toList());
+
+    Map<Integer, MgCliente> clienteMap =
+        clienteDao.findAllById(clienteIds).stream()
+            .collect(Collectors.toMap(MgCliente::getId, c -> c));
+
+    Map<String, String> provinciaNombres =
+        provinciaDao.findAll().stream()
+            .collect(Collectors.toMap(MgProvincia::getCodProvincia, MgProvincia::getNombre));
+
+    Set<Integer> municipioIds =
+        clienteMap.values().stream()
+            .map(MgCliente::getMunicipioId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+    Map<Integer, String> municipioNombres =
+        municipioRepository.findAllById(municipioIds).stream()
+            .collect(Collectors.toMap(MgMunicipio::getId, MgMunicipio::getNombre));
+
+    Set<Integer> barrioIds =
+        clienteMap.values().stream()
+            .map(MgCliente::getBarrioId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+    Map<Integer, String> barrioNombres =
+        barrioRepository.findAllById(barrioIds).stream()
+            .collect(Collectors.toMap(MgBarrioParaje::getId, MgBarrioParaje::getNombre));
+
+    Set<Integer> subBarrioIds =
+        clienteMap.values().stream()
+            .map(MgCliente::getSubBarrioId)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+    Map<Integer, String> subBarrioNombres =
+        subBarrioRepository.findAllById(subBarrioIds).stream()
+            .collect(Collectors.toMap(MgSubBarrio::getId, MgSubBarrio::getNombre));
+
     for (Integer facturaId : facturaIds) {
       if (ordenDespachoDao.existsByFacturaId(facturaId, empresaId)) continue;
 
@@ -185,15 +251,14 @@ public class DeRutaEntregaServiceImpl implements DeRutaEntregaService {
       orden.setFechaReg(LocalDateTime.now());
       orden.setUsuarioReg(username);
 
-      // Pre-llenar teléfono y dirección de entrega desde el registro del cliente
       if (factura.getClienteId() != null) {
-        clienteDao
-            .findById(factura.getClienteId())
-            .ifPresent(
-                cliente -> {
-                  orden.setClienteTelefono(cliente.getTelefono());
-                  orden.setDireccionEntrega(buildDireccionEntrega(cliente));
-                });
+        MgCliente cliente = clienteMap.get(factura.getClienteId());
+        if (cliente != null) {
+          orden.setClienteTelefono(cliente.getTelefono());
+          orden.setDireccionEntrega(
+              buildDireccionEntrega(
+                  cliente, provinciaNombres, municipioNombres, barrioNombres, subBarrioNombres));
+        }
       }
 
       DeOrdenDespacho saved = ordenDespachoDao.save(orden);
@@ -207,22 +272,47 @@ public class DeRutaEntregaServiceImpl implements DeRutaEntregaService {
     return ruta;
   }
 
-  /**
-   * Construye la cadena de dirección de entrega a partir de los campos estructurados del cliente.
-   * Usa calle si está disponible; si no, cae a la dirección fiscal. Agrega referencia al final si
-   * existe.
-   */
-  private String buildDireccionEntrega(MgCliente cliente) {
-    StringBuilder sb = new StringBuilder();
-    String base =
-        (cliente.getCalle() != null && !cliente.getCalle().isBlank())
-            ? cliente.getCalle()
-            : cliente.getDireccion();
-    if (base != null && !base.isBlank()) sb.append(base);
-    if (cliente.getReferencia() != null && !cliente.getReferencia().isBlank()) {
-      sb.append(sb.isEmpty() ? "" : " — ").append(cliente.getReferencia());
+  private String buildDireccionEntrega(
+      MgCliente c,
+      Map<String, String> provinciaNombres,
+      Map<Integer, String> municipioNombres,
+      Map<Integer, String> barrioNombres,
+      Map<Integer, String> subBarrioNombres) {
+
+    List<String> partes = new ArrayList<>();
+
+    String calle =
+        (c.getCalle() != null && !c.getCalle().isBlank()) ? c.getCalle() : c.getDireccion();
+    if (calle != null && !calle.isBlank()) partes.add(calle);
+
+    if (c.getSubBarrioId() != null) {
+      String nombre = subBarrioNombres.get(c.getSubBarrioId());
+      if (nombre != null) partes.add(nombre);
     }
-    return sb.isEmpty() ? null : sb.toString();
+
+    if (c.getBarrioId() != null) {
+      String nombre = barrioNombres.get(c.getBarrioId());
+      if (nombre != null) partes.add(nombre);
+    }
+
+    if (c.getMunicipioId() != null) {
+      String nombre = municipioNombres.get(c.getMunicipioId());
+      if (nombre != null) partes.add(nombre);
+    }
+
+    if (c.getCodProvincia() != null) {
+      String nombre = provinciaNombres.get(c.getCodProvincia());
+      if (nombre != null) partes.add(nombre);
+    }
+
+    if (partes.isEmpty()) return null;
+
+    String direccion = String.join(", ", partes);
+
+    if (c.getReferencia() != null && !c.getReferencia().isBlank())
+      direccion += " — " + c.getReferencia();
+
+    return direccion;
   }
 
   @Override
@@ -247,5 +337,40 @@ public class DeRutaEntregaServiceImpl implements DeRutaEntregaService {
 
     ruta.setEstadoId(estadoId);
     return rutaEntregaDao.save(ruta);
+  }
+
+  @Override
+  public List<DeRutaZonaResumenDTO> getZonas(Integer rutaId) {
+    return rutaZonaDao.findZonasConNombres(rutaId);
+  }
+
+  @Override
+  @Transactional
+  public DeRutaZonaResumenDTO addZona(Integer rutaId, DeRutaZona zona) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    rutaEntregaDao
+        .findById(rutaId, empresaId)
+        .orElseThrow(() -> new RecordNotFoundException("Ruta no encontrada: " + rutaId));
+
+    zona.setRutaId(rutaId);
+    rutaZonaRepository.save(zona);
+    return rutaZonaDao.findZonasConNombres(rutaId).stream()
+        .filter(z -> z.getId().equals(zona.getId()))
+        .findFirst()
+        .orElse(null);
+  }
+
+  @Override
+  @Transactional
+  public void removeZona(Integer rutaId, Integer zonaId) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    rutaEntregaDao
+        .findById(rutaId, empresaId)
+        .orElseThrow(() -> new RecordNotFoundException("Ruta no encontrada: " + rutaId));
+
+    rutaZonaRepository
+        .findById(zonaId)
+        .filter(z -> z.getRutaId().equals(rutaId))
+        .ifPresent(rutaZonaRepository::delete);
   }
 }

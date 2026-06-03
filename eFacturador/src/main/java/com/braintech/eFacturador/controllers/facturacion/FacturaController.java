@@ -72,7 +72,8 @@ public class FacturaController {
   }
 
   @GetMapping("/para-despacho")
-  public ResponseEntity<List<MfFacturaParaDespachoDTO>> getFacturasParaDespacho() {
-    return ResponseEntity.ok(facturacionServices.getFacturasParaDespacho());
+  public ResponseEntity<List<MfFacturaParaDespachoDTO>> getFacturasParaDespacho(
+      @RequestParam(required = false) Integer rutaId) {
+    return ResponseEntity.ok(facturacionServices.getFacturasParaDespacho(rutaId));
   }
 }

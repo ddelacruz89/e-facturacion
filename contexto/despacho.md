@@ -34,6 +34,20 @@ Una factura es **elegible para despacho** si cumple:
 
 ## Base de datos (PostgreSQL, schema `despacho`)
 
+### `despacho.de_ruta_zona`
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `id` | SERIAL PK | |
+| `ruta_id` | INTEGER FK → `de_ruta_entrega(id)` | |
+| `cod_provincia` | CHAR(2) FK → `mg_provincia` | |
+| `municipio_id` | INTEGER FK → `mg_municipio(id)` | |
+| `barrio_id` | INTEGER FK → `mg_barrio_paraje(id)` | **Nullable** — si NULL incluye todos los barrios del municipio |
+
+Filtrado: cuando una ruta tiene zonas, solo aparecen facturas cuyos clientes tengan `municipio_id` en alguna zona con `barrio_id = NULL`, o `barrio_id` en alguna zona específica. Sub-barrios están incluidos implícitamente (el cliente guarda `barrio_id`, no `sub_barrio_id`). Si la ruta no tiene zonas, se muestran todos los clientes.
+
+Migración: `db-migrations/create_ruta_zona.sql`
+
 ### `despacho.de_tipo_vehiculo`
 
 | Campo | Tipo | Descripción |
@@ -131,6 +145,9 @@ ON CONFLICT (empresa_id, aplicacion_id) DO NOTHING;
 | `DeVehiculo` | `de_vehiculo` | `BaseEntityPk` |
 | `DeOrdenDespacho` | `de_orden_despacho` | `BaseSucursal` + `@Id` propio |
 | `DeRutaEntrega` | `de_ruta_entrega` | `BaseSucursal` + `@Id` propio |
+| `DeRutaZona` | `de_ruta_zona` | — (plain entity, sin BaseSucursal) |
+
+`DeRutaZona` campos: `id`, `rutaId` (Integer FK), `codProvincia` (CHAR 2), `municipioId` (Integer FK), `barrioId` (Integer FK, nullable). Si `barrioId = null` incluye todos los barrios del municipio.
 
 ### Entidad `MfFactura` (`jpa/facturacion/`)
 
@@ -153,7 +170,7 @@ Tiene el campo `@Column(name = "envio") private Boolean envio = false;` agregado
 **`dto/facturacion/MfFacturaParaDespachoDTO`** — DTO slim para listar facturas elegibles para despacho:
 
 ```java
-@Data @NoArgsConstructor @AllArgsConstructor
+@Data @NoArgsConstructor
 public class MfFacturaParaDespachoDTO {
   private Integer id;
   private Integer secuencia;
@@ -161,7 +178,16 @@ public class MfFacturaParaDespachoDTO {
   private Integer clienteId;
   private BigDecimal total;
   private LocalDateTime fechaReg;
+  private String direccionEntrega; // enriquecido en FacturacionServices (no viene del JPQL)
+  // Constructor 6-args usado por el JPQL
 }
+```
+
+`direccionEntrega` se construye en `FacturacionServices.buildDireccion()` con todos los niveles geográficos del cliente: `"calle, sub-barrio, barrio, municipio, provincia — referencia"`. Solo se incluyen los niveles que el cliente tenga registrados.
+
+**`dto/despacho/DeRutaZonaResumenDTO`** — zona con nombres resueltos:
+```java
+// id, rutaId, codProvincia, provinciaNombre, municipioId, municipioNombre, barrioId, barrioNombre
 ```
 
 ### Repositorios (`dao/despacho/`)
@@ -170,6 +196,16 @@ public class MfFacturaParaDespachoDTO {
 - `DeVehiculoRepository` — JpaRepository con `findAllActivosByEmpresaId`, `findByIdAndEmpresaId`
 - `DeOrdenDespachoDaoImpl` — EntityManager JPQL: `existsByFacturaId`, `searchByCriteria`, `findPendientesByEmpresaAndSucursal`, `findMisOrdenesDirectas`, `findByRutaId`
 - `DeRutaEntregaDaoImpl` — EntityManager JPQL: `searchByCriteria`, `findByFechaAndConductor`
+- `DeRutaZonaRepository` — JpaRepository: `findByRutaId(Integer)`, `deleteByRutaId(Integer)`
+- `DeRutaZonaDaoImpl` — `@Repository` con EntityManager JPQL: `findZonasConNombres(rutaId)` — resuelve nombres de provincia/municipio/barrio con subqueries
+
+### Repositorios de ubicación (`dao/general/`) — nuevos
+
+- `MgMunicipioRepository` — JpaRepository`<MgMunicipio, Integer>` — para `findAllById` batch
+- `MgBarrioParajeRepository` — JpaRepository`<MgBarrioParaje, Integer>` — para `findAllById` batch
+- `MgSubBarrioRepository` — JpaRepository`<MgSubBarrio, Integer>` — para `findAllById` batch
+
+Estos coexisten con los DAOs custom `MgMunicipioDao`, `MgBarrioParajeDao`, `MgSubBarrioDao` (usados para búsquedas paginadas y cascadas). Los repositories se usan exclusivamente en `FacturacionServices` para carga batch.
 
 ### `FacturaDao` (`dao/facturacion/`)
 
@@ -203,17 +239,29 @@ List<MfFacturaParaDespachoDTO> findFacturasParaDespacho(
 - `getMisEntregas(fecha)`: carga rutas del conductor (por JWT username + fecha) + vehículo + órdenes asignadas.
 
 **`DeRutaEntregaServiceImpl`**
-- Inyecta: `DeRutaEntregaDao`, `DeOrdenDespachoDao`, `FacturaDao`, `SgSucursalRepository`, `SecuenciasDao`, `TenantContext`.
+- Inyecta: `DeRutaEntregaDao`, `DeOrdenDespachoDao`, `FacturaDao`, `ClienteDao`, `SgSucursalRepository`, `SecuenciasDao`, `TenantContext`, `DeRutaZonaRepository`, `DeRutaZonaDaoImpl`, `MgProvinciaDao`, `MgMunicipioRepository`, `MgBarrioParajeRepository`, `MgSubBarrioRepository`.
+- Métodos de zonas: `getZonas(rutaId)`, `addZona(rutaId, DeRutaZona)`, `removeZona(rutaId, zonaId)`.
 - `asignarOrdenes(rutaId, ordenIds)`: asigna `DeOrdenDespacho` ya existentes a la ruta (método legacy, se mantiene).
-- `asignarFacturas(rutaId, facturaIds)`: **flujo principal**. Por cada `facturaId`:
+- `asignarFacturas(rutaId, facturaIds)`: **flujo principal**. Antes del loop principal carga los catálogos geográficos en batch (provincias, municipios, barrios, sub-barrios de los clientes involucrados) para construir la dirección completa. Por cada `facturaId`:
   - Si ya existe una `DeOrdenDespacho` activa → la omite (evita duplicado).
   - Si no existe → crea `DeOrdenDespacho` con datos denormalizados de la factura, `fechaCompromiso = ruta.fecha.atTime(23,59)`, `estadoId = EN_RUTA`, genera secuencia.
+  - Setea `direccionEntrega` con la jerarquía completa: `"calle, sub-barrio, barrio, municipio, provincia — referencia"` (mismo formato que `FacturacionServices.buildDireccion()`).
   - Bloquea si la ruta está `ANU` o `COMPLETADA`.
+- `buildDireccionEntrega(cliente, provinciaNombres, municipioNombres, barrioNombres, subBarrioNombres)` — método privado, construye la dirección completa con todos los niveles geográficos disponibles. Usa `calle` si existe, fallback a `direccion` fiscal. Agrega referencia al final separada con ` — `.
 - `disableById`: devuelve órdenes no entregadas a `PEN`. **Solo bloquea si `COMPLETADA`** — sí permite anular `EN_CURSO`.
 - `cambiarEstado`: valida `EN_CURSO → PLANIFICADA` — **lanza excepción si alguna orden de la ruta tiene `estadoId = ENTREGADO`**. Las demás transiciones se aceptan sin restricción adicional.
 
 **`FacturacionServices`**
-- `getFacturasParaDespacho()`: lee `empresaId`/`sucursalId` del `TenantContext`, delega a `FacturaDao.findFacturasParaDespacho`.
+- `getFacturasParaDespacho()` → llama `getFacturasParaDespacho(null)`
+- `getFacturasParaDespacho(Integer rutaId)`:
+  1. Carga facturas elegibles (JPQL, 6-args constructor)
+  2. Carga clientes en batch por `clienteId` → `clienteDao.findAllById`
+  3. Carga catálogos de ubicación en batch: provincias (32 filas, todas), municipios, barrios, sub-barrios solo de los clientes presentes
+  4. Construye `direccionEntrega` con `buildDireccion()`: `"calle, sub-barrio, barrio, municipio, provincia — referencia"`
+  5. Si `rutaId != null` y hay zonas en `de_ruta_zona`: filtra facturas por zona usando el mismo `clienteMap` (sin query adicional)
+- `buildDireccion(cliente, provinciaNombres, municipioNombres, barrioNombres, subBarrioNombres)` — método privado, construye la dirección completa.
+
+**Inyecciones en `FacturacionServices`**: `FacturaDao`, `TenantContext`, `SecuenciasDao`, `ECFServices`, `DeRutaZonaRepository`, `ClienteDao`, `MgProvinciaDao`, `MgMunicipioRepository`, `MgBarrioParajeRepository`, `MgSubBarrioRepository`.
 
 **`DeTipoVehiculoServiceImpl`** / **`DeVehiculoServiceImpl`** — CRUD estándar; no usan secuencias.
 
@@ -264,6 +312,9 @@ List<MfFacturaParaDespachoDTO> findFacturasParaDespacho(
 | POST | `/{id}/asignar-facturas` | Body: `{ "facturaIds": [1,2,3] }` — **flujo principal**: crea órdenes y asigna |
 | PATCH | `/{id}/estado` | Body: `{ "estadoId": "..." }` — incluye EN_CURSO→PLANIFICADA |
 | DELETE | `/{id}` | Anula ruta (PLANIFICADA o EN_CURSO) y devuelve órdenes a PEN |
+| GET | `/{id}/zonas` | Lista de zonas geográficas con nombres resueltos |
+| POST | `/{id}/zonas` | Body: `{ codProvincia, municipioId, barrioId? }` — agrega zona |
+| DELETE | `/{id}/zonas/{zonaId}` | Elimina zona específica |
 
 ---
 
@@ -271,7 +322,11 @@ List<MfFacturaParaDespachoDTO> findFacturasParaDespacho(
 
 ### Modelos (`models/despacho/DespachoModels.tsx`)
 
-`DeTipoVehiculo`, `DeVehiculo`, `DeOrdenDespacho`, `DeRutaEntrega`, `DeOrdenDespachoResumen`, `DeRutaEntregaResumen`, `MisEntregasOrdenDTO`, `MisEntregasRutaDTO`, `MarcarEstadoDTO`, `DeOrdenDespachoSearchCriteria`, `DeRutaEntregaSearchCriteria`, **`MfFacturaParaDespacho`**.
+`DeTipoVehiculo`, `DeVehiculo`, `DeOrdenDespacho`, `DeRutaEntrega`, `DeOrdenDespachoResumen`, `DeRutaEntregaResumen`, `MisEntregasOrdenDTO`, `MisEntregasRutaDTO`, `MarcarEstadoDTO`, `DeOrdenDespachoSearchCriteria`, `DeRutaEntregaSearchCriteria`, **`MfFacturaParaDespacho`**, **`DeRutaZona`**.
+
+`MfFacturaParaDespacho` incluye `direccionEntrega?: string` — muestra calle + jerarquía geográfica completa.
+
+`DeRutaZona`: `{ id?, rutaId?, codProvincia, provinciaNombre?, municipioId, municipioNombre?, barrioId?, barrioNombre? }`
 
 ### Modelo `Factura` (`models/facturacion.tsx`)
 
@@ -284,8 +339,8 @@ Tiene el campo `envio?: boolean` agregado al interface `Factura`.
 | `DeTipoVehiculoController.tsx` | CRUD tipos de vehículo |
 | `DeVehiculoController.tsx` | CRUD vehículos, `getVehiculosActivos` |
 | `DeOrdenDespachoController.tsx` | `saveOrdenDespacho`, `buscarOrdenes`, `marcarEstadoOrden`, `getOrdenesPendientes` |
-| `DeRutaEntregaController.tsx` | `saveRutaEntrega`, `buscarRutasEntrega`, `asignarOrdenesARuta`, **`asignarFacturasARuta`**, `cambiarEstadoRuta`, `disableRutaEntrega` |
-| `FacturaController.tsx` | `getByNumeroFactura`, `getFacturaById`, **`getFacturasParaDespacho`** |
+| `DeRutaEntregaController.tsx` | `saveRutaEntrega`, `buscarRutasEntrega`, `asignarOrdenesARuta`, **`asignarFacturasARuta`**, `cambiarEstadoRuta`, `disableRutaEntrega`, **`getZonasDeRuta`**, **`addZonaARuta`**, **`removeZonaDeRuta`** |
+| `FacturaController.tsx` | `getByNumeroFactura`, `getFacturaById`, **`getFacturasParaDespacho(rutaId?)`** — acepta `rutaId` opcional para filtrar por zonas |
 
 > **IMPORTANTE:** Usar siempre `apiClient` (no `axios` directamente). `apiClient` tiene el interceptor que agrega `Authorization: Bearer <token>`. Sin él, todas las requests devuelven 403.
 
@@ -309,7 +364,7 @@ Tiene el campo `envio?: boolean` agregado al interface `Factura`.
 | `DeVehiculoView` | `/despacho/vehiculos` | CRUD vehículos — dropdown carga tipos del catálogo |
 | `DeOrdenDespachoView` | `/despacho/ordenes` | Buscar/ver órdenes; botón "Facturas para Despacho" abre diálogo de selección manual |
 | `DeRutaEntregaView` | `/despacho/rutas` | **Flujo principal**: crear ruta → seleccionar facturas con checkbox → asignar; conductor usa `UserSelectorField` |
-| `MisEntregasView` | `/despacho/mis-entregas` | Vista conductor: rutas del día + marcar EN_CAMINO/ENTREGADO/DEVUELTO |
+| `MisEntregasView` | `/despacho/mis-entregas` | Vista conductor responsive (mobile-first, iPhone 14 Pro Max): rutas del día + marcar EN_CAMINO/ENTREGADO/DEVUELTO |
 
 **`components/facturacion/FacturacionView.tsx`**
 - Tiene checkbox **"Para Envío"** (`FormControlLabel` + `Checkbox`) controlado por `watch("envio")` / `setValue("envio", ...)`.
@@ -329,7 +384,39 @@ Tiene el campo `envio?: boolean` agregado al interface `Factura`.
 
 Panel **"Órdenes Asignadas a esta Ruta"**: visible siempre que haya una ruta cargada (todos los estados). Muestra tabla con No. Orden, Factura No., Cliente, Compromiso y Estado (chip con color). Se carga al seleccionar la ruta y se refresca tras cada asignación. Usa `buscarOrdenesDespacho({ rutaId, page: 0, size: 100 })` — el resultado ya viene como array (unwrapContent extrae `.content`).
 
-Panel **"Facturas para Despacho"** (asignar nuevas): visible solo para `PLANIFICADA` y `EN_CURSO`. Lista facturas elegibles con checkbox, se refresca al guardar, asignar o anular.
+Panel **"Zonas Geográficas"**: visible cuando hay ruta cargada. Selector cascada `Provincia → Municipio → Barrio/Paraje` (barrio opcional). Se pueden agregar múltiples municipios y múltiples barrios por municipio. Botón "Agregar" → `POST /{id}/zonas`. Tabla con zonas existentes y botón delete. Si no hay zonas → sin filtro geográfico.
+
+Panel **"Facturas para Despacho"** (asignar nuevas): visible solo para `PLANIFICADA` y `EN_CURSO`. Lista facturas elegibles con checkbox. Muestra `📍 calle, sub-barrio, barrio, municipio, provincia` bajo el nombre del cliente. Si hay zonas activas en la ruta, solo muestra facturas de clientes en esas zonas. Se refresca al guardar, asignar o anular.
+
+### `MisEntregasView` — diseño responsive (mobile-first)
+
+Diseñado para iPhone 14 Pro Max (430px lógico) y superior. Breakpoint de corte: `xs` (0–599px) vs `sm` (600px+).
+
+**Barra de fecha/actualizar:**
+- `flexWrap: "wrap"` — el campo fecha y el botón se redistribuyen en pantallas angostas.
+- Contador "X/Y entregadas" se alinea a la derecha en xs, izquierda en sm.
+
+**Header de ruta (`#272C36`):**
+- Texto de ruta con `overflow: hidden`, `textOverflow: ellipsis`, `whiteSpace: nowrap` — nunca revienta el layout.
+- Contador de órdenes: oculto en xs (`display: { xs: "none", sm: "block" }`); reemplazado por una barra compacta (`#3a4050`) debajo del header en mobile.
+
+**Tarjeta de orden:**
+- Título (`#secuencia — clienteNombre`) + chip de estado en `flexWrap: "wrap"` — el chip cae a nueva línea si no cabe.
+- Captions con emojis para escaneo visual: 📞 teléfono, 📍 dirección, 🕐 compromiso, ✅ entregado, 📝 notas.
+- **Botones de acción** (En Camino / Entregado / Devuelto):
+  - xs: fila con `flex: "1 1 auto"` debajo del contenido, `minHeight: 44px` (Apple HIG touch target).
+  - sm+: misma fila flexible, `minHeight: 32px`.
+  - El bloque de botones solo se renderiza si `tieneAcciones` (estado `EN_RUTA` o `EN_CAMINO`).
+
+**Modal de devolución:**
+- `width: { xs: "calc(100vw - 32px)", sm: "auto" }` — ocupa casi todo el ancho en mobile.
+- `minWidth: { sm: 320 }` en desktop.
+- Overlay semitransparente detrás (`rgba(0,0,0,0.4)`) cierra el modal al tocarlo.
+- Botones del modal: `minHeight: { xs: 44, sm: 36 }`.
+
+**Padding:**
+- Contenedor exterior: `p: { xs: 1, sm: 2 }`.
+- Tarjetas: `px: { xs: 1.5, sm: 2 }`.
 
 ### Colores de botones en `DeRutaEntregaView`
 
@@ -385,6 +472,8 @@ Scripts de migración:
 - `db-migrations/create_tipo_vehiculo.sql` — tabla `de_tipo_vehiculo` + ALTER `de_vehiculo`
 - `db-migrations/insert_menu_despacho.sql` — módulo, menús y permisos en seguridad
 - `db-migrations/add_envio_to_mf_factura.sql` — campo `envio` en `facturacion.mf_factura`
+- `db-migrations/create_feature_plan.sql` — tablas `sg_feature_plan` y `sg_empresa_feature_config` en schema `seguridad`
+- `db-migrations/add_recibo_url_to_orden.sql` — campo `recibo_url` en `despacho.de_orden_despacho`
 
 ---
 
@@ -396,3 +485,58 @@ Scripts de migración:
 - **`asignarFacturas` es idempotente**: si una factura ya tiene orden activa, se omite silenciosamente — no lanza error ni crea duplicados.
 - **`disableById` solo bloquea `COMPLETADA`**: `PLANIFICADA` y `EN_CURSO` se pueden anular; las órdenes no entregadas vuelven a `PEN` y el campo `envio` de la factura queda en `true` para reaparecer en la lista.
 - **`cambiarEstado` no valida transiciones**: cualquier cambio de estado es aceptado, incluyendo `EN_CURSO → PLANIFICADA`. La validación de flujo es responsabilidad del frontend.
+
+---
+
+## Recibo de Entrega — Feature premium configurable
+
+### Modelo de habilitación (dos niveles)
+
+1. **Admin SaaS** (`empresa_id = 1`) habilita el feature por empresa:
+   - `POST /api/v1/admin/feature-plan` → `{ empresaId, featureId: "RECIBO_ENTREGA", habilitado: true }`
+   - Tabla: `seguridad.sg_feature_plan`
+
+2. **Empresa** configura y activa el feature:
+   - `PUT /api/v1/empresa/feature-config/RECIBO_ENTREGA` → `{ activo, storageTipo, storageConfig }`
+   - `GET /api/v1/empresa/feature-config/RECIBO_ENTREGA` → retorna config con credenciales enmascaradas (`***`)
+   - Tabla: `seguridad.sg_empresa_feature_config`
+   - Frontend: `/despacho/config/recibo` → `ReciboEntregaConfigView`
+
+### Proveedores de storage (`storageTipo`)
+
+| Tipo | storageConfig JSON |
+|---|---|
+| `AWS_S3` | `{ bucketName, region, accessKeyId, secretAccessKey, pathPrefix? }` |
+| `AZURE_BLOB` | `{ connectionString, containerName }` |
+| `LOCAL` | `{}` — usa `app.storage.local.base-path` del servidor |
+
+Campos sensibles enmascarados en GET: `secretAccessKey`, `connectionString`.
+
+### Campo `recibo_url` en `de_orden_despacho`
+
+- `POST /api/v1/despacho/ordenes/{id}/recibo` (multipart) — sube imagen → guarda URL → retorna `{ reciboUrl }`
+- `GET /api/v1/despacho/ordenes/{id}/recibo/file` — sirve el archivo cuando `storageTipo = LOCAL`
+- URLs: S3 y Azure retornan URL pública. LOCAL retorna `local://{empresaId}/{filename}` (sirve el backend)
+
+### Flujo en `MisEntregasView`
+
+- `MisEntregasOrdenDTO.requiereRecibo = true` cuando el feature está activo (seteado en `getMisEntregas`)
+- Si `requiereRecibo && !reciboUrl` al pulsar "Entregado" → abre `ReciboModal` (cámara/galería)
+- El conductor toma la foto → upload → marcar ENTREGADO (flujo encadenado)
+- Si ya tiene `reciboUrl` → muestra "Recibo adjunto" en la tarjeta
+- `CameraAltIcon` + texto "Foto + Entregar" indica visualmente que se necesita recibo
+
+### Tamaño máximo upload
+
+- `spring.servlet.multipart.max-file-size=10MB`
+- `spring.servlet.multipart.max-request-size=11MB`
+
+### Dependencias nuevas en `build.gradle`
+
+- `software.amazon.awssdk:s3:2.26.12`
+- `com.azure:azure-storage-blob:12.27.0`
+
+### Superadmin
+
+- Los endpoints `/api/v1/admin/feature-plan/**` validan que `empresaId == 1` (operador SaaS).
+- Sin este check, cualquier empresa podría auto-habilitarse features sin pagar.

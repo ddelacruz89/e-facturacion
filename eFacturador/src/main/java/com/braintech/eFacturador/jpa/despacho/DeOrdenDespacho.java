@@ -63,4 +63,7 @@ public class DeOrdenDespacho extends BaseSucursal implements Serializable {
 
   @Column(name = "usuario_entrego")
   private String usuarioEntrego;
+
+  @Column(name = "recibo_url", length = 500)
+  private String reciboUrl;
 }

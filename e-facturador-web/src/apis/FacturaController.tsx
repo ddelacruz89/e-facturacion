@@ -35,8 +35,9 @@ export function getByNumeroFactura(numero: number): Promise<Factura | null> {
         });
 }
 
-export function getFacturasParaDespacho(): Promise<MfFacturaParaDespacho[]> {
-    return apiClient.get(`${api}/para-despacho`).then((r) => r.data);
+export function getFacturasParaDespacho(rutaId?: number): Promise<MfFacturaParaDespacho[]> {
+    const params = rutaId != null ? { rutaId } : {};
+    return apiClient.get(`${api}/para-despacho`, { params }).then((r) => r.data);
 }
 
 export function getFacturas(page: number, size: number): Promise<PagesResult<IFacturaResumen[]> | null> {

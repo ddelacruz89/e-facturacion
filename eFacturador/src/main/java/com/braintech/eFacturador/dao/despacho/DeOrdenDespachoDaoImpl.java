@@ -99,7 +99,7 @@ public class DeOrdenDespachoDaoImpl implements DeOrdenDespachoDao {
             + "o.id, o.secuencia, o.fechaReg, o.facturaSecuencia, o.clienteNombre, "
             + "o.fechaCompromiso, "
             + "(SELECT r.conductorUsername FROM DeRutaEntrega r WHERE r.id = o.rutaId), "
-            + "o.estadoId, o.usuarioReg) ";
+            + "o.estadoId, o.usuarioReg, o.reciboUrl) ";
 
     String jpql = select + "FROM DeOrdenDespacho o " + where + " ORDER BY o.fechaCompromiso ASC";
     String countJpql = "SELECT COUNT(o) FROM DeOrdenDespacho o " + where;
@@ -159,7 +159,7 @@ public class DeOrdenDespachoDaoImpl implements DeOrdenDespachoDao {
             "SELECT new com.braintech.eFacturador.dto.despacho.MisEntregasOrdenDTO("
                 + "o.id, o.secuencia, o.facturaId, o.facturaSecuencia, o.clienteNombre, "
                 + "o.clienteTelefono, o.direccionEntrega, o.fechaCompromiso, "
-                + "o.fechaEntrega, o.estadoId, o.notas) "
+                + "o.fechaEntrega, o.estadoId, o.notas, o.reciboUrl) "
                 + "FROM DeOrdenDespacho o "
                 + "WHERE o.rutaId = :rutaId AND o.empresaId = :empresaId "
                 + "ORDER BY o.fechaCompromiso ASC",
@@ -206,7 +206,7 @@ public class DeOrdenDespachoDaoImpl implements DeOrdenDespachoDao {
             "SELECT new com.braintech.eFacturador.dto.despacho.MisEntregasOrdenDTO("
                 + "o.id, o.secuencia, o.facturaId, o.facturaSecuencia, o.clienteNombre, "
                 + "o.clienteTelefono, o.direccionEntrega, o.fechaCompromiso, "
-                + "o.fechaEntrega, o.estadoId, o.notas) "
+                + "o.fechaEntrega, o.estadoId, o.notas, o.reciboUrl) "
                 + "FROM DeOrdenDespacho o "
                 + "WHERE o.empresaId = :empresaId "
                 + "AND o.rutaId IS NULL "

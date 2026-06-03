@@ -38,6 +38,7 @@ export interface DeOrdenDespacho {
   estadoId?: EstadoOrdenDespacho | string;
   usuarioReg?: string;
   fechaReg?: string;
+  reciboUrl?: string;
 }
 
 export interface DeRutaEntrega {
@@ -64,6 +65,7 @@ export interface DeOrdenDespachoResumen {
   conductorUsername?: string;
   estadoId: EstadoOrdenDespacho;
   usuarioReg: string;
+  reciboUrl?: string;
 }
 
 export interface DeOrdenDespachoSearchCriteria {
@@ -112,6 +114,9 @@ export interface MisEntregasOrdenDTO {
   fechaEntrega?: string;
   estadoId: EstadoOrdenDespacho;
   notas?: string;
+  reciboUrl?: string;
+  /** true si la empresa tiene el feature "Recibo de Entrega" activo. */
+  requiereRecibo?: boolean;
 }
 
 export interface MisEntregasRutaDTO {
@@ -136,4 +141,16 @@ export interface MfFacturaParaDespacho {
   clienteId: number;
   total: number;
   fechaReg: string;
+  direccionEntrega?: string;
+}
+
+export interface DeRutaZona {
+  id?: number;
+  rutaId?: number;
+  codProvincia: string;
+  provinciaNombre?: string;
+  municipioId: number;
+  municipioNombre?: string;
+  barrioId?: number | null;
+  barrioNombre?: string | null;
 }

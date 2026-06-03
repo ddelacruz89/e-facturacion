@@ -28,4 +28,6 @@ public interface IFacturacion {
       Integer id, String fechaFirma, String secuityCode, String qrUrl, String trackId);
 
   List<MfFacturaParaDespachoDTO> getFacturasParaDespacho();
+
+  List<MfFacturaParaDespachoDTO> getFacturasParaDespacho(Integer rutaId);
 }

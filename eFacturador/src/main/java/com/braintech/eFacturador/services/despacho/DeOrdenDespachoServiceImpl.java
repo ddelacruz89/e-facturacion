@@ -11,10 +11,13 @@ import com.braintech.eFacturador.dto.despacho.MisEntregasOrdenDTO;
 import com.braintech.eFacturador.dto.despacho.MisEntregasRutaDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.despacho.DeOrdenDespachoService;
+import com.braintech.eFacturador.interfaces.seguridad.EmpresaFeatureConfigService;
 import com.braintech.eFacturador.jpa.despacho.DeOrdenDespacho;
 import com.braintech.eFacturador.jpa.despacho.DeRutaEntrega;
 import com.braintech.eFacturador.jpa.despacho.DeVehiculo;
+import com.braintech.eFacturador.jpa.seguridad.SgEmpresaFeatureConfig;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
+import com.braintech.eFacturador.services.storage.StorageServiceFactory;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,12 +34,16 @@ import org.springframework.transaction.annotation.Transactional;
 @AllArgsConstructor
 public class DeOrdenDespachoServiceImpl implements DeOrdenDespachoService {
 
+  private static final String FEATURE_RECIBO = "RECIBO_ENTREGA";
+
   private final DeOrdenDespachoDao ordenDespachoDao;
   private final DeRutaEntregaDao rutaEntregaDao;
   private final DeVehiculoRepository vehiculoRepository;
   private final SgSucursalRepository sucursalRepository;
   private final SecuenciasDao secuenciasDao;
   private final TenantContext tenantContext;
+  private final EmpresaFeatureConfigService empresaFeatureConfigService;
+  private final StorageServiceFactory storageServiceFactory;
 
   @Override
   @Transactional
@@ -170,6 +177,8 @@ public class DeOrdenDespachoServiceImpl implements DeOrdenDespachoService {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     String username = tenantContext.getCurrentUsername();
 
+    boolean reciboActivo = empresaFeatureConfigService.isFeatureActivo(FEATURE_RECIBO, empresaId);
+
     List<DeRutaEntrega> rutas = rutaEntregaDao.findByFechaAndConductor(fecha, username, empresaId);
 
     List<MisEntregasRutaDTO> result = new ArrayList<>();
@@ -191,12 +200,48 @@ public class DeOrdenDespachoServiceImpl implements DeOrdenDespachoService {
 
       List<MisEntregasOrdenDTO> ordenes =
           ordenDespachoDao.findOrdenesByRutaId(ruta.getId(), empresaId);
+      if (reciboActivo) {
+        ordenes.forEach(o -> o.setRequiereRecibo(true));
+      }
       dto.setOrdenes(ordenes);
 
       result.add(dto);
     }
 
     return result;
+  }
+
+  @Override
+  @Transactional
+  public String uploadRecibo(
+      Integer ordenId, byte[] data, String originalFilename, String contentType) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+
+    DeOrdenDespacho orden =
+        ordenDespachoDao
+            .findById(ordenId, empresaId)
+            .orElseThrow(
+                () -> new RecordNotFoundException("Orden de despacho no encontrada: " + ordenId));
+
+    SgEmpresaFeatureConfig cfg = empresaFeatureConfigService.getRaw(FEATURE_RECIBO, empresaId);
+
+    if (!Boolean.TRUE.equals(cfg.getActivo())) {
+      throw new IllegalStateException("El feature de recibo de entrega no está activo.");
+    }
+
+    String url =
+        storageServiceFactory.upload(
+            cfg.getStorageTipo(),
+            cfg.getStorageConfig(),
+            empresaId,
+            data,
+            originalFilename,
+            contentType);
+
+    orden.setReciboUrl(url);
+    ordenDespachoDao.save(orden);
+
+    return url;
   }
 
   @Override

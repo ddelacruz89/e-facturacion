@@ -2,8 +2,10 @@ package com.braintech.eFacturador.controllers.despacho;
 
 import com.braintech.eFacturador.dto.despacho.DeRutaEntregaResumenDTO;
 import com.braintech.eFacturador.dto.despacho.DeRutaEntregaSearchCriteria;
+import com.braintech.eFacturador.dto.despacho.DeRutaZonaResumenDTO;
 import com.braintech.eFacturador.interfaces.despacho.DeRutaEntregaService;
 import com.braintech.eFacturador.jpa.despacho.DeRutaEntrega;
+import com.braintech.eFacturador.jpa.despacho.DeRutaZona;
 import com.braintech.eFacturador.security.Accion;
 import com.braintech.eFacturador.security.RequierePermiso;
 import java.util.List;
@@ -72,6 +74,25 @@ public class DeRutaEntregaController {
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> disable(@PathVariable Integer id) {
     rutaEntregaService.disableById(id);
+    return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/{id}/zonas")
+  public ResponseEntity<List<DeRutaZonaResumenDTO>> getZonas(@PathVariable Integer id) {
+    return ResponseEntity.ok(rutaEntregaService.getZonas(id));
+  }
+
+  @RequierePermiso(menuUrl = "/despacho/rutas", accion = Accion.ESCRIBIR)
+  @PostMapping("/{id}/zonas")
+  public ResponseEntity<DeRutaZonaResumenDTO> addZona(
+      @PathVariable Integer id, @RequestBody DeRutaZona zona) {
+    return ResponseEntity.ok(rutaEntregaService.addZona(id, zona));
+  }
+
+  @RequierePermiso(menuUrl = "/despacho/rutas", accion = Accion.ESCRIBIR)
+  @DeleteMapping("/{id}/zonas/{zonaId}")
+  public ResponseEntity<Void> removeZona(@PathVariable Integer id, @PathVariable Integer zonaId) {
+    rutaEntregaService.removeZona(id, zonaId);
     return ResponseEntity.noContent().build();
   }
 }

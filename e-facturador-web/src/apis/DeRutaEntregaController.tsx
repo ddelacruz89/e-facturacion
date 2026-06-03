@@ -3,6 +3,7 @@ import {
     DeRutaEntrega,
     DeRutaEntregaResumen,
     DeRutaEntregaSearchCriteria,
+    DeRutaZona,
 } from "../models/despacho/DespachoModels";
 
 interface Page<T> {
@@ -68,4 +69,20 @@ export function cambiarEstadoRuta(rutaId: number, estadoId: string): Promise<DeR
 
 export function disableRutaEntrega(id: number): Promise<void> {
     return apiClient.delete(`${BASE_URL}/${id}`).then(() => undefined);
+}
+
+export function getZonasDeRuta(rutaId: number): Promise<DeRutaZona[]> {
+    return apiClient
+        .get(`${BASE_URL}/${rutaId}/zonas`)
+        .then((x) => unwrapContent<DeRutaZona[]>(x.data));
+}
+
+export function addZonaARuta(rutaId: number, zona: DeRutaZona): Promise<DeRutaZona> {
+    return apiClient
+        .post(`${BASE_URL}/${rutaId}/zonas`, zona)
+        .then((x) => unwrapContent<DeRutaZona>(x.data));
+}
+
+export function removeZonaDeRuta(rutaId: number, zonaId: number): Promise<void> {
+    return apiClient.delete(`${BASE_URL}/${rutaId}/zonas/${zonaId}`).then(() => undefined);
 }

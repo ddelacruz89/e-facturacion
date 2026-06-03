@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import {
     Alert,
+    Autocomplete,
     Box,
     Button,
     Checkbox,
     Chip,
     CircularProgress,
     Divider,
+    IconButton,
     Paper,
     Snackbar,
     Table,
@@ -15,22 +17,35 @@ import {
     TableHead,
     TableRow,
     TextField,
+    Tooltip,
     Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import AddIcon from "@mui/icons-material/Add";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PlaceIcon from "@mui/icons-material/Place";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import ActionBar from "../../customers/ActionBar";
 import ModalSearch from "../search/ModalSearch";
 import SearchButton from "../search/SearchButton";
 import useModalSearch from "../../hooks/useModalSearch";
 import { SEARCH_CONFIGS } from "../../types/modalSearchTypes";
-import { DeOrdenDespachoResumen, DeRutaEntrega, DeRutaEntregaResumen, MfFacturaParaDespacho } from "../../models/despacho/DespachoModels";
 import {
+    DeOrdenDespachoResumen,
+    DeRutaEntrega,
+    DeRutaEntregaResumen,
+    DeRutaZona,
+    MfFacturaParaDespacho,
+} from "../../models/despacho/DespachoModels";
+import {
+    addZonaARuta,
     asignarFacturasARuta,
     cambiarEstadoRuta,
     disableRutaEntrega,
+    getZonasDeRuta,
     getRutaEntrega,
+    removeZonaDeRuta,
     saveRutaEntrega,
 } from "../../apis/DeRutaEntregaController";
 import { buscarOrdenesDespacho } from "../../apis/DeOrdenDespachoController";
@@ -38,6 +53,15 @@ import { getFacturasParaDespacho } from "../../apis/FacturaController";
 import { getVehiculosActivos } from "../../apis/DeVehiculoController";
 import { DeVehiculo } from "../../models/despacho/DespachoModels";
 import UserSelectorField from "../shared/UserSelectorField";
+import {
+    getProvincias,
+    getMunicipiosByProvincia,
+    getBarriosByMunicipio,
+    MgProvincia,
+    MgMunicipioResumen,
+    MgBarrioParajeResumen,
+} from "../../apis/UbicacionController";
+import ReciboViewer from "./ReciboViewer";
 
 const ESTADO_RUTA_LABELS: Record<string, { label: string; color: "default" | "warning" | "info" | "success" | "error" }> = {
     PLANIFICADA: { label: "Planificada", color: "warning" },
@@ -70,24 +94,68 @@ export const DeRutaEntregaView: React.FC = () => {
     const [facturasSeleccionadas, setFacturasSeleccionadas] = useState<Set<number>>(new Set());
     const [ordenesAsignadas, setOrdenesAsignadas] = useState<DeOrdenDespachoResumen[]>([]);
     const [loading, setLoading] = useState(false);
+    const [reciboViewer, setReciboViewer] = useState<DeOrdenDespachoResumen | null>(null);
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMsg, setSnackbarMsg] = useState("");
     const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">("success");
+
+    // Zonas geográficas
+    const [zonas, setZonas] = useState<DeRutaZona[]>([]);
+    const [provincias, setProvincias] = useState<MgProvincia[]>([]);
+    const [municipios, setMunicipios] = useState<MgMunicipioResumen[]>([]);
+    const [barrios, setBarrios] = useState<MgBarrioParajeResumen[]>([]);
+    const [selProvincia, setSelProvincia] = useState<MgProvincia | null>(null);
+    const [selMunicipio, setSelMunicipio] = useState<MgMunicipioResumen | null>(null);
+    const [selBarrio, setSelBarrio] = useState<MgBarrioParajeResumen | null>(null);
+    const [loadingZona, setLoadingZona] = useState(false);
 
     const rutaSearch = useModalSearch();
 
     useEffect(() => {
         getVehiculosActivos().then(setVehiculos).catch(console.error);
+        getProvincias().then(setProvincias).catch(console.error);
     }, []);
 
-    const cargarFacturasDespacho = () => {
-        getFacturasParaDespacho().then(setFacturasParaDespacho).catch(console.error);
+    useEffect(() => {
+        if (selProvincia) {
+            getMunicipiosByProvincia(selProvincia.codProvincia)
+                .then(setMunicipios)
+                .catch(console.error);
+            setSelMunicipio(null);
+            setSelBarrio(null);
+            setBarrios([]);
+        } else {
+            setMunicipios([]);
+            setSelMunicipio(null);
+            setSelBarrio(null);
+            setBarrios([]);
+        }
+    }, [selProvincia]);
+
+    useEffect(() => {
+        if (selMunicipio) {
+            getBarriosByMunicipio(selMunicipio.id)
+                .then(setBarrios)
+                .catch(console.error);
+            setSelBarrio(null);
+        } else {
+            setBarrios([]);
+            setSelBarrio(null);
+        }
+    }, [selMunicipio]);
+
+    const cargarFacturasDespacho = (rutaId?: number) => {
+        getFacturasParaDespacho(rutaId).then(setFacturasParaDespacho).catch(console.error);
     };
 
     const cargarOrdenesDeRuta = (rutaId: number) => {
         buscarOrdenesDespacho({ rutaId, page: 0, size: 100 })
             .then((result: any) => setOrdenesAsignadas(Array.isArray(result) ? result : (result?.content ?? [])))
             .catch(console.error);
+    };
+
+    const cargarZonasDeRuta = (rutaId: number) => {
+        getZonasDeRuta(rutaId).then(setZonas).catch(console.error);
     };
 
     const showMsg = (msg: string, severity: "success" | "error" = "success") => {
@@ -101,6 +169,8 @@ export const DeRutaEntregaView: React.FC = () => {
         setSelectedRuta(null);
         setFacturasSeleccionadas(new Set());
         setOrdenesAsignadas([]);
+        setZonas([]);
+        setSelProvincia(null);
     };
 
     const handleSelectRuta = rutaSearch.handleSelect(async (resumen: any) => {
@@ -109,7 +179,8 @@ export const DeRutaEntregaView: React.FC = () => {
         setRuta(completo);
         setFacturasSeleccionadas(new Set());
         cargarOrdenesDeRuta(resumen.id);
-        cargarFacturasDespacho();
+        cargarZonasDeRuta(resumen.id);
+        cargarFacturasDespacho(resumen.id);
     });
 
     const toggleFactura = (id: number) => {
@@ -133,11 +204,49 @@ export const DeRutaEntregaView: React.FC = () => {
             setSelectedRuta(saved);
             setRuta(saved);
             showMsg("Ruta guardada.");
-            cargarFacturasDespacho();
+            cargarFacturasDespacho(saved.id);
+            if (saved.id) cargarZonasDeRuta(saved.id);
         } catch (e: any) {
             showMsg(e?.response?.data?.message ?? "Error al guardar.", "error");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleAgregarZona = async () => {
+        if (!selectedRuta?.id || !selProvincia || !selMunicipio) {
+            showMsg("Seleccione al menos provincia y municipio.", "error");
+            return;
+        }
+        setLoadingZona(true);
+        try {
+            const zona: DeRutaZona = {
+                codProvincia: selProvincia.codProvincia,
+                municipioId: selMunicipio.id,
+                barrioId: selBarrio?.id ?? null,
+            };
+            await addZonaARuta(selectedRuta.id, zona);
+            cargarZonasDeRuta(selectedRuta.id);
+            cargarFacturasDespacho(selectedRuta.id);
+            // Reset only barrio; keep provincia+municipio for adding more barrios
+            setSelBarrio(null);
+            showMsg("Zona agregada.");
+        } catch (e: any) {
+            showMsg(e?.response?.data?.message ?? "Error al agregar zona.", "error");
+        } finally {
+            setLoadingZona(false);
+        }
+    };
+
+    const handleEliminarZona = async (zonaId: number) => {
+        if (!selectedRuta?.id) return;
+        try {
+            await removeZonaDeRuta(selectedRuta.id, zonaId);
+            cargarZonasDeRuta(selectedRuta.id);
+            cargarFacturasDespacho(selectedRuta.id);
+            showMsg("Zona eliminada.");
+        } catch (e: any) {
+            showMsg(e?.response?.data?.message ?? "Error al eliminar zona.", "error");
         }
     };
 
@@ -149,7 +258,7 @@ export const DeRutaEntregaView: React.FC = () => {
             showMsg(`${facturasSeleccionadas.size} factura(s) asignada(s) a la ruta.`);
             setFacturasSeleccionadas(new Set());
             cargarOrdenesDeRuta(selectedRuta.id);
-            cargarFacturasDespacho();
+            cargarFacturasDespacho(selectedRuta.id);
         } catch (e: any) {
             showMsg(e?.response?.data?.message ?? "Error al asignar.", "error");
         } finally {
@@ -180,7 +289,6 @@ export const DeRutaEntregaView: React.FC = () => {
             await disableRutaEntrega(selectedRuta.id);
             showMsg("Ruta anulada.");
             handleNueva();
-            cargarFacturasDespacho();
         } catch (e: any) {
             showMsg(e?.response?.data?.message ?? "Error al anular.", "error");
         } finally {
@@ -191,6 +299,7 @@ export const DeRutaEntregaView: React.FC = () => {
     const estadoRuta = selectedRuta?.estadoId ?? "";
     const isEditable = !selectedRuta || estadoRuta === "PLANIFICADA";
     const tieneEntregadas = ordenesAsignadas.some((o) => o.estadoId === "ENTREGADO");
+    const zonaEditable = selectedRuta && (estadoRuta === "PLANIFICADA" || estadoRuta === "EN_CURSO");
 
     return (
         <Box sx={{ flexGrow: 1 }}>
@@ -347,6 +456,132 @@ export const DeRutaEntregaView: React.FC = () => {
                         </Paper>
                     </Grid>
 
+                    {/* Zonas geográficas — visible cuando hay una ruta seleccionada */}
+                    {selectedRuta && (
+                        <Grid size={12}>
+                            <Paper sx={{ p: 2 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                                    <PlaceIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 600, flex: 1 }}>
+                                        Zonas Geográficas
+                                    </Typography>
+                                    <Chip
+                                        label={zonas.length === 0 ? "Sin filtro — todas las ubicaciones" : `${zonas.length} zona(s)`}
+                                        size="small"
+                                        color={zonas.length > 0 ? "primary" : "default"}
+                                        variant="outlined"
+                                    />
+                                </Box>
+
+                                {/* Tabla de zonas existentes */}
+                                {zonas.length > 0 && (
+                                    <Table size="small" sx={{ mb: 2 }}>
+                                        <TableHead>
+                                            <TableRow sx={{ "& th": { fontWeight: 600, py: 0.75, fontSize: "0.75rem", color: "text.secondary" } }}>
+                                                <TableCell>Provincia</TableCell>
+                                                <TableCell>Municipio</TableCell>
+                                                <TableCell>Barrio / Paraje</TableCell>
+                                                {zonaEditable && <TableCell align="center" sx={{ width: 48 }} />}
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {zonas.map((z) => (
+                                                <TableRow key={z.id} sx={{ "&:last-child td": { border: 0 } }}>
+                                                    <TableCell sx={{ py: 0.5 }}>{z.provinciaNombre ?? z.codProvincia}</TableCell>
+                                                    <TableCell sx={{ py: 0.5 }}>{z.municipioNombre ?? z.municipioId}</TableCell>
+                                                    <TableCell sx={{ py: 0.5 }}>
+                                                        {z.barrioId
+                                                            ? z.barrioNombre ?? `#${z.barrioId}`
+                                                            : <Typography variant="caption" color="text.secondary">Todos</Typography>
+                                                        }
+                                                    </TableCell>
+                                                    {zonaEditable && (
+                                                        <TableCell align="center" sx={{ py: 0.5 }}>
+                                                            <Tooltip title="Eliminar zona">
+                                                                <IconButton size="small" onClick={() => handleEliminarZona(z.id!)}>
+                                                                    <DeleteIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </TableCell>
+                                                    )}
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
+
+                                {/* Selector para agregar zona — solo en estados editables */}
+                                {zonaEditable && (
+                                    <>
+                                        <Divider sx={{ mb: 1.5 }} />
+                                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                                            Agregar zona: seleccione provincia, municipio y opcionalmente barrio/paraje
+                                        </Typography>
+                                        <Grid container spacing={1.5} alignItems="center">
+                                            <Grid size={{ xs: 12, sm: 3 }}>
+                                                <Autocomplete
+                                                    size="small"
+                                                    options={provincias}
+                                                    getOptionLabel={(p) => p.nombre}
+                                                    value={selProvincia}
+                                                    onChange={(_, v) => setSelProvincia(v)}
+                                                    renderInput={(params) => <TextField {...params} label="Provincia" />}
+                                                />
+                                            </Grid>
+                                            <Grid size={{ xs: 12, sm: 3 }}>
+                                                <Autocomplete
+                                                    size="small"
+                                                    options={municipios}
+                                                    getOptionLabel={(m) => m.nombre}
+                                                    value={selMunicipio}
+                                                    onChange={(_, v) => setSelMunicipio(v)}
+                                                    disabled={!selProvincia}
+                                                    renderInput={(params) => <TextField {...params} label="Municipio" />}
+                                                />
+                                            </Grid>
+                                            <Grid size={{ xs: 12, sm: 4 }}>
+                                                <Autocomplete
+                                                    size="small"
+                                                    options={barrios}
+                                                    getOptionLabel={(b) => b.nombre}
+                                                    value={selBarrio}
+                                                    onChange={(_, v) => setSelBarrio(v)}
+                                                    disabled={!selMunicipio}
+                                                    renderInput={(params) => (
+                                                        <TextField
+                                                            {...params}
+                                                            label="Barrio / Paraje"
+                                                            placeholder="Todos los barrios"
+                                                        />
+                                                    )}
+                                                />
+                                            </Grid>
+                                            <Grid size={{ xs: 12, sm: 2 }}>
+                                                <Button
+                                                    variant="contained"
+                                                    size="small"
+                                                    fullWidth
+                                                    startIcon={loadingZona ? <CircularProgress size={14} color="inherit" /> : <AddIcon />}
+                                                    onClick={handleAgregarZona}
+                                                    disabled={loadingZona || !selProvincia || !selMunicipio}
+                                                    sx={{ bgcolor: "#526671", "&:hover": { bgcolor: "#3d4e56" } }}
+                                                >
+                                                    Agregar
+                                                </Button>
+                                            </Grid>
+                                        </Grid>
+                                    </>
+                                )}
+
+                                {!zonaEditable && zonas.length === 0 && (
+                                    <Typography variant="body2" color="text.secondary">
+                                        Sin restricción geográfica — se muestran clientes de todas las ubicaciones.
+                                    </Typography>
+                                )}
+                            </Paper>
+                        </Grid>
+                    )}
+
                     {/* Órdenes ya asignadas a esta ruta */}
                     {selectedRuta && (
                         <Grid size={12}>
@@ -375,6 +610,7 @@ export const DeRutaEntregaView: React.FC = () => {
                                                 <TableCell>Cliente</TableCell>
                                                 <TableCell>Compromiso</TableCell>
                                                 <TableCell>Estado</TableCell>
+                                                <TableCell align="center">Recibo</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -395,6 +631,21 @@ export const DeRutaEntregaView: React.FC = () => {
                                                             size="small"
                                                         />
                                                     </TableCell>
+                                                    <TableCell align="center" sx={{ py: 0.5 }}>
+                                                        {o.reciboUrl ? (
+                                                            <Tooltip title="Ver recibo de entrega">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => setReciboViewer(o)}
+                                                                    sx={{ color: "#2563eb" }}
+                                                                >
+                                                                    <ReceiptLongIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        ) : (
+                                                            <Typography variant="caption" color="text.disabled">—</Typography>
+                                                        )}
+                                                    </TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -409,9 +660,16 @@ export const DeRutaEntregaView: React.FC = () => {
                         <Grid size={12}>
                             <Paper sx={{ p: 2 }}>
                                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                        Facturas para Despacho — Asignar a esta Ruta
-                                    </Typography>
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                            Facturas para Despacho — Asignar a esta Ruta
+                                        </Typography>
+                                        {zonas.length > 0 && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                Filtradas por zonas geográficas de la ruta
+                                            </Typography>
+                                        )}
+                                    </Box>
                                     <Button
                                         variant="contained"
                                         size="small"
@@ -425,7 +683,9 @@ export const DeRutaEntregaView: React.FC = () => {
                                 </Box>
                                 {facturasParaDespacho.length === 0 ? (
                                     <Typography variant="body2" color="text.secondary">
-                                        No hay facturas pagadas con envío pendiente de asignar.
+                                        {zonas.length > 0
+                                            ? "No hay facturas pendientes de clientes en las zonas definidas."
+                                            : "No hay facturas pagadas con envío pendiente de asignar."}
                                     </Typography>
                                 ) : (
                                     facturasParaDespacho.map((f) => (
@@ -433,9 +693,9 @@ export const DeRutaEntregaView: React.FC = () => {
                                             key={f.id}
                                             sx={{
                                                 display: "flex",
-                                                alignItems: "center",
+                                                alignItems: "flex-start",
                                                 gap: 1,
-                                                py: 0.5,
+                                                py: 0.75,
                                                 borderBottom: "1px solid #f0f0f0",
                                             }}
                                         >
@@ -443,16 +703,28 @@ export const DeRutaEntregaView: React.FC = () => {
                                                 size="small"
                                                 checked={facturasSeleccionadas.has(f.id)}
                                                 onChange={() => toggleFactura(f.id)}
+                                                sx={{ mt: -0.25 }}
                                             />
-                                            <Typography variant="body2" sx={{ flex: 1 }}>
-                                                <strong>Factura #{f.secuencia}</strong> — {f.razonSocial}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {new Date(f.fechaReg).toLocaleDateString("es-DO")}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary" sx={{ ml: 2, fontWeight: 600 }}>
-                                                RD$ {f.total?.toLocaleString("es-DO", { minimumFractionDigits: 2 })}
-                                            </Typography>
+                                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                <Typography variant="body2">
+                                                    <strong>Factura #{f.secuencia}</strong> — {f.razonSocial}
+                                                </Typography>
+                                                <Typography
+                                                    variant="caption"
+                                                    color={f.direccionEntrega ? "text.secondary" : "text.disabled"}
+                                                    sx={{ display: "block", mt: 0.25, fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                                >
+                                                    📍 {f.direccionEntrega ?? "Sin dirección registrada"}
+                                                </Typography>
+                                            </Box>
+                                            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0 }}>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {new Date(f.fechaReg).toLocaleDateString("es-DO")}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                                                    RD$ {f.total?.toLocaleString("es-DO", { minimumFractionDigits: 2 })}
+                                                </Typography>
+                                            </Box>
                                         </Box>
                                     ))
                                 )}
@@ -468,6 +740,15 @@ export const DeRutaEntregaView: React.FC = () => {
                 onSelect={handleSelectRuta}
                 config={rutaSearch.config ?? SEARCH_CONFIGS.RUTA_ENTREGA}
             />
+
+            {reciboViewer && reciboViewer.reciboUrl && (
+                <ReciboViewer
+                    ordenId={reciboViewer.id}
+                    reciboUrl={reciboViewer.reciboUrl}
+                    clienteNombre={reciboViewer.clienteNombre}
+                    onClose={() => setReciboViewer(null)}
+                />
+            )}
 
             <Snackbar
                 open={snackbarOpen}
