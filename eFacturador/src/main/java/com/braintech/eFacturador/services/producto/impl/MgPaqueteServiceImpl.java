@@ -9,9 +9,7 @@ import com.braintech.eFacturador.jpa.producto.MgPaquete;
 import com.braintech.eFacturador.jpa.producto.MgPaqueteItem;
 import com.braintech.eFacturador.services.producto.MgPaqueteService;
 import com.braintech.eFacturador.util.TenantContext;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
 import lombok.AllArgsConstructor;
@@ -30,23 +28,14 @@ public class MgPaqueteServiceImpl implements MgPaqueteService {
   public List<MgPaqueteResumenDTO> buscar(MgPaqueteSearchCriteria criteria) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
 
-    // Rango de fechas: si no viene, últimos 30 días
-    LocalDate inicio =
-        criteria.getFechaInicio() != null
-            ? criteria.getFechaInicio()
-            : LocalDate.now().minusDays(30);
-    LocalDate fin = criteria.getFechaFin() != null ? criteria.getFechaFin() : LocalDate.now();
-
-    LocalDateTime desde = inicio.atStartOfDay();
-    LocalDateTime hasta = fin.atTime(LocalTime.MAX);
-
-    // Normalizar filtro de nombre (null si viene vacío)
+    // Pasar "" cuando no hay filtro: Hibernate 6 + PostgreSQL no puede inferir el tipo
+    // de un parámetro null dentro de CONCAT/LOWER, resultando en bytea.
     String nombre =
         (criteria.getNombre() != null && !criteria.getNombre().isBlank())
             ? criteria.getNombre().trim()
-            : null;
+            : "";
 
-    return paqueteRepository.buscar(empresaId, desde, hasta, nombre);
+    return paqueteRepository.buscar(empresaId, nombre);
   }
 
   @Override

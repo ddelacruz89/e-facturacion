@@ -7,6 +7,7 @@ import com.braintech.eFacturador.jpa.producto.MgProducto;
 import com.braintech.eFacturador.jpa.producto.ProductoResumen;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 
 public interface MgProductoService {
   List<MgProducto> getAll();
@@ -30,9 +31,9 @@ public interface MgProductoService {
   // Advanced search
   List<MgProducto> searchAdvancedResumen(MgProductoSearchCriteria criteria);
 
-  List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria);
+  Page<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria);
 
-  List<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria);
+  Page<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria);
 
   List<MgProductoResumenDTO> getProductosDisponiblesCompraResumen(Integer suplidorId);
 

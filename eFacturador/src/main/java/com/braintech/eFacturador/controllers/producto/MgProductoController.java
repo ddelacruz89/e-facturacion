@@ -11,6 +11,7 @@ import com.braintech.eFacturador.views.Views;
 import com.fasterxml.jackson.annotation.JsonView;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -86,7 +87,7 @@ public class MgProductoController {
   }
 
   @GetMapping("/search/advanced")
-  public List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria) {
+  public Page<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria) {
     return productoService.searchAdvanced(criteria);
   }
 
@@ -95,7 +96,7 @@ public class MgProductoController {
    * por Orden de Compra y Cotización.
    */
   @GetMapping("/search/advanced/compra")
-  public List<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria) {
+  public Page<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria) {
     return productoService.searchAdvancedCompra(criteria);
   }
 

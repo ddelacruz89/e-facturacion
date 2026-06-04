@@ -2,7 +2,6 @@ package com.braintech.eFacturador.dao.producto;
 
 import com.braintech.eFacturador.dto.producto.MgPaqueteResumenDTO;
 import com.braintech.eFacturador.jpa.producto.MgPaquete;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,13 +31,9 @@ public interface MgPaqueteRepository extends JpaRepository<MgPaquete, Integer> {
             )
             FROM MgPaquete p
             WHERE p.empresaId = :empresaId
-              AND p.fechaReg BETWEEN :desde AND :hasta
-              AND (:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
-            ORDER BY p.fechaReg DESC
+              AND (:nombre = '' OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+            ORDER BY p.nombre ASC
             """)
   List<MgPaqueteResumenDTO> buscar(
-      @Param("empresaId") Integer empresaId,
-      @Param("desde") LocalDateTime desde,
-      @Param("hasta") LocalDateTime hasta,
-      @Param("nombre") String nombre);
+      @Param("empresaId") Integer empresaId, @Param("nombre") String nombre);
 }

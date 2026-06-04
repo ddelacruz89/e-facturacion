@@ -160,26 +160,12 @@ export const SEARCH_CONFIGS = {
         method: "POST" as const,
         keyField: "id",
         searchOnLoad: true,
-        defaultParams: {
-            fechaInicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-            fechaFin: new Date().toISOString().split("T")[0],
-        },
         fields: [
             {
                 key: "nombre",
                 label: "Nombre",
                 type: "text" as const,
                 placeholder: "Nombre del paquete",
-            },
-            {
-                key: "fechaInicio",
-                label: "Fecha inicio",
-                type: "date" as const,
-            },
-            {
-                key: "fechaFin",
-                label: "Fecha fin",
-                type: "date" as const,
             },
         ],
         displayColumns: [
@@ -212,19 +198,11 @@ export const SEARCH_CONFIGS = {
         title: "Buscar Producto",
         endpoint: "/api/producto/search/advanced",
         keyField: "id",
+        searchOnLoad: true,
+        pagination: { enabled: true, pageSize: 30 },
         fields: [
-            {
-                key: "id",
-                label: "ID",
-                type: "number" as const,
-                placeholder: "Ingrese ID del producto"
-            },
-            {
-                key: "nombreProducto",
-                label: "Nombre",
-                type: "text" as const,
-                placeholder: "Ingrese nombre del producto"
-            }
+            { key: "id", label: "ID", type: "number" as const, placeholder: "Ingrese ID del producto" },
+            { key: "nombreProducto", label: "Nombre", type: "text" as const, placeholder: "Ingrese nombre del producto" }
         ],
         displayColumns: [
             { key: "id", label: "ID", width: "10%" },
@@ -241,19 +219,10 @@ export const SEARCH_CONFIGS = {
         keyField: "id",
         searchOnLoad: true,
         defaultParams: { categoriaId: 5 },
+        pagination: { enabled: true, pageSize: 30 },
         fields: [
-            {
-                key: "id",
-                label: "ID",
-                type: "number" as const,
-                placeholder: "Ingrese ID del producto"
-            },
-            {
-                key: "nombreProducto",
-                label: "Nombre",
-                type: "text" as const,
-                placeholder: "Ingrese nombre del producto"
-            }
+            { key: "id", label: "ID", type: "number" as const, placeholder: "Ingrese ID del producto" },
+            { key: "nombreProducto", label: "Nombre", type: "text" as const, placeholder: "Ingrese nombre del producto" }
         ],
         displayColumns: [
             { key: "id", label: "ID", width: "10%" },
@@ -270,19 +239,10 @@ export const SEARCH_CONFIGS = {
         keyField: "id",
         searchOnLoad: true,
         defaultParams: { categoriaId: 1 },
+        pagination: { enabled: true, pageSize: 30 },
         fields: [
-            {
-                key: "id",
-                label: "ID",
-                type: "number" as const,
-                placeholder: "Ingrese ID"
-            },
-            {
-                key: "nombreProducto",
-                label: "Nombre",
-                type: "text" as const,
-                placeholder: "Ingrese nombre del servicio"
-            }
+            { key: "id", label: "ID", type: "number" as const, placeholder: "Ingrese ID" },
+            { key: "nombreProducto", label: "Nombre", type: "text" as const, placeholder: "Ingrese nombre del servicio" }
         ],
         displayColumns: [
             { key: "id", label: "ID", width: "10%" },
@@ -296,25 +256,11 @@ export const SEARCH_CONFIGS = {
         endpoint: "/api/producto/search/advanced/compra",
         keyField: "id",
         searchOnLoad: true,
+        pagination: { enabled: true, pageSize: 30 },
         fields: [
-            {
-                key: "id",
-                label: "ID",
-                type: "number" as const,
-                placeholder: "Ingrese ID del producto"
-            },
-            {
-                key: "nombreProducto",
-                label: "Nombre",
-                type: "text" as const,
-                placeholder: "Ingrese nombre del producto"
-            },
-            {
-                key: "codigoBarra",
-                label: "Código de Barra",
-                type: "text" as const,
-                placeholder: "Ingrese código de barra"
-            }
+            { key: "id", label: "ID", type: "number" as const, placeholder: "Ingrese ID del producto" },
+            { key: "nombreProducto", label: "Nombre", type: "text" as const, placeholder: "Ingrese nombre del producto" },
+            { key: "codigoBarra", label: "Código de Barra", type: "text" as const, placeholder: "Ingrese código de barra" }
         ],
         displayColumns: [
             { key: "id", label: "ID", width: "10%" },

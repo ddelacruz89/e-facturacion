@@ -10,5 +10,6 @@ public class MgProductoSearchCriteria {
   private String codigoBarra;
   private String descripcion;
   private Integer categoriaId;
-  // El filtro de empresaId se obtiene del contexto, no del query, por lo que no se expone aquí
+  private Integer page = 0;
+  private Integer size = 30;
 }
