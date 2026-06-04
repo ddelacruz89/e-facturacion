@@ -89,7 +89,13 @@ const HomeView = () => {
     };
 
     // ── layout ─────────────────────────────────────────────────────────────────
-    const { data: modulos } = useSharedModulos();
+    const { data: modulos, refresh: refreshModulos } = useSharedModulos();
+
+    // Refrescar módulos al autenticarse (limpia caché del hook singleton)
+    useEffect(() => {
+        if (user?.isAuthenticated) refreshModulos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.isAuthenticated]);
 
     const [userMenuAnchor, setUserMenuAnchor] = useState<HTMLElement | null>(null);
 

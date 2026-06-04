@@ -2,6 +2,7 @@ package com.braintech.eFacturador.services.seguridad;
 
 import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
+import com.braintech.eFacturador.interfaces.seguridad.LicenciaService;
 import com.braintech.eFacturador.interfaces.seguridad.SgSucursalService;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.models.Response;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SgSucursalServiceImpl implements SgSucursalService {
   @Autowired private SgSucursalRepository sucursalRepository;
+  @Autowired private LicenciaService licenciaService;
 
   private SgSucursal updateSucursal(Integer id, SgSucursal sucursal) {
     Optional<SgSucursal> opt = sucursalRepository.findById(id);
@@ -84,9 +86,12 @@ public class SgSucursalServiceImpl implements SgSucursalService {
   public Response<?> save(SgSucursal sucursal) {
     try {
       if (sucursal.getId() == null) {
-        // New sucursal
+        // Validar límite de sucursales según licencia
+        if (sucursal.getEmpresa() != null && sucursal.getEmpresa().getId() != null) {
+          licenciaService.validarLimiteSucursales(sucursal.getEmpresa().getId());
+        }
         sucursal.setFechaReg(LocalDateTime.now());
-        sucursal.setUsuarioReg("SYSTEM"); // You can get this from security context
+        sucursal.setUsuarioReg("SYSTEM");
         sucursal.setEstadoId("ACT");
       }
       SgSucursal savedSucursal = sucursalRepository.save(sucursal);

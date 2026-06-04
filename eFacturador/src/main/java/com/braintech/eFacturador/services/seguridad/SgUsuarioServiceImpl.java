@@ -5,6 +5,7 @@ import com.braintech.eFacturador.dto.seguridad.AdminResetPasswordResponse;
 import com.braintech.eFacturador.dto.seguridad.SgUsuarioResumenDTO;
 import com.braintech.eFacturador.dto.seguridad.SgUsuarioSearchCriteria;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
+import com.braintech.eFacturador.interfaces.seguridad.LicenciaService;
 import com.braintech.eFacturador.interfaces.seguridad.SgUsuarioService;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
 import com.braintech.eFacturador.util.TenantContext;
@@ -23,6 +24,7 @@ public class SgUsuarioServiceImpl implements SgUsuarioService {
   @Autowired private SgUsuarioRepository usuarioRepository;
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private TenantContext tenantContext;
+  @Autowired private LicenciaService licenciaService;
 
   @Override
   public List<SgUsuarioResumenDTO> buscar(SgUsuarioSearchCriteria criteria) {
@@ -54,6 +56,7 @@ public class SgUsuarioServiceImpl implements SgUsuarioService {
   @Override
   public SgUsuario save(SgUsuario usuario) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
+    licenciaService.validarLimiteUsuarios(empresaId);
     usuario.setEmpresaId(empresaId);
     if (usuario.getFechaReg() == null) {
       usuario.setFechaReg(LocalDateTime.now());

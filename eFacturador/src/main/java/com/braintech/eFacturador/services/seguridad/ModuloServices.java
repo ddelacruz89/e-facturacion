@@ -4,6 +4,7 @@ import com.braintech.eFacturador.dao.seguridad.ModuloDao;
 import com.braintech.eFacturador.dao.seguridad.SgPermisoRepository;
 import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
 import com.braintech.eFacturador.interfaces.IBaseString;
+import com.braintech.eFacturador.interfaces.seguridad.LicenciaService;
 import com.braintech.eFacturador.jpa.seguridad.SgModulo;
 import com.braintech.eFacturador.jpa.seguridad.dto.MenuDtoImpl;
 import com.braintech.eFacturador.jpa.seguridad.dto.ModuloDto;
@@ -14,6 +15,7 @@ import com.braintech.eFacturador.util.TenantContext;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class ModuloServices implements IBaseString<SgModulo> {
   final ModuloDao moduloDao;
   final SgPermisoRepository permisoRepository;
   final TenantContext tenantContext;
+  final LicenciaService licenciaService;
 
   @Override
   public Response<SgModulo> getFindById(String id) {
@@ -48,10 +51,14 @@ public class ModuloServices implements IBaseString<SgModulo> {
     Set<Integer> menuIdsPermitidos =
         permisoRepository.findMenuIdsPermitidos(username, empresaId, sucursalId);
 
+    Set<String> modulosLicenciados = getModulosLicenciados(empresaId);
+
     List<ModuloDto> result =
         moduloDao.findAll().stream()
             .map(
                 modulo -> {
+                  boolean sinLicencia = !modulosLicenciados.contains(modulo.getId());
+
                   List<menuDto> menusPermitidos =
                       modulo.getMenus().stream()
                           .filter(
@@ -64,10 +71,12 @@ public class ModuloServices implements IBaseString<SgModulo> {
                                       new MenuDtoImpl(
                                           m.getId(), m.getMenu(), m.getUrl(), m.getUrlSql()))
                           .toList();
+
                   return (ModuloDto)
-                      new ModuloDtoImpl(modulo.getId(), modulo.getModulo(), menusPermitidos);
+                      new ModuloDtoImpl(
+                          modulo.getId(), modulo.getModulo(), menusPermitidos, sinLicencia);
                 })
-            .filter(m -> !m.getMenus().isEmpty())
+            .filter(m -> !m.getMenus().isEmpty() && !Boolean.TRUE.equals(m.getSinLicencia()))
             .toList();
 
     if (!result.isEmpty()) {
@@ -82,10 +91,15 @@ public class ModuloServices implements IBaseString<SgModulo> {
 
   /** Todos los módulos y menús sin filtrar — para la pantalla de gestión de roles. */
   public Response<List<ModuloDto>> getTodos() {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Set<String> modulosLicenciados = getModulosLicenciados(empresaId);
+
     List<ModuloDto> result =
         moduloDao.findAll().stream()
             .map(
                 modulo -> {
+                  boolean sinLicencia = !modulosLicenciados.contains(modulo.getId());
+
                   List<menuDto> menus =
                       modulo.getMenus().stream()
                           .filter(m -> Boolean.TRUE.equals(m.getActivo()))
@@ -95,7 +109,9 @@ public class ModuloServices implements IBaseString<SgModulo> {
                                       new MenuDtoImpl(
                                           m.getId(), m.getMenu(), m.getUrl(), m.getUrlSql()))
                           .toList();
-                  return (ModuloDto) new ModuloDtoImpl(modulo.getId(), modulo.getModulo(), menus);
+
+                  return (ModuloDto)
+                      new ModuloDtoImpl(modulo.getId(), modulo.getModulo(), menus, sinLicencia);
                 })
             .filter(m -> !m.getMenus().isEmpty())
             .toList();
@@ -113,5 +129,11 @@ public class ModuloServices implements IBaseString<SgModulo> {
   @Override
   public Response<SgModulo> save(SgModulo entity) {
     return null;
+  }
+
+  private Set<String> getModulosLicenciados(Integer empresaId) {
+    return licenciaService.getModulosHabilitados(empresaId).stream()
+        .map(lm -> lm.getModulo().getId())
+        .collect(Collectors.toSet());
   }
 }

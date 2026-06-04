@@ -54,6 +54,8 @@ public class SgMenu extends BaseEntity implements Serializable {
   @Comment("Orden de visualización del menú")
   private Integer orden;
 
+  @Transient private Boolean sinLicencia = false;
+
   @Transient
   public String getModuloId() {
     return this.moduloId != null ? this.moduloId.getId() : null;

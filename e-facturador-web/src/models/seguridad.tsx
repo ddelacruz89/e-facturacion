@@ -106,6 +106,7 @@ export interface ModuloDto {
     id: string;
     menus: MenuDto[];
     modulo: string;
+    sinLicencia?: boolean;
 }
 
 export interface SgMenu {

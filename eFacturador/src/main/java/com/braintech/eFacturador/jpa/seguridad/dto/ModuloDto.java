@@ -8,4 +8,6 @@ public interface ModuloDto {
   String getModulo();
 
   List<menuDto> getMenus();
+
+  Boolean getSinLicencia();
 }

@@ -46,6 +46,9 @@ public interface SgUsuarioRepository extends JpaRepository<SgUsuario, String> {
    * Búsqueda de resumen: filtra por empresa, rango de fechas y texto en username/nombre. LEFT JOIN
    * con manager para incluir username/nombre del manager (null si no tiene).
    */
+  @Query("SELECT COUNT(u) FROM SgUsuario u WHERE u.empresaId = :empresaId AND u.estadoId <> 'INA'")
+  long countActivosByEmpresaId(@Param("empresaId") Integer empresaId);
+
   @Query(
       """
       SELECT new com.braintech.eFacturador.dto.seguridad.SgUsuarioResumenDTO(

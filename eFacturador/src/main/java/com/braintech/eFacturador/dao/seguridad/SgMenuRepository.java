@@ -29,4 +29,11 @@ public interface SgMenuRepository extends JpaRepository<SgMenu, Integer> {
       "SELECT new com.braintech.eFacturador.dto.seguridad.SgMenuResumenDTO(m.id, m.menu) "
           + "FROM SgMenu m WHERE m.productoAsignable = true AND m.activo = true ORDER BY m.orden")
   List<SgMenuResumenDTO> findMenusAsignablesAProductos();
+
+  @Query("SELECT m.moduloId.id FROM SgMenu m WHERE m.url = :url AND m.activo = true")
+  Optional<String> findModuloIdByUrl(@Param("url") String url);
+
+  @Query(
+      "SELECT m FROM SgMenu m WHERE m.activo = true AND m.moduloId.id IN :moduloIds ORDER BY m.orden")
+  List<SgMenu> findAllActiveByModuloIds(@Param("moduloIds") List<String> moduloIds);
 }

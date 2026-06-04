@@ -3,11 +3,14 @@ package com.braintech.eFacturador.services.seguridad.impl;
 import com.braintech.eFacturador.dao.seguridad.SgMenuRepository;
 import com.braintech.eFacturador.dto.seguridad.SgMenuResumenDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
+import com.braintech.eFacturador.interfaces.seguridad.LicenciaService;
 import com.braintech.eFacturador.jpa.seguridad.SgMenu;
 import com.braintech.eFacturador.services.seguridad.SgMenuService;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,12 +19,28 @@ import org.springframework.transaction.annotation.Transactional;
 public class SgMenuServiceImpl implements SgMenuService {
 
   @Autowired private SgMenuRepository menuRepository;
-
+  @Autowired private LicenciaService licenciaService;
   @Autowired private TenantContext tenantContext;
 
   @Override
   public List<SgMenu> getAllActive() {
-    return menuRepository.findAllActive();
+    List<SgMenu> menus = menuRepository.findAllActive();
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+
+    Set<String> modulosHabilitados =
+        licenciaService.getModulosHabilitados(empresaId).stream()
+            .map(lm -> lm.getModulo().getId())
+            .collect(Collectors.toSet());
+
+    menus.forEach(
+        m -> {
+          String modId = m.getModuloId();
+          if (modId != null && !modulosHabilitados.contains(modId)) {
+            m.setSinLicencia(true);
+          }
+        });
+
+    return menus;
   }
 
   @Override
