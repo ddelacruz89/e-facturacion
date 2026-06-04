@@ -54,6 +54,14 @@ public class GlobalDatabaseExceptionHandler {
     return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
   }
 
+  @ExceptionHandler(LicenciaExcedidaException.class)
+  public ResponseEntity<Object> handleLicenciaExcedida(LicenciaExcedidaException ex) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("status", "LICENCIA_EXCEDIDA");
+    body.put("message", ex.getMessage());
+    return new ResponseEntity<>(body, HttpStatus.PAYMENT_REQUIRED);
+  }
+
   @ExceptionHandler(DataIntegrityViolationException.class)
   public ResponseEntity<Object> handleDataIntegrityViolation(
       DataIntegrityViolationException ex, WebRequest request) {

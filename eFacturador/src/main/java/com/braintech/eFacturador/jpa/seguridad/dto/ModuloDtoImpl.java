@@ -10,4 +10,5 @@ public class ModuloDtoImpl implements ModuloDto {
   private String id;
   private String modulo;
   private List<menuDto> menus;
+  private Boolean sinLicencia;
 }

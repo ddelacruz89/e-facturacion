@@ -1,10 +1,13 @@
 package com.braintech.eFacturador.security;
 
+import com.braintech.eFacturador.dao.seguridad.SgMenuRepository;
 import com.braintech.eFacturador.dao.seguridad.SgPermisoRepository;
 import com.braintech.eFacturador.exceptions.AccesoDenegadoException;
+import com.braintech.eFacturador.interfaces.seguridad.LicenciaService;
 import com.braintech.eFacturador.jpa.seguridad.SgPermiso;
 import com.braintech.eFacturador.util.TenantContext;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Aspect;
@@ -26,6 +29,8 @@ import org.springframework.stereotype.Component;
 public class PermisoAspect {
 
   private final SgPermisoRepository permisoRepository;
+  private final SgMenuRepository menuRepository;
+  private final LicenciaService licenciaService;
   private final TenantContext tenantContext;
 
   @Before("@annotation(requierePermiso)")
@@ -71,6 +76,21 @@ public class PermisoAspect {
               + accionLabel
               + " en este módulo. "
               + "Contacte al administrador para solicitar acceso.");
+    }
+
+    // Verificar que el módulo esté habilitado en la licencia
+    Optional<String> moduloId = menuRepository.findModuloIdByUrl(menuUrl);
+    if (moduloId.isPresent() && !licenciaService.isModuloHabilitado(empresaId, moduloId.get())) {
+      log.warn(
+          "Módulo no licenciado — usuario={} empresaId={} moduloId={} menuUrl={}",
+          username,
+          empresaId,
+          moduloId.get(),
+          menuUrl);
+      throw new AccesoDenegadoException(
+          "El módulo '"
+              + moduloId.get()
+              + "' no está habilitado en su licencia. Contacte al administrador.");
     }
 
     log.debug("Permiso OK — usuario={} menuUrl={} accion={}", username, menuUrl, accion);

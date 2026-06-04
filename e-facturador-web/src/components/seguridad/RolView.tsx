@@ -525,35 +525,52 @@ const RolView: React.FC = () => {
                                                     return (
                                                         <React.Fragment key={modulo.id}>
                                                             {/* Cabecera de módulo */}
-                                                            <TableRow sx={{ backgroundColor: "grey.100" }}>
+                                                            <TableRow sx={{ backgroundColor: modulo.sinLicencia ? "grey.200" : "grey.100" }}>
                                                                 <TableCell colSpan={5}>
                                                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                                                        <Tooltip title="Seleccionar todos los permisos de este módulo">
-                                                                            <Checkbox
-                                                                                size="small"
-                                                                                checked={moduloAllChecked(menus)}
-                                                                                indeterminate={
-                                                                                    !moduloAllChecked(menus) &&
-                                                                                    menus.some((m) => anyTrue(matrix[m.id] ?? emptyFlags()))
-                                                                                }
-                                                                                onChange={(e) => toggleModuloAll(menus, e.target.checked)}
-                                                                            />
+                                                                        <Tooltip title={modulo.sinLicencia ? "Módulo sin licencia" : "Seleccionar todos los permisos de este módulo"}>
+                                                                            <span>
+                                                                                <Checkbox
+                                                                                    size="small"
+                                                                                    disabled={!!modulo.sinLicencia}
+                                                                                    checked={moduloAllChecked(menus)}
+                                                                                    indeterminate={
+                                                                                        !moduloAllChecked(menus) &&
+                                                                                        menus.some((m) => anyTrue(matrix[m.id] ?? emptyFlags()))
+                                                                                    }
+                                                                                    onChange={(e) => toggleModuloAll(menus, e.target.checked)}
+                                                                                />
+                                                                            </span>
                                                                         </Tooltip>
-                                                                        <Typography variant="subtitle2" fontWeight="bold" color="primary.main">
+                                                                        <Typography
+                                                                            variant="subtitle2"
+                                                                            fontWeight="bold"
+                                                                            color={modulo.sinLicencia ? "text.disabled" : "primary.main"}
+                                                                        >
                                                                             {modulo.modulo}
                                                                         </Typography>
-                                                                        <Chip
-                                                                            label={`${menus.filter((m) => anyTrue(matrix[m.id] ?? emptyFlags())).length}/${menus.length}`}
-                                                                            size="small"
-                                                                            variant="outlined"
-                                                                            color="primary"
-                                                                        />
+                                                                        {modulo.sinLicencia ? (
+                                                                            <Chip label="Sin licencia" size="small" color="warning" />
+                                                                        ) : (
+                                                                            <Chip
+                                                                                label={`${menus.filter((m) => anyTrue(matrix[m.id] ?? emptyFlags())).length}/${menus.length}`}
+                                                                                size="small"
+                                                                                variant="outlined"
+                                                                                color="primary"
+                                                                            />
+                                                                        )}
                                                                     </Box>
                                                                 </TableCell>
                                                             </TableRow>
 
                                                             {/* Filas de menús */}
-                                                            {menus.map((menu) => {
+                                                            {modulo.sinLicencia ? (
+                                                                <TableRow>
+                                                                    <TableCell colSpan={5} sx={{ pl: 6, color: "text.disabled", fontStyle: "italic", py: 1 }}>
+                                                                        No tiene licencia para este módulo. Contacte al administrador para habilitarlo.
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ) : menus.map((menu) => {
                                                                 const flags = matrix[menu.id] ?? emptyFlags();
                                                                 const rowAll = allTrue(flags);
                                                                 const rowAny = anyTrue(flags);

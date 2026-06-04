@@ -27,6 +27,9 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -289,91 +292,131 @@ public class MgProductoServiceImpl implements MgProductoService {
   }
 
   @Override
-  public List<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria) {
+  public Page<MgProductoResumenDTO> searchAdvanced(MgProductoSearchCriteria criteria) {
     CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-    CriteriaQuery<MgProductoResumenDTO> query = cb.createQuery(MgProductoResumenDTO.class);
-    Root<MgProducto> product = query.from(MgProducto.class);
-    List<Predicate> predicates = new ArrayList<>();
-
     Integer empresaId = tenantContext.getCurrentEmpresaId();
-    if (empresaId != null) {
-      predicates.add(cb.equal(product.get("empresaId"), empresaId));
-    } else throw new ApplicationException("Empresa no encontrada");
+    if (empresaId == null) throw new ApplicationException("Empresa no encontrada");
 
-    if (criteria.getNombreProducto() != null && !criteria.getNombreProducto().trim().isEmpty()) {
-      predicates.add(
-          cb.like(
-              cb.lower(product.get("nombreProducto")),
-              "%" + criteria.getNombreProducto().toLowerCase(Locale.ROOT) + "%"));
-    }
-    if (criteria.getCodigoBarra() != null && !criteria.getCodigoBarra().trim().isEmpty()) {
-      predicates.add(cb.equal(product.get("codigoBarra"), criteria.getCodigoBarra()));
-    }
-    if (criteria.getDescripcion() != null && !criteria.getDescripcion().trim().isEmpty()) {
-      predicates.add(
-          cb.like(
-              cb.lower(product.get("descripcion")),
-              "%" + criteria.getDescripcion().toLowerCase(Locale.ROOT) + "%"));
-    }
-    if (criteria.getCategoriaId() != null) {
-      predicates.add(cb.equal(product.get("categoriaId").get("id"), criteria.getCategoriaId()));
-    }
+    int page = criteria.getPage() != null ? criteria.getPage() : 0;
+    int size = criteria.getSize() != null ? criteria.getSize() : 30;
 
-    query.where(cb.and(predicates.toArray(new Predicate[0])));
-    query.select(
+    // Count
+    CriteriaQuery<Long> countQ = cb.createQuery(Long.class);
+    Root<MgProducto> cr = countQ.from(MgProducto.class);
+    countQ
+        .select(cb.count(cr))
+        .where(cb.and(productoPredicates(cb, cr, criteria, empresaId).toArray(new Predicate[0])));
+    long total = entityManager.createQuery(countQ).getSingleResult();
+
+    // Data
+    CriteriaQuery<MgProductoResumenDTO> q = cb.createQuery(MgProductoResumenDTO.class);
+    Root<MgProducto> r = q.from(MgProducto.class);
+    q.where(cb.and(productoPredicates(cb, r, criteria, empresaId).toArray(new Predicate[0])));
+    q.select(
         cb.construct(
-            MgProductoResumenDTO.class,
-            product.get("id"),
-            product.get("nombreProducto"),
-            product.get("precio")));
-    query.orderBy(cb.asc(product.get("nombreProducto")));
-    return entityManager.createQuery(query).getResultList();
+            MgProductoResumenDTO.class, r.get("id"), r.get("nombreProducto"), r.get("precio")));
+    q.orderBy(cb.asc(r.get("nombreProducto")));
+
+    List<MgProductoResumenDTO> results =
+        entityManager
+            .createQuery(q)
+            .setFirstResult(page * size)
+            .setMaxResults(size)
+            .getResultList();
+
+    return new PageImpl<>(results, PageRequest.of(page, size), total);
+  }
+
+  private List<Predicate> productoPredicates(
+      CriteriaBuilder cb,
+      Root<MgProducto> root,
+      MgProductoSearchCriteria criteria,
+      Integer empresaId) {
+    List<Predicate> p = new ArrayList<>();
+    p.add(cb.equal(root.get("empresaId"), empresaId));
+    if (criteria.getNombreProducto() != null && !criteria.getNombreProducto().isBlank())
+      p.add(
+          cb.like(
+              cb.lower(root.get("nombreProducto")),
+              "%" + criteria.getNombreProducto().toLowerCase(Locale.ROOT) + "%"));
+    if (criteria.getCodigoBarra() != null && !criteria.getCodigoBarra().isBlank())
+      p.add(cb.equal(root.get("codigoBarra"), criteria.getCodigoBarra()));
+    if (criteria.getDescripcion() != null && !criteria.getDescripcion().isBlank())
+      p.add(
+          cb.like(
+              cb.lower(root.get("descripcion")),
+              "%" + criteria.getDescripcion().toLowerCase(Locale.ROOT) + "%"));
+    if (criteria.getCategoriaId() != null)
+      p.add(cb.equal(root.get("categoriaId").get("id"), criteria.getCategoriaId()));
+    return p;
   }
 
   @Override
-  public List<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria) {
+  public Page<MgProductoResumenDTO> searchAdvancedCompra(MgProductoSearchCriteria criteria) {
     CriteriaBuilder cb = entityManager.getCriteriaBuilder();
-    CriteriaQuery<MgProductoResumenDTO> query = cb.createQuery(MgProductoResumenDTO.class);
-    Root<MgProducto> product = query.from(MgProducto.class);
-    List<Predicate> predicates = new ArrayList<>();
-
     Integer empresaId = tenantContext.getCurrentEmpresaId();
-    if (empresaId != null) {
-      predicates.add(cb.equal(product.get("empresaId"), empresaId));
-    } else throw new ApplicationException("Empresa no encontrada");
+    if (empresaId == null) throw new ApplicationException("Empresa no encontrada");
 
-    // Solo productos con al menos una unidad disponible en compra (EXISTS)
-    Subquery<Integer> subq = query.subquery(Integer.class);
-    Root<MgProductoUnidadSuplidor> uRoot = subq.from(MgProductoUnidadSuplidor.class);
-    subq.select(cb.literal(1));
-    subq.where(
-        cb.and(
-            cb.equal(uRoot.get("productoId"), product),
-            cb.equal(uRoot.get("disponibleEnCompra"), true)));
-    predicates.add(cb.exists(subq));
+    int page = criteria.getPage() != null ? criteria.getPage() : 0;
+    int size = criteria.getSize() != null ? criteria.getSize() : 30;
 
-    if (criteria.getNombreProducto() != null && !criteria.getNombreProducto().trim().isEmpty()) {
-      predicates.add(
-          cb.like(
-              cb.lower(product.get("nombreProducto")),
-              "%" + criteria.getNombreProducto().toLowerCase(Locale.ROOT) + "%"));
-    }
-    if (criteria.getCodigoBarra() != null && !criteria.getCodigoBarra().trim().isEmpty()) {
-      predicates.add(cb.equal(product.get("codigoBarra"), criteria.getCodigoBarra()));
-    }
-    if (criteria.getId() != null) {
-      predicates.add(cb.equal(product.get("id"), criteria.getId()));
-    }
+    // Count
+    CriteriaQuery<Long> countQ = cb.createQuery(Long.class);
+    Root<MgProducto> cr = countQ.from(MgProducto.class);
+    countQ
+        .select(cb.count(cr))
+        .where(
+            cb.and(
+                compraPredicates(cb, cr, countQ, criteria, empresaId).toArray(new Predicate[0])));
+    long total = entityManager.createQuery(countQ).getSingleResult();
 
-    query.where(cb.and(predicates.toArray(new Predicate[0])));
-    query.select(
+    // Data
+    CriteriaQuery<MgProductoResumenDTO> q = cb.createQuery(MgProductoResumenDTO.class);
+    Root<MgProducto> r = q.from(MgProducto.class);
+    q.where(cb.and(compraPredicates(cb, r, q, criteria, empresaId).toArray(new Predicate[0])));
+    q.select(
         cb.construct(
             MgProductoResumenDTO.class,
-            product.get("id"),
-            product.get("nombreProducto"),
-            product.get("precioVenta")));
-    query.orderBy(cb.asc(product.get("nombreProducto")));
-    return entityManager.createQuery(query).getResultList();
+            r.get("id"),
+            r.get("nombreProducto"),
+            r.get("precioVenta")));
+    q.orderBy(cb.asc(r.get("nombreProducto")));
+
+    List<MgProductoResumenDTO> results =
+        entityManager
+            .createQuery(q)
+            .setFirstResult(page * size)
+            .setMaxResults(size)
+            .getResultList();
+
+    return new PageImpl<>(results, PageRequest.of(page, size), total);
+  }
+
+  private <T> List<Predicate> compraPredicates(
+      CriteriaBuilder cb,
+      Root<MgProducto> root,
+      CriteriaQuery<T> query,
+      MgProductoSearchCriteria criteria,
+      Integer empresaId) {
+    List<Predicate> p = new ArrayList<>();
+    p.add(cb.equal(root.get("empresaId"), empresaId));
+    Subquery<Integer> subq = query.subquery(Integer.class);
+    Root<MgProductoUnidadSuplidor> uRoot = subq.from(MgProductoUnidadSuplidor.class);
+    subq.select(cb.literal(1))
+        .where(
+            cb.and(
+                cb.equal(uRoot.get("productoId"), root),
+                cb.equal(uRoot.get("disponibleEnCompra"), true)));
+    p.add(cb.exists(subq));
+    if (criteria.getNombreProducto() != null && !criteria.getNombreProducto().isBlank())
+      p.add(
+          cb.like(
+              cb.lower(root.get("nombreProducto")),
+              "%" + criteria.getNombreProducto().toLowerCase(Locale.ROOT) + "%"));
+    if (criteria.getCodigoBarra() != null && !criteria.getCodigoBarra().isBlank())
+      p.add(cb.equal(root.get("codigoBarra"), criteria.getCodigoBarra()));
+    if (criteria.getId() != null) p.add(cb.equal(root.get("id"), criteria.getId()));
+    return p;
   }
 
   @Override
