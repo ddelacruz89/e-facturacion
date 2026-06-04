@@ -5,9 +5,12 @@ import com.braintech.eFacturador.dto.facturacion.PrecioVentaDto;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
 import com.braintech.eFacturador.security.Accion;
 import com.braintech.eFacturador.security.RequierePermiso;
+import com.braintech.eFacturador.services.ReportServices;
 import com.braintech.eFacturador.services.facturacion.FacturacionServices;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +19,20 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class FacturaController {
   private final FacturacionServices facturacionServices;
+  private final ReportServices reportServices;
+
+  @GetMapping("reporte/{id}")
+  public ResponseEntity<?> getReporteFactura(@PathVariable Integer id) {
+
+    final byte[] file = reportServices.getFacturaById(id);
+    final HttpHeaders headers = new HttpHeaders();
+    headers.add("Content-Disposition", "attachment; filename=" + "facturas.pdf");
+    return ResponseEntity.ok()
+        .headers(headers)
+        .contentLength(file.length)
+        .contentType(MediaType.parseMediaType("application/pdf"))
+        .body(file);
+  }
 
   // Get all active records (estadoId = 'ACT')
   @GetMapping

@@ -2,6 +2,7 @@ package com.braintech.eFacturador.services.facturacion;
 
 import com.braintech.eFacturador.dao.despacho.DeRutaZonaRepository;
 import com.braintech.eFacturador.dao.facturacion.FacturaDao;
+import com.braintech.eFacturador.dao.facturacion.ReciboDao;
 import com.braintech.eFacturador.dao.general.*;
 import com.braintech.eFacturador.dto.facturacion.IFacturaResumen;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO;
@@ -10,6 +11,7 @@ import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.facturacionelectronica.services.ECFServices;
 import com.braintech.eFacturador.jpa.despacho.DeRutaZona;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
+import com.braintech.eFacturador.jpa.facturacion.MfRecibos;
 import com.braintech.eFacturador.jpa.general.MgBarrioParaje;
 import com.braintech.eFacturador.jpa.general.MgCliente;
 import com.braintech.eFacturador.jpa.general.MgMunicipio;
@@ -20,7 +22,6 @@ import com.braintech.eFacturador.util.LocalDateZone;
 import com.braintech.eFacturador.util.PageableUtils;
 import com.braintech.eFacturador.util.TenantContext;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
@@ -40,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class FacturacionServices implements IFacturacion {
   private final FacturaDao facturaDao;
+  private final ReciboDao reciboDao;
   private final TenantContext tenantContext;
   private final SecuenciasDao secuenciasDao;
   private final ECFServices ecfServices;
@@ -127,7 +129,21 @@ public class FacturacionServices implements IFacturacion {
     entity.setItbis(BigDecimal.valueOf(montoItbis.getSum()));
     entity.setDescuento(BigDecimal.valueOf(montoDescuento.getSum()));
     entity.sumTotal();
+    MfRecibos recibos = entity.getRecibo();
     MfFactura save = facturaDao.save(entity);
+    if (recibos != null) {
+      int nextSecuenciaRec =
+          secuenciasDao.getNextSecuencia(
+              empresaId, MfRecibos.class.getSimpleName().toUpperCase(Locale.ROOT));
+      recibos.setFacturaId(save.getId());
+      recibos.setEmpresaId(empresaId);
+      recibos.setSecuencia(nextSecuenciaRec);
+      recibos.setActivo(true);
+      recibos.setUsuarioReg(username);
+      recibos.setFechaReg(LocalDateZone.toLocalDate());
+      reciboDao.save(recibos);
+    }
+
     ecfServices.senderEcfFactura(save);
     return save;
   }

@@ -59,6 +59,18 @@ dependencies {
 	// Storage backends para Recibo de Entrega
 	implementation 'software.amazon.awssdk:s3:2.26.12'
 	implementation 'com.azure:azure-storage-blob:12.27.0'
+
+	//JasperReports
+	implementation 'net.sf.jasperreports:jasperreports:6.21.3'
+	implementation 'net.sf.jasperreports:jasperreports-functions:6.21.3'
+	implementation 'net.sf.jasperreports:jasperreports-fonts:6.21.3'
+	implementation 'com.lowagie:itext:4.2.2'
+	implementation group: 'com.itextpdf', name: 'itextpdf', version: '5.5.13.4'
+	implementation group: 'org.apache.poi', name: 'poi', version: '5.0.0'
+	implementation 'net.sf.barcode4j:barcode4j:2.1'
+	implementation 'com.google.zxing:core:3.5.3'
+	implementation 'com.google.zxing:javase:3.5.3'
+	implementation 'org.apache.xmlgraphics:batik-bridge:1.19'
 }
 
 spotbugs {

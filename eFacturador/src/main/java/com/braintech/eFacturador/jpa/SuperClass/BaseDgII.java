@@ -1,6 +1,5 @@
 package com.braintech.eFacturador.jpa.SuperClass;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
 import java.io.Serial;
@@ -41,7 +40,6 @@ public class BaseDgII extends BaseEntitySucursal implements Serializable {
   @Column(name = "rnc")
   private String rnc;
 
-  @JsonProperty("tipoCfId")
   @Column(name = "tipo_cf_id")
   private String tipoComprobanteId;
 

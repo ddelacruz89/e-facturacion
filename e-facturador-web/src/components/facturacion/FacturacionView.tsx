@@ -17,12 +17,12 @@ import ModalSearchClientes from "../../customers/search/ModalSearchClientes";
 import { Cliente } from "../../models/cliente/Cliente";
 import ModalSearchFacturas from "../../customers/search/ModalSearchFacturas";
 import ModalReciboPago from "./modals/ModalReciboPago";
-import { AccountBalanceWallet } from "@mui/icons-material";
+import { CallReportById } from "../../customers/search/CallReport";
 
 export default function FacturacionView() {
 
     const [save, setSave] = useState<boolean>(false)
-    const [openModalReciboPago, setOpenModalReciboPago] = useState<boolean>(true)
+    const [openModalReciboPago, setOpenModalReciboPago] = useState<boolean>(false)
     const facturaForm = useForm<Factura>({
         defaultValues: {
             usuarioReg: "",
@@ -241,13 +241,21 @@ export default function FacturacionView() {
     function handleSelectTipoComprobante(selected: any): void {
         setValue("tipoComprobanteId", selected.tipoComprobante)
     }
+    const handleGenerateReport = () => {
+        const id = Number(watch("id"));
+        if (id > 0) {
+            CallReportById("reporte", id);
+        }
+    }
+
 
     return (
 
         <main style={{ display: "flex", flexDirection: "row", gap: 20, padding: 10 }}>
 
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
-            <form style={{ flexGrow: 1 }} onSubmit={handleSubmit(onSubmit, onError)}>
+
+            <form style={{ flexGrow: 1, minWidth: "50%" }} onSubmit={handleSubmit(onSubmit, onError)}>
                 <ModalReciboPago facturaForm={facturaForm} isOpen={openModalReciboPago} onClose={() => { setOpenModalReciboPago(false) }} onConfirm={() => {
                     handleSubmit(onSubmit, onError)();
                     setOpenModalReciboPago(false)
@@ -272,6 +280,9 @@ export default function FacturacionView() {
                     }
                     <Button variant="contained" color="primary" onClick={handleClean}>
                         <ArticleIcon /> Nuevo
+                    </Button>
+                    <Button variant="contained" color="primary" onClick={handleGenerateReport}>
+                        <ArticleIcon /> Reporte
                     </Button>
                 </ActionBar>
                 <fieldset disabled={save}>

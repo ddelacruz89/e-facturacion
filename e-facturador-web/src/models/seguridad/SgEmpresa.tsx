@@ -7,4 +7,5 @@ export interface SgEmpresa {
     correo: string;
     direccion: string;
     logo?: Uint8Array;
+    reportePath: string;
 }
