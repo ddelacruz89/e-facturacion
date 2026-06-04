@@ -47,6 +47,7 @@ const EmpresaView = () => {
             correo: "",
             direccion: "",
             logo: null,
+            reportePath: "",
         },
     });
 
@@ -69,6 +70,7 @@ const EmpresaView = () => {
             setValue("correo", data.correo);
             setValue("direccion", data.direccion);
             setValue("logo", data.logo);
+            setValue("reportePath", data.reportePath);
         });
         getSucursales().then(setSucursales).catch(() => setSucursales([]));
     }, []);
@@ -83,6 +85,7 @@ const EmpresaView = () => {
                 setValue("correo", response.correo);
                 setValue("direccion", response.direccion);
                 setValue("logo", response.logo);
+                setValue("reportePath", response.reportePath);
                 alert("Datos guardados correctamente");
             })
             .catch(() => alert("Error al guardar los datos"));
@@ -103,7 +106,7 @@ const EmpresaView = () => {
 
         promise
             .then(() => {
-                getSucursales().then(setSucursales).catch(() => {});
+                getSucursales().then(setSucursales).catch(() => { });
                 resetSucursal(SUCURSAL_DEFAULTS);
             })
             .catch(() => alert("Error al guardar la sucursal"));
@@ -242,6 +245,16 @@ const EmpresaView = () => {
                             name="direccion"
                             control={control}
                             error={errors.direccion}
+                            rules={{ required: "Campo requerido", minLength: { value: 3 }, maxLength: { value: 250 } }}
+                        />
+                    </Grid>
+                    <Grid container spacing={2}>
+                        <AlphanumericInput
+                            label="Ruta Reporte"
+                            size={12}
+                            name="reportePath"
+                            control={control}
+                            error={errors.reportePath}
                             rules={{ required: "Campo requerido", minLength: { value: 3 }, maxLength: { value: 250 } }}
                         />
                     </Grid>

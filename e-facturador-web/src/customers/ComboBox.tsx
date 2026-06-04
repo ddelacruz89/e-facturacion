@@ -234,7 +234,6 @@ export function RetencionesSelect({ handleGetItem, name, disabled, readOnly, lab
                                         key={option.id}
                                         value={option.id}>{option.nombre}</MenuItem>)
                             }
-
                         </Select>
                         {error && <FormHelperText>{error.message}</FormHelperText>}
                     </FormControl>

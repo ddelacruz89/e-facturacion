@@ -1,18 +1,83 @@
-li {
-    list-style: none;
+/* Contenedor con scrollbar personalizado */
+.product-list-container {
+  overflow-y: auto;
+  max-height: calc(100vh - 180px);
+  padding-right: 4px;
 }
 
-li:hover {
-    background-color: rgb(42, 54, 87);
-    cursor: pointer;
-    color: white;
-    user-select: none;
+/* Estilos de la barra de desplazamiento */
+.product-list-container::-webkit-scrollbar {
+  width: 6px;
 }
 
-li:active {
-    background-color: rgb(99, 106, 126);
+.product-list-container::-webkit-scrollbar-track {
+  background: transparent;
 }
-p {
-    margin: 0;
-    user-select: none;
+
+.product-list-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+
+.product-list-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Estilos de las tarjetas de producto */
+.product-item-card {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background-color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px !important;
+  margin-bottom: 8px;
+}
+
+.product-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.1) !important;
+  border-color: #1976d2 !important; /* Color primario MUI */
+  background-color: rgba(25, 118, 210, 0.02) !important;
+}
+
+.product-item-card:active {
+  transform: translateY(0);
+  background-color: rgba(25, 118, 210, 0.06) !important;
+}
+
+/* Efecto hover especial para mostrar el icono de agregar */
+.product-item-card .add-icon-indicator {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  color: #1976d2;
+}
+
+.product-item-card:hover .add-icon-indicator {
+  opacity: 1;
+}
+
+/* Degradado para el avatar de secuencia */
+.product-avatar-gradient {
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);
+}
+
+/* Animación sutil de entrada para la lista */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInUp 0.3s ease forwards;
 }

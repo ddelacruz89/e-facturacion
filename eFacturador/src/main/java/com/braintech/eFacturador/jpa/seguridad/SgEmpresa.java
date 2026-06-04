@@ -60,8 +60,11 @@ public class SgEmpresa implements Serializable {
   @Column(name = "logo")
   private byte[] logo;
 
-  @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
-  private java.util.List<SgSucursal> sucursales = new java.util.ArrayList<>();
+  @Column(name = "reporte_path")
+  private String reportePath;
+
+  //  @OneToMany(mappedBy = "empresa", cascade = CascadeType.ALL, orphanRemoval = true)
+  //  private java.util.List<SgSucursal> sucursales = new java.util.ArrayList<>();
 
   @Transient
   public String getClienteId() {

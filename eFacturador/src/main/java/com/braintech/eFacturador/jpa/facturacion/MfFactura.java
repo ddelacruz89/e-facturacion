@@ -69,7 +69,7 @@ public class MfFactura extends BaseDgII implements Serializable {
   @OrderBy("id asc")
   private List<MfFacturaDetalle> detalles;
 
-  @Transient private MfRecibos recibos;
+  @Transient private MfRecibos recibo;
 
   public MfFactura(int i) {
     super(i);

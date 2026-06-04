@@ -10,6 +10,7 @@ export interface SgEmpresa {
     correo: string;
     direccion: string;
     logo?: number[] | null; // se puede ajustar según cómo manejes los archivos binarios
+    reportePath: string;
 }
 export interface SgUsuario {
     username: string;

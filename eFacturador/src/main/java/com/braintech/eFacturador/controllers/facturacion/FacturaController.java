@@ -1,13 +1,16 @@
 package com.braintech.eFacturador.controllers.facturacion;
 
 import com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO;
+import com.braintech.eFacturador.dto.facturacion.PrecioVentaDto;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
-import com.braintech.eFacturador.models.IProductoVenta;
 import com.braintech.eFacturador.security.Accion;
 import com.braintech.eFacturador.security.RequierePermiso;
+import com.braintech.eFacturador.services.ReportServices;
 import com.braintech.eFacturador.services.facturacion.FacturacionServices;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +19,20 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class FacturaController {
   private final FacturacionServices facturacionServices;
+  private final ReportServices reportServices;
+
+  @GetMapping("reporte/{id}")
+  public ResponseEntity<?> getReporteFactura(@PathVariable Integer id) {
+
+    final byte[] file = reportServices.getFacturaById(id);
+    final HttpHeaders headers = new HttpHeaders();
+    headers.add("Content-Disposition", "attachment; filename=" + "facturas.pdf");
+    return ResponseEntity.ok()
+        .headers(headers)
+        .contentLength(file.length)
+        .contentType(MediaType.parseMediaType("application/pdf"))
+        .body(file);
+  }
 
   // Get all active records (estadoId = 'ACT')
   @GetMapping
@@ -42,14 +59,14 @@ public class FacturaController {
     return ResponseEntity.ok(factura);
   }
 
-  @RequierePermiso(menuUrl = "/facturacion/facturas", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/facturacion", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MfFactura> create(@RequestBody MfFactura factura) {
     MfFactura saved = facturacionServices.create(factura);
     return ResponseEntity.ok(saved);
   }
 
-  @RequierePermiso(menuUrl = "/facturacion/facturas", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/facturacion", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MfFactura> update(
       @PathVariable Integer id, @RequestBody MfFactura factura) {
@@ -58,7 +75,7 @@ public class FacturaController {
   }
 
   // Soft delete - changes estadoId to 'INA'
-  @RequierePermiso(menuUrl = "/facturacion/facturas", accion = Accion.ELIMINAR)
+  @RequierePermiso(menuUrl = "/facturacion", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> disable(@PathVariable Integer id) {
     facturacionServices.disable(id);
@@ -66,8 +83,8 @@ public class FacturaController {
   }
 
   @GetMapping("/productos/ventas")
-  public ResponseEntity<List<IProductoVenta>> getProductosVentas() {
-    List<IProductoVenta> productoVenta = facturacionServices.getProductoVenta();
+  public ResponseEntity<List<PrecioVentaDto>> getProductosVentas() {
+    List<PrecioVentaDto> productoVenta = facturacionServices.getProductoVenta();
     return ResponseEntity.ok(productoVenta);
   }
 
