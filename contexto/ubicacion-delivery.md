@@ -20,7 +20,7 @@ Provincia  (32 — incluye Distrito Nacional como cod '01')
                     └── Sub-barrio  (5,782 — hijo del barrio; hereda precio del padre)
 ```
 
-**Regla de precio:** `precio_envio` vive únicamente en `mg_barrio_paraje`. Si el cliente selecciona un sub-barrio, el sistema lee el precio del barrio padre.
+**Regla de precio:** Los precios de envío son **por tenant** en `despacho.de_precio_envio` (ver módulo Precios de Envío en contexto/despacho.md). El campo `precio_envio` en `mg_barrio_paraje` es legado global y no se usa activamente. El módulo de administración permite configurar: precio base por barrio (aplica a sub-barrios sin precio propio) + precio específico por sub-barrio (tiene preferencia).
 
 **Sub-barrio:** solo 5,782 de los 12,808 barrios tienen sub-barrios — son principalmente zonas urbanas densas (DN, Santiago). El selector solo muestra el campo sub-barrio si el barrio tiene hijos en la DB.
 
@@ -99,7 +99,10 @@ TRUNCATE general.mg_sub_barrio;
 | `cod_one` | VARCHAR(13) UNIQUE | prv+mun+dm+sec+brr+sub |
 | `cod_sub` | CHAR(2) | '01', '02'… |
 | `nombre` | VARCHAR(150) | |
-| `barrio_id` | INTEGER FK → `mg_barrio_paraje` | Precio se hereda desde aquí |
+| `barrio_id` | INTEGER FK → `mg_barrio_paraje` | FK al barrio padre |
+| `precio_envio` | DECIMAL(10,2) | Nullable — si NULL hereda `mg_barrio_paraje.precio_envio` |
+
+Migración: `db-migrations/add_precio_envio_to_sub_barrio.sql`
 
 ### Campos en `general.mg_cliente` (nuevos, reemplazan los viejos)
 
@@ -133,7 +136,7 @@ cod_municipio_cabecera, cod_municipio, sector_paraje_id, sector, ciudad, direcci
 
 - `MgMunicipioResumenDTO` — `id, codOne, nombre, codProvincia, parentId, esDm`
 - `MgBarrioParajeResumenDTO` — `id, nombre, seccionId, precioEnvio`
-- `MgSubBarrioResumenDTO` — `id, codSub, nombre, barrioId`
+- `MgSubBarrioResumenDTO` — `id, codSub, nombre, barrioId, precioEnvio`
 - `MgMunicipioSearchCriteria` — `codProvincia, nombre, esDm, parentId, page, size`
 
 ### DAOs

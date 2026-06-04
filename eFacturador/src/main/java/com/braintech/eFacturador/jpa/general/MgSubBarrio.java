@@ -28,7 +28,6 @@ public class MgSubBarrio implements Serializable {
   @Column(name = "nombre", length = 150, nullable = false)
   private String nombre;
 
-  /** FK al barrio padre. El precio se hereda de mg_barrio_paraje.precio_envio */
   @Column(name = "barrio_id", nullable = false)
   private Integer barrioId;
 }

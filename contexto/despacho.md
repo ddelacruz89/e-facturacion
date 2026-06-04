@@ -459,7 +459,7 @@ Botones de estado — paleta **tetrádica**:
 
 ## Seguridad (`seguridad.sg_menu` / `seguridad.sg_permiso`)
 
-Módulo `DE` — 7 menús registrados:
+Módulo `DE` — 8 menús registrados:
 
 | `url` | `menu` | `orden` | `tipo_menu_id` | Empresas |
 |---|---|---|---|---|
@@ -470,6 +470,7 @@ Módulo `DE` — 7 menús registrados:
 | `/despacho/tipo-vehiculo` | Tipos de Vehículo | 5 | `P` | todas |
 | `/despacho/config/recibo` | Config. Recibo | 6 | `P` | todas |
 | `/admin/feature-plan` | Admin Features | 7 | `P` | solo empresa_id = 1 |
+| `/despacho/precios-envio` | Precios de Envío | 8 | `P` | todas |
 
 Scripts de migración:
 - `db-migrations/create_despacho_module.sql` — schema + tablas despacho
@@ -478,6 +479,62 @@ Scripts de migración:
 - `db-migrations/add_envio_to_mf_factura.sql` — campo `envio` en `facturacion.mf_factura`
 - `db-migrations/create_feature_plan.sql` — tablas `sg_feature_plan` y `sg_empresa_feature_config` en schema `seguridad`
 - `db-migrations/add_recibo_url_to_orden.sql` — campo `recibo_url` en `despacho.de_orden_despacho`
+- `db-migrations/create_precio_envio.sql` — tabla `despacho.de_precio_envio` con índices únicos parciales
+- `db-migrations/insert_menu_precio_envio.sql` — menú y permisos Precios de Envío
+
+---
+
+## Precios de Envío por Zona — módulo multi-tenant
+
+Cada empresa configura sus propios precios de entrega por barrio y sub-barrio. Las tablas geográficas (`mg_barrio_paraje`, `mg_sub_barrio`) son catálogos globales sin precio; los precios viven en `despacho.de_precio_envio`.
+
+### BD — `despacho.de_precio_envio`
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `id` | SERIAL PK | |
+| `empresa_id` | INTEGER | Tenant |
+| `barrio_id` | INTEGER FK → `mg_barrio_paraje` | NOT NULL — barrio al que aplica |
+| `sub_barrio_id` | INTEGER FK → `mg_sub_barrio` | **Nullable** — si NULL el precio aplica a todo el barrio |
+| `precio` | DECIMAL(10,2) | |
+| `fecha_reg` | TIMESTAMP | |
+| `usuario_reg` | VARCHAR(100) | |
+
+Restricciones de unicidad con índices parciales:
+- `(empresa_id, barrio_id) WHERE sub_barrio_id IS NULL` — un precio base por barrio
+- `(empresa_id, sub_barrio_id) WHERE sub_barrio_id IS NOT NULL` — un precio por sub-barrio
+
+**Regla de prioridad:** sub-barrio con precio propio → usa ese. Sub-barrio sin precio → hereda el del barrio padre. Barrio sin precio → sin precio de envío configurado.
+
+### Backend
+
+| Clase | Paquete |
+|---|---|
+| `DePrecioEnvio` | `jpa/despacho/` |
+| `DePrecioEnvioDTO` | `dto/despacho/` — id, barrioId, barrioNombre, subBarrioId, subBarrioNombre, precio |
+| `DePrecioRequestDTO` | `dto/despacho/` — `{ precio }` para PUT |
+| `DePrecioEnvioRepository` | `dao/despacho/` — JpaRepository con `@Query` JPQL que resuelve nombres con subqueries |
+| `DePrecioEnvioService` / `DePrecioEnvioServiceImpl` | `interfaces+services/despacho/` |
+| `DePrecioEnvioController` | `controllers/despacho/` — `api/v1/despacho/precios-envio` |
+
+Endpoints:
+- `GET /por-municipio/{municipioId}` — precios configurados del tenant para los barrios de un municipio
+- `GET /por-barrio/{barrioId}` — precio del barrio + sub-barrios (para DireccionSelector)
+- `GET /efectivo?barrioId=X&subBarrioId=Y` — **precio efectivo en una sola llamada**: sub-barrio si tiene precio propio → barrio como fallback → `0` si ninguno. `subBarrioId` es opcional.
+- `PUT /barrio/{barrioId}` → body `{ precio }` — upsert precio base del barrio
+- `PUT /sub-barrio/{subBarrioId}` → body `{ precio }` — upsert precio específico del sub-barrio
+- `DELETE /barrio/{barrioId}` — elimina precio del barrio
+- `DELETE /sub-barrio/{subBarrioId}` — elimina precio del sub-barrio
+
+El service lee `empresaId` de `TenantContext`. El upsert usa `findByEmpresaIdAndBarrioIdAndSubBarrioIdIsNull` / `findByEmpresaIdAndSubBarrioId` para crear o actualizar según exista.
+
+### Frontend
+
+- `src/apis/DePrecioEnvioController.tsx` — funciones API
+- `src/components/despacho/DePrecioEnvioView.tsx` — selector Provincia → Municipio → tabla de barrios con precio inline; filas expandibles para sub-barrios
+- `PrecioInput` es un componente con estado local: tipear NO propaga al padre → sin lag con muchos barrios
+- Los precios del municipio se cargan una sola vez en `preciosTodos` y se reutilizan al expandir sub-barrios (sin segunda llamada al API)
+- Sub-barrio muestra "Hereda RD$X" si el barrio padre tiene precio pero el sub-barrio no
 
 ---
 
