@@ -2,6 +2,7 @@ package com.braintech.eFacturador.controllers.facturacion;
 
 import com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO;
 import com.braintech.eFacturador.dto.facturacion.PrecioVentaDto;
+import com.braintech.eFacturador.facturacionelectronica.models.FacturaValidateResponse;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
 import com.braintech.eFacturador.security.Accion;
 import com.braintech.eFacturador.security.RequierePermiso;
@@ -57,6 +58,12 @@ public class FacturaController {
   public ResponseEntity<MfFactura> getByNumeroFactura(@PathVariable Integer numeroFactura) {
     MfFactura factura = facturacionServices.getByNumeroFactura(numeroFactura);
     return ResponseEntity.ok(factura);
+  }
+
+  @GetMapping("/sender/{id}")
+  public ResponseEntity<FacturaValidateResponse> getSender(@PathVariable Integer id) {
+    FacturaValidateResponse facturaValidateResponse = facturacionServices.senderFacturaEcf(id);
+    return ResponseEntity.ok(facturaValidateResponse);
   }
 
   @RequierePermiso(menuUrl = "/facturacion", accion = Accion.ESCRIBIR)

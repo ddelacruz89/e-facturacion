@@ -376,19 +376,30 @@ public class ECFServices implements IECF {
   //    }
 
   @Override
-  public void senderEcfFactura(MfFactura factura) {
+  public FacturaValidateResponse senderEcfFactura(MfFactura factura) {
     SgEmpresa empresa = empresaServices.getCurrent().content();
     if (!empresa.getApiKeyActivo()) {
       log.warn(NO_ENVIAR_FACTURA_ELECTRONICA_DGII_CONFIG_MISSING_OR_STATUS_FALSE);
-      return;
+      return null;
     }
     log.info("Enviando Factura");
     if (factura.getAprobada()) {
       log.info("enviada anteriormente Factura");
-      return;
+      return null;
     }
     log.info("Comenza envio Factura");
     List<MfFacturaDetalle> detalles = factura.getDetalles();
+    DoubleSummaryStatistics ItbisRetenido =
+        detalles.stream()
+            .filter(
+                row ->
+                    (row.getRetencionItbis() != null && row.getRetencionItbis().doubleValue() > 0))
+            .collect(Collectors.summarizingDouble(row -> row.getRetencionItbis().doubleValue()));
+    DoubleSummaryStatistics isrRetenido =
+        detalles.stream()
+            .filter(
+                row -> (row.getRetencionIsr() != null && row.getRetencionIsr().doubleValue() > 0))
+            .collect(Collectors.summarizingDouble(row -> row.getRetencionIsr().doubleValue()));
 
     Map<Integer, DoubleSummaryStatistics> collect =
         detalles.stream()
@@ -456,7 +467,7 @@ public class ECFServices implements IECF {
     Documento documento =
         Documento.builder()
             .tipoeCF(String.valueOf(factura.getTipoComprobanteId()))
-            //            .fechaVencimientoSecuencia(factura.getFechaVencimiento())
+            .fechaVencimientoSecuencia(factura.getFechaVencimiento())
             .indicadorMontoGravado(indicadorMontoGravado)
             .encf(factura.getNcf())
             .tipoIngresos("01")
@@ -617,6 +628,11 @@ public class ECFServices implements IECF {
       montoItbisTotal = BigDecimal.ZERO;
     }
 
+    BigDecimal ITBISRetenidoTotal =
+        BigDecimal.valueOf(ItbisRetenido.getSum()).setScale(2, RoundingMode.HALF_UP);
+    BigDecimal ISRRetenidoTotal =
+        BigDecimal.valueOf(isrRetenido.getSum()).setScale(2, RoundingMode.HALF_UP);
+
     Totales totales =
         Totales.builder()
             .montoTotal(montoTotal)
@@ -633,6 +649,8 @@ public class ECFServices implements IECF {
             .montoExento(montoExento)
             .montoNoFacturable(montoNoFacturable)
             .montoGravadoTotal(montoGravadoTotal)
+            .totalITBISRetenido(ITBISRetenidoTotal)
+            .totalISRRetencion(ISRRetenidoTotal)
             .build();
     Encabezado encabezado =
         Encabezado.builder()
@@ -670,8 +688,10 @@ public class ECFServices implements IECF {
           factura.getQrUrl(),
           factura.getTrackId());
       log.info("Fin envio Factura");
+      return facturaValidateResponse;
     } catch (JsonProcessingException e) {
-      throw new RuntimeException(e);
+      log.error(e.getMessage());
+      return null;
     }
   }
 

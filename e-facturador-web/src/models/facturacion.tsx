@@ -60,6 +60,7 @@ export interface Factura {
     rnc?: string;
     tipoComprobanteId: string;
     ncf?: string;
+    nota?: string;
     id?: number;
     numeroFactura?: number;
     tipoFacturaId: number;

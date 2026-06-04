@@ -23,6 +23,15 @@ export function getFacturaById(id: number): Promise<Factura | null> {
             return null;
         });
 }
+export function getFacturaSender(id: number): Promise<any | null> {
+    return apiClient
+        .get(`${api}/sender/${id}`)
+        .then((x: { data: any }) => x.data).catch((error) => {
+            const response: DataNotFound = error.response.data.error;
+            console.error("Mensaje:", response.message);
+            return null;
+        });
+}
 
 export function getByNumeroFactura(numero: number): Promise<Factura | null> {
     return apiClient

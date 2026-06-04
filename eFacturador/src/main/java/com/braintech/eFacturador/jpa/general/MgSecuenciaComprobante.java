@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.general;
 
+import com.braintech.eFacturador.enums.StatusSecuenciaCF;
 import com.braintech.eFacturador.jpa.SuperClass.BaseEntityPk;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,6 +30,10 @@ public class MgSecuenciaComprobante extends BaseEntityPk {
   @Column(name = "secuencia_final")
   @NotBlank
   Integer secuenciaFinal;
+
+  @Column(name = "status")
+  @NotBlank
+  StatusSecuenciaCF status = StatusSecuenciaCF.INACTIVO;
 
   @Column(name = "fecha_valida")
   LocalDate fechaIValida;

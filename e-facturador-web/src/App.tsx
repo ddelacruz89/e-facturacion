@@ -84,8 +84,8 @@ const AppRoutes = () => {
                     <Route path="tipo/comprobante" element={<TipoComprobanteView />} />
                     <Route path="facturacion" element={<FacturacionView />} />
                     <Route path="producto" element={<ProductoView />} />
-                    <Route path="categoria" element={<CategoriaView />} />
-                    <Route path="unidad" element={<UnidadView />} />
+                    <Route path="producto/categoria" element={<CategoriaView />} />
+                    <Route path="producto/unidad" element={<UnidadView />} />
                     <Route path="paquete" element={<PaqueteView />} />
                     <Route path="suplidores" element={<SuplidorView />} />
                     <Route path="/inventario/cotizacion" element={<CotizacionView />} />
@@ -106,12 +106,12 @@ const AppRoutes = () => {
                     <Route path="alertas" element={<NotificacionesView />} />
                     <Route path="inventario/requisicion" element={<RequisicionView />} />
                     <Route path="inventario/reportes" element={<ReportesInventarioView />} />
-                    <Route path="aprobaciones-config"  element={<AprobacionConfigView />} />
+                    <Route path="aprobaciones-config" element={<AprobacionConfigView />} />
                     <Route path="aprobaciones-bandeja" element={<AprobacionBandejaView />} />
                     <Route path="despacho/tipo-vehiculo" element={<MenuRoute menuUrl="/despacho/tipo-vehiculo"><DeTipoVehiculoView /></MenuRoute>} />
-                    <Route path="despacho/vehiculos"    element={<MenuRoute menuUrl="/despacho/vehiculos"><DeVehiculoView /></MenuRoute>} />
-                    <Route path="despacho/ordenes"      element={<MenuRoute menuUrl="/despacho/ordenes"><DeOrdenDespachoView /></MenuRoute>} />
-                    <Route path="despacho/rutas"        element={<MenuRoute menuUrl="/despacho/rutas"><DeRutaEntregaView /></MenuRoute>} />
+                    <Route path="despacho/vehiculos" element={<MenuRoute menuUrl="/despacho/vehiculos"><DeVehiculoView /></MenuRoute>} />
+                    <Route path="despacho/ordenes" element={<MenuRoute menuUrl="/despacho/ordenes"><DeOrdenDespachoView /></MenuRoute>} />
+                    <Route path="despacho/rutas" element={<MenuRoute menuUrl="/despacho/rutas"><DeRutaEntregaView /></MenuRoute>} />
                     <Route path="despacho/mis-entregas" element={<MenuRoute menuUrl="/despacho/mis-entregas"><MisEntregasView /></MenuRoute>} />
                     <Route path="despacho/config/recibo" element={<MenuRoute menuUrl="/despacho/config/recibo"><ReciboEntregaConfigView /></MenuRoute>} />
                     <Route path="despacho/precios-envio" element={<MenuRoute menuUrl="/despacho/precios-envio"><DePrecioEnvioView /></MenuRoute>} />
