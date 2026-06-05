@@ -1,13 +1,11 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseDgII;
+import com.braintech.eFacturador.jpa.SuperClass.BaseEntitySucursal;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
-import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -22,50 +20,54 @@ import lombok.Setter;
     generator = ObjectIdGenerators.PropertyGenerator.class,
     property = "id")
 @EqualsAndHashCode(callSuper = false)
-public class MfCotizacion extends BaseDgII implements Serializable {
-  @Serial private static final long serialVersionUID = 1L;
+public class MfCotizacion extends BaseEntitySucursal implements Serializable {
 
-  @Column(name = "tipo_factura_id")
-  private Integer tipoFacturaId;
+  @Column(name = "activo")
+  private Boolean activo;
 
-  @Column(name = "retencion_id")
-  private String retenciionId;
-
-  @Column(name = "cliente_id")
-  private Integer clienteId;
-
-  @Column(name = "fecha_limite_pago")
-  private LocalDate fechaLimitePago;
+  @Column(name = "empresa_id")
+  private Integer empresaId;
 
   @Column(name = "razon_social")
   private String razonSocial;
 
+  @Column(name = "secuencia")
+  private Integer secuencia;
+
   @Column(name = "rnc")
   private String rnc;
 
-  @Column(name = "estado_id")
-  private String estadoId;
+  @Column(name = "tipo_comprobante_id")
+  private String tipoComprobanteId;
 
-  @Column(name = "monto")
+  @Column(name = "nota")
+  private String nota;
+
+  @Column(name = "cliente_id")
+  private Integer clienteId;
+
+  @Column(name = "monto", precision = 18, scale = 2)
   private BigDecimal monto;
 
-  @Column(name = "descuento")
+  @Column(name = "descuento", precision = 18, scale = 2)
   private BigDecimal descuento;
 
-  @Column(name = "itbis")
+  @Column(name = "itbis", precision = 18, scale = 2)
   private BigDecimal itbis;
 
-  @Column(name = "retencion_itbis")
+  @Column(name = "retencion_id")
+  private Integer retencionId;
+
+  @Column(name = "retencion_itbis", precision = 18, scale = 2)
   private BigDecimal retencionItbis;
 
-  @Column(name = "retencion_isr")
+  @Column(name = "retencion_isr", precision = 18, scale = 2)
   private BigDecimal retencionIsr;
 
-  @Column(name = "total")
+  @Column(name = "total", precision = 18, scale = 2)
   private BigDecimal total;
 
-  @OneToMany(cascade = CascadeType.ALL, mappedBy = "cotizacionId", fetch = FetchType.LAZY)
-  @OrderBy("id asc")
+  @OneToMany(mappedBy = "cotizacion", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<MfCotizacionDetalle> detalles;
 
   public MfCotizacion(int i) {

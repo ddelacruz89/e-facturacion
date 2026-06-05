@@ -60,6 +60,9 @@ public class SgEmpresa implements Serializable {
   @Column(name = "logo")
   private byte[] logo;
 
+  @Column(name = "tipo_retencion")
+  private Integer tipoRetencion = 0;
+
   @Column(name = "reporte_path")
   private String reportePath;
 

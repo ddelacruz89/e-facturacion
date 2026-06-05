@@ -6,7 +6,7 @@ import Grid from "@mui/material/Grid";
 import { TextInput, GridRow, TableComponentFacturacion } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
 import { RetencionesSelect, TipoComprobanteSelect, TipoFacturaSelect } from "../../customers/ComboBox";
-import { saveFactura, getFacturaById } from "../../apis/FacturaController";
+import { saveFactura, getFacturaById, getFacturaSender } from "../../apis/FacturaController";
 import ListaProductoVenta from "./ListaProductoVenta";
 import { ProductoVenta } from "../../models/producto/productoVenta";
 import { detalleItbis, formatCurrency } from "../../utils/FacturaUtils";
@@ -46,6 +46,7 @@ export default function FacturacionView() {
             total: 0,
             detalles: [],
             envio: false,
+            nota: "",
         },
     });
 
@@ -144,6 +145,7 @@ export default function FacturacionView() {
         setValue("activo", true);
         setValue("detalles", []);
         setValue("envio", false);
+        setValue("nota", "");
         setSave(false)
     };
 
@@ -227,6 +229,7 @@ export default function FacturacionView() {
             setValue("total", response?.total || 0);
             setValue("detalles", response?.detalles || []);
             setValue("envio", response?.envio || false);
+            setValue("nota", response?.nota || "");
         });
     }
 
@@ -245,6 +248,15 @@ export default function FacturacionView() {
         const id = Number(watch("id"));
         if (id > 0) {
             CallReportById("reporte", id);
+        }
+    }
+
+    function handleResend() {
+        const id = Number(watch("id"));
+        if (id > 0) {
+            getFacturaSender(id).then((response) => {
+                console.log(response);
+            });
         }
     }
 
@@ -281,6 +293,9 @@ export default function FacturacionView() {
                     <Button variant="contained" color="primary" onClick={handleClean}>
                         <ArticleIcon /> Nuevo
                     </Button>
+                    {/* <Button variant="contained" color="warning" onClick={handleResend}>
+                        <ArticleIcon /> Reenviar
+                    </Button> */}
                     <Button variant="contained" color="primary" onClick={handleGenerateReport}>
                         <ArticleIcon /> Reporte
                     </Button>
@@ -308,6 +323,7 @@ export default function FacturacionView() {
                                 control={control}
                                 name="tipoComprobanteId"
                                 label="Tipo Comprobante ID"
+                                categoria="F"
                                 rules={{
                                     required: "Debe seleccionar un tipo de comprobante",
                                     validate: (value: any) =>
@@ -410,6 +426,22 @@ export default function FacturacionView() {
                                     label="Para Envío"
                                 />
                             </Grid>
+                        </GridRow>
+                        <GridRow>
+                            <TextInput
+                                disabled={save}
+                                control={control}
+                                name="nota"
+                                label="Nota"
+                                error={errors.nota}
+                                rules={{
+                                    maxLength: {
+                                        value: 250,
+                                        message: "Debe tener menos de 250 caracteres",
+                                    },
+                                }}
+                                size={6}
+                            />
                         </GridRow>
                     </Grid>
                     <Divider>Listado</Divider>

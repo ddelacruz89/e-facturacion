@@ -11,6 +11,8 @@ export interface SgEmpresa {
     direccion: string;
     logo?: number[] | null; // se puede ajustar según cómo manejes los archivos binarios
     reportePath: string;
+    apiKeyActivo: boolean;
+    apikey?: string;
 }
 export interface SgUsuario {
     username: string;

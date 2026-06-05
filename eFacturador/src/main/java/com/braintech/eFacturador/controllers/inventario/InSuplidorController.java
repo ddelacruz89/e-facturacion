@@ -38,20 +38,20 @@ public class InSuplidorController {
     return ResponseEntity.ok(inSuplidorService.getByRnc(rnc));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/suplidores", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/suplidores", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<Response<?>> create(@RequestBody InSuplidor suplidor) {
     return ResponseEntity.ok(inSuplidorService.create(suplidor));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/suplidores", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/suplidores", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<Response<?>> update(
       @PathVariable Integer id, @RequestBody InSuplidor suplidor) {
     return ResponseEntity.ok(inSuplidorService.update(id, suplidor));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/suplidores", accion = Accion.ELIMINAR)
+  @RequierePermiso(menuUrl = "/suplidores", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Response<?>> disable(@PathVariable Integer id) {
     return ResponseEntity.ok(inSuplidorService.disable(id));
@@ -80,14 +80,14 @@ public class InSuplidorController {
     return ResponseEntity.ok(inSuplidorService.getProductos(suplidorId));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/suplidores", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/suplidores", accion = Accion.ESCRIBIR)
   @PostMapping("/{suplidorId}/productos")
   public ResponseEntity<Response<?>> addProducto(
       @PathVariable Integer suplidorId, @RequestBody InSuplidorProductoRequestDTO request) {
     return ResponseEntity.ok(inSuplidorService.addProducto(suplidorId, request));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/suplidores", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/suplidores", accion = Accion.ESCRIBIR)
   @PutMapping("/{suplidorId}/productos/{id}")
   public ResponseEntity<Response<?>> updateProductoPrecio(
       @PathVariable Integer suplidorId,
@@ -96,7 +96,7 @@ public class InSuplidorController {
     return ResponseEntity.ok(inSuplidorService.updateProductoPrecio(suplidorId, id, request));
   }
 
-  @RequierePermiso(menuUrl = "/inventario/suplidores", accion = Accion.ELIMINAR)
+  @RequierePermiso(menuUrl = "/suplidores", accion = Accion.ELIMINAR)
   @DeleteMapping("/{suplidorId}/productos/{id}")
   public ResponseEntity<Response<?>> removeProducto(
       @PathVariable Integer suplidorId, @PathVariable Integer id) {

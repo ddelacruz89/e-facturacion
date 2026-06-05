@@ -62,6 +62,9 @@ public class MfFactura extends BaseDgII implements Serializable {
   @Column(name = "total")
   private BigDecimal total;
 
+  @Column(name = "nota")
+  private String nota;
+
   @Column(name = "envio")
   private Boolean envio = false;
 

@@ -48,6 +48,8 @@ const EmpresaView = () => {
             direccion: "",
             logo: null,
             reportePath: "",
+            apiKeyActivo: false,
+            apikey: "",
         },
     });
 
@@ -71,6 +73,8 @@ const EmpresaView = () => {
             setValue("direccion", data.direccion);
             setValue("logo", data.logo);
             setValue("reportePath", data.reportePath);
+            setValue("apiKeyActivo", data.apiKeyActivo);
+            setValue("apikey", data.apikey);
         });
         getSucursales().then(setSucursales).catch(() => setSucursales([]));
     }, []);
@@ -86,6 +90,8 @@ const EmpresaView = () => {
                 setValue("direccion", response.direccion);
                 setValue("logo", response.logo);
                 setValue("reportePath", response.reportePath);
+                setValue("apiKeyActivo", response.apiKeyActivo);
+                setValue("apikey", response.apikey);
                 alert("Datos guardados correctamente");
             })
             .catch(() => alert("Error al guardar los datos"));
@@ -256,6 +262,23 @@ const EmpresaView = () => {
                             control={control}
                             error={errors.reportePath}
                             rules={{ required: "Campo requerido", minLength: { value: 3 }, maxLength: { value: 250 } }}
+                        />
+                    </Grid>
+                    <Grid container spacing={2}>
+                        <AlphanumericInput
+                            label="API Key"
+                            size={12}
+                            name="apikey"
+                            control={control}
+                            error={errors.apikey}
+                            rules={{ required: "Campo requerido", minLength: { value: 3 }, maxLength: { value: 250 } }}
+                        />
+                        <SwitchInput
+                            label="API Key Activo"
+                            size={12}
+                            name="apiKeyActivo"
+                            control={control}
+                            error={errors.apiKeyActivo}
                         />
                     </Grid>
                 </section>

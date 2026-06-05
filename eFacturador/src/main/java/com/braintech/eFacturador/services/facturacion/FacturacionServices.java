@@ -8,6 +8,7 @@ import com.braintech.eFacturador.dto.facturacion.IFacturaResumen;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaParaDespachoDTO;
 import com.braintech.eFacturador.dto.facturacion.PrecioVentaDto;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
+import com.braintech.eFacturador.facturacionelectronica.models.FacturaValidateResponse;
 import com.braintech.eFacturador.facturacionelectronica.services.ECFServices;
 import com.braintech.eFacturador.jpa.despacho.DeRutaZona;
 import com.braintech.eFacturador.jpa.facturacion.MfFactura;
@@ -74,6 +75,16 @@ public class FacturacionServices implements IFacturacion {
     return facturaDao
         .findByIdAndEmpresaIdAndSucursalId(id, empresaId, sucursalId)
         .orElseThrow(() -> new RecordNotFoundException("Registro no encontrado"));
+  }
+
+  public FacturaValidateResponse senderFacturaEcf(Integer id) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Integer sucursalId = tenantContext.getCurrentSucursalId();
+    MfFactura factura =
+        facturaDao
+            .findByIdAndEmpresaIdAndSucursalId(id, empresaId, sucursalId)
+            .orElseThrow(() -> new RecordNotFoundException("Registro no encontrado"));
+    return ecfServices.senderEcfFactura(factura);
   }
 
   @Override

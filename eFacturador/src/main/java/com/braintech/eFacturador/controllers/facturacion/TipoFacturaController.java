@@ -22,7 +22,7 @@ public class TipoFacturaController {
     return ResponseEntity.status(response.status()).body(response);
   }
 
-  @RequierePermiso(menuUrl = "/facturacion/tipo", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/tipo/factura", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<Response<MgTipoFactura>> save(@RequestBody MgTipoFactura tipoFactura) {
     Response<MgTipoFactura> response = tipoFacturaService.save(tipoFactura);

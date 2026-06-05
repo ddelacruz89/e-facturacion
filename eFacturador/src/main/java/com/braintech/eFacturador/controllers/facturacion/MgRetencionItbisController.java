@@ -40,14 +40,14 @@ public class MgRetencionItbisController {
   }
 
   /** Crear nuevo registro. */
-  @RequierePermiso(menuUrl = "/facturacion/retenciones-itbis", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/retenciones-itbis", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<MgRetencionItbis> save(@RequestBody MgRetencionItbisRequestDTO dto) {
     return ResponseEntity.ok(service.save(dto));
   }
 
   /** Actualizar registro existente. */
-  @RequierePermiso(menuUrl = "/facturacion/retenciones-itbis", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/retenciones-itbis", accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
   public ResponseEntity<MgRetencionItbis> update(
       @PathVariable Integer id, @RequestBody MgRetencionItbisRequestDTO dto) {
@@ -55,7 +55,7 @@ public class MgRetencionItbisController {
   }
 
   /** Eliminar registro. */
-  @RequierePermiso(menuUrl = "/facturacion/retenciones-itbis", accion = Accion.ELIMINAR)
+  @RequierePermiso(menuUrl = "/retenciones-itbis", accion = Accion.ELIMINAR)
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable Integer id) {
     service.delete(id);

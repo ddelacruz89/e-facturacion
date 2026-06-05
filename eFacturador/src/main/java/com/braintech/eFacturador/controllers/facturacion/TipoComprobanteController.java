@@ -26,7 +26,7 @@ public class TipoComprobanteController {
     return ResponseEntity.status(response.status()).body(response);
   }
 
-  @RequierePermiso(menuUrl = "/facturacion/tipo/comprobante", accion = Accion.ESCRIBIR)
+  @RequierePermiso(menuUrl = "/tipo/comprobante", accion = Accion.ESCRIBIR)
   @PostMapping
   public ResponseEntity<Response<MgTipoComprobante>> save(
       @RequestBody MgTipoComprobante tipoComprobante) {
