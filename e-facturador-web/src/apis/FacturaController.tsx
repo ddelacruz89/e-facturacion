@@ -6,6 +6,7 @@ import { DataNotFound } from "../models/ServerErros";
 import { MfFacturaParaDespacho } from "../models/despacho/DespachoModels";
 
 const api = "/api/v1/facturacion/facturas";
+const apiCotizaciones = "/api/v1/facturacion/cotizaciones";
 export function getProductosVentas(): Promise<ProductoVenta[]> {
     return apiClient.get(`${api}/productos/ventas`).then((response) => response.data);
 }
@@ -57,4 +58,8 @@ export function getFacturas(page: number, size: number): Promise<PagesResult<IFa
             console.error("Mensaje:", response.message);
             return null;
         });
+}
+
+export function saveCotizacion(cotizacion: Factura): Promise<Factura> {
+    return apiClient.post(`${apiCotizaciones}/cotizacion`, cotizacion).then((response) => response.data);
 }
