@@ -61,15 +61,17 @@ import {
     FacturaSuplidorErrors,
 } from "../../validations/facturaSuplidorValidation";
 
-// ── Paleta ────────────────────────────────────────────────────────────────────
+// ── Paleta tetrádica ──────────────────────────────────────────────────────────
 const COLOR = {
-    navDark:    "#2c3e50",
-    tableHead:  "#34495e",
-    sectionBg:  "#f8f9fa",
-    cardBorder: "#dee2e6",
-    accentTeal: "#17a589",
-    labelGray:  "#6c757d",
-    totalsRow:  "#eaf4fb",
+    primary:    "#525C71",  // azul-gris base
+    secondary:  "#5F5271",  // violeta-azul (informativo / headers)
+    accent:     "#527158",  // verde-salvia (acciones positivas, ITBIS)
+    warm:       "#716752",  // dorado-cálido (ISR, advertencias)
+    alert:      "#71526B",  // violeta-rosa (rechazado / urgente)
+    sectionBg:  "#f5f6f9",  // fondo claro derivado de primary
+    cardBorder: "#c8ccd8",  // borde derivado de primary
+    labelGray:  "#848EA5",  // informativo (paleta monocromática)
+    totalsRow:  "#eef0f5",  // fondo muy claro de primary
 };
 
 // ── Fecha en zona horaria República Dominicana (UTC-4, sin DST) ───────────────
@@ -92,7 +94,7 @@ interface PendingRetencionChange {
 function makeInitialForm(): MfFacturaSuplidorRequest {
     const hoy = getDRToday();
     return {
-        tipoCfId:            "" as any,
+        tipoComprobanteId:   "" as any,
         numeroFactura:       "",
         estadoId:            "ACT",
         descuento:           0,
@@ -202,7 +204,7 @@ const FacturaSuplidorView: React.FC = () => {
 
     const { fields, append, remove } = useFieldArray({ control, name: "detalles" });
     const detalles      = watch("detalles");
-    const tipoCfIdVal   = watch("tipoCfId");
+    const tipoCfIdVal   = watch("tipoComprobanteId");
     const suplidorIdVal = watch("suplidorId");
     const suplidorRule  = suplidorRuleForTipoCf(tipoCfIdVal);
 
@@ -333,7 +335,7 @@ const FacturaSuplidorView: React.FC = () => {
             suplidorId:          completa.suplidor?.id ?? completa.suplidorId,
             numeroFactura:       completa.numeroFactura,
             ncf:                 completa.ncf,
-            tipoCfId:            completa.tipoCfId,
+            tipoComprobanteId:   completa.tipoComprobanteId,
             fechaEmision:        completa.fechaEmision,
             fechaLimitePago:     completa.fechaLimitePago,
             fechaVencimiento:    completa.fechaVencimiento,
@@ -506,17 +508,20 @@ const FacturaSuplidorView: React.FC = () => {
         <>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <ActionBar title="Facturas Suplidor">
-                    <Button variant="contained" color="primary" type="submit" disabled={!!internalId}>Guardar</Button>
-                    <Button variant="outlined" type="button" onClick={() => {
-                        reset(makeInitialForm());
-                        setValue("numeroFactura", "");
-                        setSecuenciaInput("");
-                        setInternalId(undefined);
-                        setQrUrl(undefined);
-                        setQrAprobado(undefined);
-                        setIsrPct(0); setItbisPct(0);
-                        setDetalleForm(makeInitialDetalle(0, 0));
-                    }}>Nuevo</Button>
+                    <Button variant="contained" type="submit" disabled={!!internalId}
+                        sx={{ bgcolor: "#272C36", "&:hover": { bgcolor: "#1a1f27" } }}>Guardar</Button>
+                    <Button variant="contained" type="button"
+                        sx={{ bgcolor: "#3D4453", "&:hover": { bgcolor: "#2e3340" } }}
+                        onClick={() => {
+                            reset(makeInitialForm());
+                            setValue("numeroFactura", "");
+                            setSecuenciaInput("");
+                            setInternalId(undefined);
+                            setQrUrl(undefined);
+                            setQrAprobado(undefined);
+                            setIsrPct(0); setItbisPct(0);
+                            setDetalleForm(makeInitialDetalle(0, 0));
+                        }}>Nuevo</Button>
                 </ActionBar>
 
                 {/* ── Cargar Factura Existente + NCF ────────────────────────── */}
@@ -549,7 +554,7 @@ const FacturaSuplidorView: React.FC = () => {
                                     fullWidth size="small" placeholder="Ej: E410000000007"
                                     {...register("ncf")}
                                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: "4px 0 0 4px",
-                                        "&.Mui-focused fieldset": { borderColor: COLOR.accentTeal } } }}
+                                        "&.Mui-focused fieldset": { borderColor: COLOR.accent } } }}
                                 />
                                 <IconButton
                                     size="small"
@@ -559,10 +564,10 @@ const FacturaSuplidorView: React.FC = () => {
                                         borderLeft: "none",
                                         borderRadius: "0 4px 4px 0",
                                         height: 40, width: 40,
-                                        ...(qrAprobado === true  && { border: "1px solid #2e7d32", backgroundColor: "#e8f5e9", color: "#2e7d32", "&:hover": { backgroundColor: "#c8e6c9" } }),
-                                        ...(qrAprobado === false && { border: "1px solid #c62828", backgroundColor: "#ffebee", color: "#c62828", "&:hover": { backgroundColor: "#ffcdd2" } }),
-                                        ...(qrAprobado === null  && { border: "1px solid #9e9e9e", backgroundColor: "#f5f5f5", color: "#9e9e9e", "&:hover": { backgroundColor: "#eeeeee" } }),
-                                        ...(qrAprobado === undefined && { border: `1px solid ${COLOR.accentTeal}`, backgroundColor: `${COLOR.accentTeal}15`, color: COLOR.accentTeal, "&:hover": { backgroundColor: `${COLOR.accentTeal}30` } }),
+                                        ...(qrAprobado === true  && { border: `1px solid ${COLOR.accent}`,    backgroundColor: "#eef4f0", color: COLOR.accent,    "&:hover": { backgroundColor: "#d9ece0" } }),
+                                        ...(qrAprobado === false && { border: `1px solid ${COLOR.alert}`,    backgroundColor: "#f4eef2", color: COLOR.alert,    "&:hover": { backgroundColor: "#e8d9e4" } }),
+                                        ...(qrAprobado === null  && { border: `1px solid ${COLOR.warm}`,     backgroundColor: "#f5f2ee", color: COLOR.warm,     "&:hover": { backgroundColor: "#ece7de" } }),
+                                        ...(qrAprobado === undefined && { border: `1px solid ${COLOR.secondary}`, backgroundColor: "#f0eff5", color: COLOR.secondary, "&:hover": { backgroundColor: "#e6e5ef" } }),
                                         "&.Mui-disabled": { borderColor: "#ccc", color: "#ccc", backgroundColor: "transparent" },
                                     }}
                                 >
@@ -578,7 +583,7 @@ const FacturaSuplidorView: React.FC = () => {
                 {/* ── Datos de la Factura ───────────────────────────────────── */}
                 <Box sx={{ backgroundColor: COLOR.sectionBg, px: 2.5, pt: 2, pb: 2.5 }}>
                     <Typography variant="subtitle1" fontWeight={700} align="center" mb={2}
-                        sx={{ color: COLOR.navDark, letterSpacing: 0.3 }}>
+                        sx={{ color: COLOR.primary, letterSpacing: 0.3 }}>
                         Datos de la Factura
                     </Typography>
 
@@ -632,7 +637,7 @@ const FacturaSuplidorView: React.FC = () => {
                         </Grid>
 
                         {/* Fila 2 */}
-                        <TipoComprobanteSelect control={control} name="tipoCfId" label="Tipo de Comprobante" size={2} categoria="FT" />
+                        <TipoComprobanteSelect control={control} name="tipoComprobanteId" label="Tipo de Comprobante" size={2} categoria="FT" />
 
                         <Grid size={{ xs: 12, md: 2 }}>
                             <TextField fullWidth size="small" label="No. Factura" {...register("numeroFactura")} />
@@ -705,7 +710,7 @@ const FacturaSuplidorView: React.FC = () => {
                         sx={{ border: `1px solid ${COLOR.cardBorder}`, borderRadius: "6px !important", "&:before": { display: "none" },
                             opacity: tipoCfIdVal ? 1 : 0.55, pointerEvents: tipoCfIdVal ? "auto" : "none" }}>
                         <AccordionSummary
-                            sx={{ backgroundColor: tipoCfIdVal ? COLOR.navDark : "#95a5a6",
+                            sx={{ backgroundColor: tipoCfIdVal ? COLOR.primary : COLOR.labelGray,
                                 borderRadius: (!!tipoCfIdVal && accordionOpen) ? "6px 6px 0 0" : "6px",
                                 minHeight: 44, "& .MuiAccordionSummary-content": { my: 0 }, cursor: tipoCfIdVal ? "pointer" : "not-allowed" }}>
                             <Box display="flex" gap={2} alignItems="center">
@@ -720,14 +725,14 @@ const FacturaSuplidorView: React.FC = () => {
                                 {(isrPct > 0 || itbisPct > 0) && (
                                     <Box display="flex" gap={1}>
                                         {isrPct > 0 && (
-                                            <Box sx={{ backgroundColor: "#e67e22", borderRadius: "4px", px: 1, py: 0.2 }}>
+                                            <Box sx={{ backgroundColor: COLOR.warm, borderRadius: "4px", px: 1, py: 0.2 }}>
                                                 <Typography sx={{ color: "#fff", fontSize: "0.7rem", fontWeight: 600 }}>
                                                     ISR {isrPct}%
                                                 </Typography>
                                             </Box>
                                         )}
                                         {itbisPct > 0 && (
-                                            <Box sx={{ backgroundColor: "#16a085", borderRadius: "4px", px: 1, py: 0.2 }}>
+                                            <Box sx={{ backgroundColor: COLOR.accent, borderRadius: "4px", px: 1, py: 0.2 }}>
                                                 <Typography sx={{ color: "#fff", fontSize: "0.7rem", fontWeight: 600 }}>
                                                     ITBIS Ret. {itbisPct}%
                                                 </Typography>
@@ -802,7 +807,7 @@ const FacturaSuplidorView: React.FC = () => {
                                     <FieldLabel>
                                         ITBIS %{" "}
                                         {soloExento && (
-                                            <span style={{ color: "#17a589", fontSize: "0.7rem" }}>(solo Exento)</span>
+                                            <span style={{ color: COLOR.accent, fontSize: "0.7rem" }}>(solo Exento)</span>
                                         )}
                                     </FieldLabel>
                                     <TextField select fullWidth size="small"
@@ -826,14 +831,14 @@ const FacturaSuplidorView: React.FC = () => {
                                         fullWidth variant="outlined" size="small"
                                         disabled={!detalleForm.indicadorBienServicio || !(detalleForm.montoItem && detalleForm.montoItem > 0)}
                                         onClick={() => setDescDialogOpen(true)}
-                                        sx={{ height: 40, borderColor: COLOR.accentTeal, color: COLOR.accentTeal,
-                                            "&:hover": { borderColor: COLOR.accentTeal, backgroundColor: `${COLOR.accentTeal}10` },
+                                        sx={{ height: 40, borderColor: COLOR.accent, color: COLOR.accent,
+                                            "&:hover": { borderColor: COLOR.accent, backgroundColor: `${COLOR.accent}10` },
                                             "&.Mui-disabled": { borderColor: "#ccc", color: "#ccc" } }}
                                         endIcon={
                                             (detalleForm.descuentos?.length ?? 0) > 0
                                                 ? <Chip label={detalleForm.descuentos!.length} size="small"
                                                     sx={{ height: 18, fontSize: "0.65rem",
-                                                          backgroundColor: COLOR.accentTeal, color: "#fff" }} />
+                                                          backgroundColor: COLOR.accent, color: "#fff" }} />
                                                 : null
                                         }
                                     >
@@ -845,23 +850,23 @@ const FacturaSuplidorView: React.FC = () => {
 
                                 {/* Fila C — calculados */}
                                 <Grid size={{ xs: 12, md: 2 }}>
-                                    <FieldLabel>ITBIS Retenido {itbisPct > 0 && <span style={{ color: "#16a085" }}>({itbisPct}%)</span>}</FieldLabel>
+                                    <FieldLabel>ITBIS Retenido {itbisPct > 0 && <span style={{ color: COLOR.accent }}>({itbisPct}%)</span>}</FieldLabel>
                                     <TextField fullWidth size="small" value={`RD$ ${fmt(detalleForm.montoItbisRetenido)}`} disabled
-                                        sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: itbisPct > 0 ? "#16a085" : undefined } }} />
+                                        sx={{ "& .MuiInputBase-input.Mui-disabled": { WebkitTextFillColor: itbisPct > 0 ? COLOR.accent : undefined } }} />
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 2 }}>
                                     <FieldLabel>
                                         ISR Retenido{" "}
                                         {detalleForm.indicadorBienServicio === 1
                                             ? <span style={{ color: "#aaa", fontSize: "0.68rem" }}>(no aplica a bienes)</span>
-                                            : isrPct > 0 && <span style={{ color: "#e67e22" }}>({isrPct}%)</span>
+                                            : isrPct > 0 && <span style={{ color: COLOR.warm }}>({isrPct}%)</span>
                                         }
                                     </FieldLabel>
                                     <TextField fullWidth size="small" value={`RD$ ${fmt(detalleForm.retencion)}`} disabled
                                         sx={{ "& .MuiInputBase-input.Mui-disabled": {
                                             WebkitTextFillColor: detalleForm.indicadorBienServicio === 1
                                                 ? "#bbb"
-                                                : isrPct > 0 ? "#e67e22" : undefined
+                                                : isrPct > 0 ? COLOR.warm : undefined
                                         }}} />
                                 </Grid>
                                 <Grid size={{ xs: 12, md: 2 }}>
@@ -875,7 +880,7 @@ const FacturaSuplidorView: React.FC = () => {
                                 <Grid size={{ xs: 12, md: 2 }}>
                                     <FieldLabel>&nbsp;</FieldLabel>
                                     <Button fullWidth variant="contained" onClick={handleAddDetalle}
-                                        sx={{ height: 40, backgroundColor: COLOR.navDark, "&:hover": { backgroundColor: "#1a252f" } }}>
+                                        sx={{ height: 40, backgroundColor: COLOR.primary, "&:hover": { backgroundColor: "#3d4558" } }}>
                                         <AddIcon />
                                     </Button>
                                 </Grid>
@@ -896,7 +901,7 @@ const FacturaSuplidorView: React.FC = () => {
                         sx={{ border: `1px solid ${COLOR.cardBorder}`, borderRadius: 1 }}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow sx={{ backgroundColor: COLOR.tableHead }}>
+                                <TableRow sx={{ backgroundColor: COLOR.secondary }}>
                                     {["Concepto","Centro de costos","Cantidad","Precio Unitario",
                                       "SubTotal","Descuento","ITBIS","ISR Retenido","TOTAL","Acciones"].map((h) => (
                                         <TableCell key={h}
@@ -927,7 +932,7 @@ const FacturaSuplidorView: React.FC = () => {
                                                 <TableCell align="right" sx={{ fontSize:"0.82rem" }}>RD$ {fmt(d?.subTotal)}</TableCell>
                                                 <TableCell align="right" sx={{ fontSize:"0.82rem" }}>RD$ {fmt(d?.montoDescuento)}</TableCell>
                                                 <TableCell align="right" sx={{ fontSize:"0.82rem" }}>RD$ {fmt(d?.itbis)}</TableCell>
-                                                <TableCell align="right" sx={{ fontSize:"0.82rem", color: isrPct > 0 ? "#e67e22" : "inherit" }}>
+                                                <TableCell align="right" sx={{ fontSize:"0.82rem", color: isrPct > 0 ? COLOR.warm : "inherit" }}>
                                                     RD$ {fmt(d?.retencion)}
                                                 </TableCell>
                                                 <TableCell align="right" sx={{ fontSize:"0.82rem", fontWeight:600 }}>RD$ {fmt(d?.total)}</TableCell>
@@ -946,7 +951,7 @@ const FacturaSuplidorView: React.FC = () => {
                                     <TableCell align="right" sx={{ fontWeight:700, fontSize:"0.82rem" }}>RD$ {fmt(tablaSubtotal)}</TableCell>
                                     <TableCell align="right" sx={{ fontWeight:700, fontSize:"0.82rem" }}>RD$ {fmt(tablaDescuento)}</TableCell>
                                     <TableCell align="right" sx={{ fontWeight:700, fontSize:"0.82rem" }}>RD$ {fmt(tablaItbis)}</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight:700, fontSize:"0.82rem", color: isrPct > 0 ? "#e67e22" : "inherit" }}>
+                                    <TableCell align="right" sx={{ fontWeight:700, fontSize:"0.82rem", color: isrPct > 0 ? COLOR.warm : "inherit" }}>
                                         RD$ {fmt(tablaIsrRet)}
                                     </TableCell>
                                     <TableCell align="right" sx={{ fontWeight:700, fontSize:"0.82rem" }}>RD$ {fmt(tablaTotal)}</TableCell>
@@ -962,7 +967,7 @@ const FacturaSuplidorView: React.FC = () => {
                     <Grid size={{ xs: 12, md: 8 }} />
                     <Grid size={{ xs: 12, md: 4 }}>
                         <Box sx={{ border: `1px solid ${COLOR.cardBorder}`, borderRadius: 1, overflow: "hidden" }}>
-                            <Box sx={{ backgroundColor: COLOR.navDark, px: 2, py: 0.75 }}>
+                            <Box sx={{ backgroundColor: COLOR.primary, px: 2, py: 0.75 }}>
                                 <Typography variant="caption" fontWeight={700} sx={{ color:"#fff", letterSpacing:0.5 }}>RESUMEN</Typography>
                             </Box>
                             <Box sx={{ p: 2, backgroundColor: "#fff" }}>
@@ -986,7 +991,7 @@ const FacturaSuplidorView: React.FC = () => {
                                 {/* Ret. ISR — calculado automáticamente */}
                                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.6}>
                                     <Typography variant="body2" color={COLOR.labelGray}>
-                                        Ret. ISR {isrPct > 0 && <span style={{ color:"#e67e22", fontSize:"0.75rem" }}>({isrPct}%)</span>}
+                                        Ret. ISR {isrPct > 0 && <span style={{ color: COLOR.warm, fontSize:"0.75rem" }}>({isrPct}%)</span>}
                                     </Typography>
                                     <Typography variant="body2" color="error.main">RD$ {fmt(montoRetIsrH)}</Typography>
                                 </Box>
@@ -994,15 +999,15 @@ const FacturaSuplidorView: React.FC = () => {
                                 {/* Ret. ITBIS — calculado automáticamente */}
                                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={0.6}>
                                     <Typography variant="body2" color={COLOR.labelGray}>
-                                        Ret. ITBIS {itbisPct > 0 && <span style={{ color:"#16a085", fontSize:"0.75rem" }}>({itbisPct}%)</span>}
+                                        Ret. ITBIS {itbisPct > 0 && <span style={{ color: COLOR.accent, fontSize:"0.75rem" }}>({itbisPct}%)</span>}
                                     </Typography>
                                     <Typography variant="body2" color="error.main">RD$ {fmt(montoRetItbisH)}</Typography>
                                 </Box>
 
                                 <Divider sx={{ my: 1 }} />
                                 <Box display="flex" justifyContent="space-between" alignItems="center">
-                                    <Typography fontWeight={700} color={COLOR.navDark}>Total</Typography>
-                                    <Typography fontWeight={700} fontSize="1.1rem" color={COLOR.navDark}>
+                                    <Typography fontWeight={700} color={COLOR.primary}>Total</Typography>
+                                    <Typography fontWeight={700} fontSize="1.1rem" color={COLOR.primary}>
                                         RD$ {fmt(totalFinal)}
                                     </Typography>
                                 </Box>
@@ -1014,17 +1019,17 @@ const FacturaSuplidorView: React.FC = () => {
 
             {/* ── Dialog de Descuentos del renglón ─────────────────────────── */}
             <Dialog open={descDialogOpen} onClose={() => setDescDialogOpen(false)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{ backgroundColor: "#3f51b5", color: "#fff", fontWeight: 700 }}>
+                <DialogTitle sx={{ backgroundColor: COLOR.secondary, color: "#fff", fontWeight: 700 }}>
                     ✂ Agregar Descuentos
                 </DialogTitle>
                 <DialogContent sx={{ pt: 2 }}>
                     {/* Resumen del renglón */}
-                    <Box sx={{ backgroundColor: "#f0f4ff", borderRadius: 1, p: 1.5, mb: 2, textAlign: "center" }}>
-                        <Typography variant="body2" fontWeight={600} color="#3f51b5">
+                    <Box sx={{ backgroundColor: "#f0eff5", borderRadius: 1, p: 1.5, mb: 2, textAlign: "center" }}>
+                        <Typography variant="body2" fontWeight={600} color={COLOR.secondary}>
                             📋 Total del detalle:{" "}
                             <strong>RD$ {fmt(detalleForm.montoItem)}</strong>
                         </Typography>
-                        <Typography variant="body2" color="#3f51b5">
+                        <Typography variant="body2" color={COLOR.secondary}>
                             🏷 Total disponible para descuentos:{" "}
                             <strong>
                                 RD$ {fmt((detalleForm.montoItem ?? 0) - (detalleForm.montoDescuento ?? 0))}
@@ -1075,7 +1080,7 @@ const FacturaSuplidorView: React.FC = () => {
                         )}
 
                         <Button variant="contained" size="small" onClick={handleDescAgregar}
-                            sx={{ height: 40, backgroundColor: "#3f51b5", "&:hover": { backgroundColor: "#303f9f" },
+                            sx={{ height: 40, backgroundColor: COLOR.secondary, "&:hover": { backgroundColor: COLOR.primary },
                                 minWidth: 90, whiteSpace: "nowrap" }}>
                             + Agregar
                         </Button>
@@ -1086,7 +1091,7 @@ const FacturaSuplidorView: React.FC = () => {
                         sx={{ border: `1px solid ${COLOR.cardBorder}`, borderRadius: 1 }}>
                         <Table size="small">
                             <TableHead>
-                                <TableRow sx={{ backgroundColor: "#3f51b5" }}>
+                                <TableRow sx={{ backgroundColor: COLOR.secondary }}>
                                     {["Tipo", "Porcentaje / Valor", "Monto", "Acciones"].map((h) => (
                                         <TableCell key={h} sx={{ color: "#fff", fontWeight: 700, fontSize: "0.75rem", py: 1 }}>
                                             {h}
@@ -1139,7 +1144,7 @@ const FacturaSuplidorView: React.FC = () => {
                         ✕ Cancelar
                     </Button>
                     <Button variant="contained" onClick={handleDescGuardar}
-                        sx={{ backgroundColor: "#3f51b5", "&:hover": { backgroundColor: "#303f9f" } }}>
+                        sx={{ backgroundColor: COLOR.secondary, "&:hover": { backgroundColor: COLOR.primary } }}>
                         💾 Guardar Descuentos
                     </Button>
                 </DialogActions>
@@ -1147,8 +1152,8 @@ const FacturaSuplidorView: React.FC = () => {
 
             {/* ── Advertencia cambio de retención ──────────────────────────── */}
             <Dialog open={!!pendingRet} onClose={handleCancelRetencionChange} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{ display:"flex", alignItems:"center", gap:1.5, backgroundColor:"#fff3cd", color:"#856404" }}>
-                    <WarningAmberIcon sx={{ color:"#e67e22" }} />
+                <DialogTitle sx={{ display:"flex", alignItems:"center", gap:1.5, backgroundColor:"#f8f4ee", color:"#5a5241" }}>
+                    <WarningAmberIcon sx={{ color: COLOR.warm }} />
                     Cambio de Retención
                 </DialogTitle>
                 <DialogContent sx={{ pt: 2 }}>

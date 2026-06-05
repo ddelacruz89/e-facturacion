@@ -20,12 +20,12 @@ const resolveSuplidorId = (value: any): number | null => {
 
 const facturaSuplidorSchema = Yup.object().shape({
 
-    tipoCfId: Yup.string()
+    tipoComprobanteId: Yup.string()
         .required("El tipo de comprobante es requerido"),
 
     suplidorId: Yup.mixed()
         .nullable()
-        .when("tipoCfId", {
+        .when("tipoComprobanteId", {
             is: "41",
             then: (schema) =>
                 schema.test(

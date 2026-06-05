@@ -281,7 +281,7 @@ export default function FacturaSuplidorPagosView() {
                     </Grid>
                     <Grid size={{ xs: 12, sm: 3 }}>
                         <Typography sx={labelSx}>Tipo de Comprobante</Typography>
-                        <TextField fullWidth size="small" value={factura?.tipoCfId ?? "No Asignar"} disabled sx={readSx} />
+                        <TextField fullWidth size="small" value={factura?.tipoComprobanteId ?? "No Asignar"} disabled sx={readSx} />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
                         <Typography sx={labelSx}>Concepto</Typography>
