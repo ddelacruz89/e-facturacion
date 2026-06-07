@@ -17,7 +17,8 @@
 | `referencia_tipo` | VARCHAR(50) | `InLote` \| `MgProducto` \| … |
 | `referencia_key` | VARCHAR(200) | Clave de negocio para deduplicar. VENCIMIENTO: `"lote:productoId"`, STOCK_BAJO: `"productoId:almacenId"` |
 | `payload` | JSONB | Datos estructurados específicos del tipo |
-| `menu_url_origen` | VARCHAR(200) | NULL = global (todos la ven). Con valor = solo usuarios con `puedeLeer=true` en ese menú (`sg_menu.url`) |
+| `menu_url_origen` | VARCHAR(200) | NULL = global (todos la ven). Con valor = solo usuarios con `puedeLeer=true` en ese menú (`sg_menu.url`). **Solo aplica al badge/campana, no al modal login.** |
+| `para_login` | BOOLEAN | Si `TRUE`, aparece en el wizard bloqueante al iniciar sesión |
 | `estado_id` | VARCHAR(10) | `ACT` \| `CER` |
 | `fecha_reg` | TIMESTAMPTZ | |
 | `usuario_reg` | VARCHAR(45) | |
@@ -27,6 +28,30 @@
 **Índices:**
 - `idx_notif_tenant_estado` → `(empresa_id, sucursal_id, estado_id, fecha_reg)`
 - `idx_notif_dedup` → `(modulo, tipo, referencia_key, empresa_id, estado_id)`
+
+### `sg_notificacion_tipo_config` — catálogo de tipos (schema `seguridad`)
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `tipo_id` | VARCHAR(50) PK | Ej: `VENCIMIENTO`, `STOCK_BAJO`, `RECORDATORIO` |
+| `nombre` | VARCHAR(100) | Label legible |
+| `modulo` | VARCHAR(30) | Solo categoría visual, no controla acceso |
+| `para_login` | BOOLEAN | Si `TRUE`, el tipo puede aparecer en el modal login |
+| `acceso_restringido` | BOOLEAN | `FALSE` = todos los usuarios lo ven sin suscribirse. `TRUE` = solo usuarios suscritos |
+| `activo` | BOOLEAN | |
+
+**Regla de acceso al modal login:**
+- `acceso_restringido = FALSE` → va al set `tiposNoRestringidos` → cualquier usuario del tenant lo ve al login
+- `acceso_restringido = TRUE` → solo usuarios con registro en `sg_usuario_notif_suscripcion` para ese tipo
+
+### `sg_usuario_notif_suscripcion` — suscripciones (schema `seguridad`)
+
+| Campo | Tipo |
+|---|---|
+| `empresa_id` | INTEGER |
+| `username` | VARCHAR(45) |
+| `tipo_id` | FK → sg_notificacion_tipo_config |
+| UNIQUE | `(empresa_id, username, tipo_id)` |
 
 ### `sg_notificacion_visto` — visto por usuario
 
@@ -44,21 +69,26 @@
 
 ```
 jpa/notificacion/
-  SgNotificacion.java          ← entidad principal
-  SgNotificacionVisto.java     ← junction por usuario
+  SgNotificacion.java               ← entidad principal (incluye paraLogin)
+  SgNotificacionVisto.java          ← junction por usuario
+  SgNotificacionTipoConfig.java     ← catálogo tipos (accesoRestringido, paraLogin)
+  SgUsuarioNotifSuscripcion.java    ← suscripciones por usuario
 dao/notificacion/
-  SgNotificacionRepository.java      ← findActivasByTenant, contarNoVistas, dedup
-  SgNotificacionVistoRepository.java ← existsByNotificacionIdAndUsername
+  SgNotificacionRepository.java           ← findActivasByTenant, contarNoVistas, dedup, findLoginPendientes
+  SgNotificacionVistoRepository.java      ← existsByNotificacionIdAndUsername
+  SgNotificacionTipoConfigRepository.java ← findTiposNoRestringidos()
+  SgUsuarioNotifSuscripcionRepository.java
 dto/notificacion/
-  SgNotificacionDTO.java       ← flat DTO + campo "visto: boolean"
+  SgNotificacionDTO.java            ← flat DTO + campos "visto" y "paraLogin"
+  SgNotificacionTipoConfigDTO.java  ← incluye flag "suscrito" por usuario
 interfaces/notificacion/
-  SgNotificacionService.java   ← findActivas, findActivasByModulo, contarNoVistas, marcarVisto, cerrar
+  SgNotificacionService.java
 services/notificacion/
-  SgNotificacionServiceImpl.java
+  SgNotificacionServiceImpl.java    ← findLoginPendientes: tiposNoRestringidos ∪ tiposSuscritos
 controllers/notificacion/
-  SgNotificacionController.java   ← /api/v1/notificaciones
+  SgNotificacionController.java     ← /api/v1/notificaciones
 sse/
-  InAlertaSseService.java      ← gestiona emitters SSE por tenant (empresaId-sucursalId)
+  InAlertaSseService.java           ← gestiona emitters SSE por tenant (empresaId-sucursalId)
 ```
 
 ---
@@ -73,6 +103,11 @@ sse/
 | GET | `/stream` | Conexión SSE. Token via `?token=` (EventSource no soporta headers) |
 | POST | `/{id}/visto` | Marca como vista. Idempotente |
 | PUT | `/{id}/cerrar` | Cierra la notificación (`estadoId = 'CER'`) |
+| GET | `/login` | Notificaciones pendientes al login para el usuario autenticado |
+| GET | `/tipos` | Catálogo de tipos activos |
+| GET | `/tipos/{username}` | Catálogo con flag `suscrito` para el usuario |
+| PUT | `/tipos/{username}/suscripciones` | Guarda suscripciones del usuario (reemplaza) |
+| PATCH | `/tipos/{tipoId}` | Actualiza `paraLogin` / `accesoRestringido` / `activo` (admin) |
 
 ---
 
@@ -175,9 +210,13 @@ Opciones si se necesita tiempo real desde DB:
 
 ```
 apis/
-  SgNotificacionController.tsx   ← getNotificaciones, getContadorNoVistas, marcarVisto, cerrarNotificacion
+  SgNotificacionController.tsx   ← getNotificaciones, getContadorNoVistas, marcarVisto, cerrarNotificacion,
+                                    getNotificacionesLogin, getTodosTipos, getTiposConSuscripcion, saveSuscripciones
 components/notificaciones/
   NotificacionesView.tsx         ← tabla con filtros por módulo, "marcar todas vistas", visto/cerrar por fila
+  NotificacionLoginModal.tsx     ← wizard bloqueante al login (disableEscapeKeyDown, dots de navegación, barra de progreso)
+components/seguridad/
+  NotificacionTipoConfigView.tsx ← admin de tipos en /seguridad/config-avisos (toggles paraLogin, activo)
 ```
 
 ### `HomeView.tsx` — badge en top bar
@@ -185,6 +224,15 @@ components/notificaciones/
 - Clic en campana → `Popover` con las 5 notificaciones más recientes + botón "Ver todas"
 - Fallback poll cada **5 minutos** por si la conexión SSE se pierde
 - Ruta `/alertas` → `NotificacionesView`
+- `useEffect([user?.isAuthenticated])` → llama `getNotificacionesLogin()` → si `length > 0` abre `NotificacionLoginModal`
+- **Cuidado:** el `.catch(() => {})` traga errores 401 silenciosamente si el token JWT no está listo al disparar el efecto
+
+### `NotificacionLoginModal.tsx` — wizard al login
+- Modal bloqueante (`disableEscapeKeyDown`): el usuario debe confirmar cada aviso antes de continuar
+- Wizard paginado con dots de navegación, barra de progreso LinearProgress, chip `X / total`
+- Botón "Entendido" llama `POST /{id}/visto` → avanza automáticamente al siguiente
+- "Todos leídos — Continuar" se habilita solo cuando `confirmados.size === total`
+- Estado interno: `Set<number>` con IDs confirmados. Usar `Array.from(prev).concat(id)` al actualizar (no `[...prev]` — falla con `--downlevelIteration` desactivado)
 
 ---
 
@@ -221,9 +269,62 @@ Si la alerta es realmente para todos, no llamar `setMenuUrlOrigen()` (queda `nul
 
 ---
 
+## Modal login — cómo insertar una notificación general (todos la ven)
+
+El `modulo` de la notificación es solo una etiqueta visual. El acceso al modal se controla únicamente por `acceso_restringido` en el tipo.
+
+```sql
+-- 1. Tipo catálogo (una sola vez por tipo nuevo)
+INSERT INTO seguridad.sg_notificacion_tipo_config
+    (tipo_id, nombre, descripcion, modulo, para_login, acceso_restringido, activo, fecha_reg, usuario_reg)
+VALUES ('RECORDATORIO', 'Recordatorio general', 'Avisos para todos los usuarios',
+        'GENERAL', TRUE, FALSE, TRUE, NOW(), 'Master')
+ON CONFLICT (tipo_id) DO NOTHING;
+
+-- 2. La notificación (una por aviso que quieras enviar)
+INSERT INTO general.sg_notificacion
+    (empresa_id, sucursal_id, modulo, tipo, titulo, descripcion,
+     referencia_key, menu_url_origen, para_login, estado_id, fecha_reg, usuario_reg)
+VALUES (2, NULL, 'GENERAL', 'RECORDATORIO',
+        'Título del aviso', 'Texto completo.',
+        'recordatorio:1',  -- clave única, cambiar sufijo por cada aviso
+        NULL, TRUE, 'ACT', NOW(), 'Master');
+```
+
+## Modal login — diagnóstico cuando no aparece
+
+Simula exactamente `findLoginPendientes()` del backend:
+
+```sql
+SELECT n.id, n.tipo, n.titulo, n.empresa_id
+FROM general.sg_notificacion n
+WHERE n.empresa_id = :empresaId
+  AND n.estado_id = 'ACT'
+  AND n.para_login = TRUE
+  AND n.tipo IN (
+      SELECT t.tipo_id FROM seguridad.sg_notificacion_tipo_config t
+      WHERE t.activo = TRUE AND t.acceso_restringido = FALSE AND t.para_login = TRUE
+  )
+  AND NOT EXISTS (
+      SELECT 1 FROM general.sg_notificacion_visto v
+      WHERE v.notificacion_id = n.id AND v.username = :username
+  );
+```
+
+| Causa | Fix |
+|---|---|
+| Tipo no existe en `sg_notificacion_tipo_config` | Ejecutar el INSERT del paso 1 |
+| Tipo con `activo=false`, `para_login=false` o `acceso_restringido=true` | `UPDATE seguridad.sg_notificacion_tipo_config SET activo=TRUE, para_login=TRUE, acceso_restringido=FALSE WHERE tipo_id='RECORDATORIO'` |
+| Notificación con `para_login=FALSE` | `UPDATE general.sg_notificacion SET para_login=TRUE WHERE tipo='RECORDATORIO'` |
+| `empresa_id` no coincide con el del usuario | Verificar con el query de diagnóstico |
+| Usuario ya la vio antes | `DELETE FROM general.sg_notificacion_visto WHERE username = :username AND notificacion_id = :id` |
+
+---
+
 ## Notas importantes
 
 - **El insert directo a DB no dispara el SSE** — el push lo hace el código Java, no la DB. El fallback de 5 min cubre este caso.
 - **Deduplicación**: antes de crear una notificación, verificar `existsByModuloAndTipoAndReferenciaKeyAndEmpresaIdAndEstadoId`. La native query del scheduler incluye `NOT EXISTS` para mayor eficiencia.
 - **`visto` es por usuario, independiente**: un usuario puede marcar como vista sin afectar a los demás. Cerrar (`CER`) sí la quita para todos.
+- **`menu_url_origen` solo filtra badge/campana**, no el modal login. Para el modal, el filtro es `acceso_restringido` en el tipo.
 - **Particionamiento futuro**: cuando la tabla crezca, particionar por `fecha_reg` mensual en PostgreSQL. La tabla `sg_notificacion_visto` se puede limpiar en cascada.

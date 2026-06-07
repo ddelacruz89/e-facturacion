@@ -4,6 +4,7 @@ import com.braintech.eFacturador.jpa.notificacion.SgNotificacion;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -53,6 +54,35 @@ public interface SgNotificacionRepository extends JpaRepository<SgNotificacion, 
       @Param("sucursalId") Integer sucursalId,
       @Param("modulo") String modulo,
       @Param("urlsPermitidas") Collection<String> urlsPermitidas);
+
+  /**
+   * Notificaciones activas con para_login=true, no vistas por el usuario y que el usuario puede
+   * recibir: - tipos NO restringidos → los ve todo el mundo. - tipos restringidos → solo si el
+   * usuario tiene ese tipo en su perfil (tiposSuscritos). tiposNoRestringidos = tipos activos con
+   * accesoRestringido=false (cargados en el service). Si tiposSuscritos está vacío se pasa
+   * ["__NONE__"] para evitar IN vacío.
+   */
+  @Query(
+      """
+      SELECT n FROM SgNotificacion n
+      WHERE n.empresaId = :empresaId
+        AND n.estadoId = 'ACT'
+        AND n.paraLogin = TRUE
+        AND (
+            n.tipo IN :tiposNoRestringidos
+            OR n.tipo IN :tiposSuscritos
+        )
+        AND NOT EXISTS (
+            SELECT v FROM SgNotificacionVisto v
+            WHERE v.notificacion.id = n.id AND v.username = :username
+        )
+      ORDER BY n.fechaReg DESC
+      """)
+  List<SgNotificacion> findLoginPendientes(
+      @Param("empresaId") Integer empresaId,
+      @Param("username") String username,
+      @Param("tiposNoRestringidos") Set<String> tiposNoRestringidos,
+      @Param("tiposSuscritos") Set<String> tiposSuscritos);
 
   /** Cuenta notificaciones activas no vistas por el usuario, respetando sus permisos de menú. */
   @Query(

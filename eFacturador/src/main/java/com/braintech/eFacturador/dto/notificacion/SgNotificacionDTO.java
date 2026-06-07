@@ -33,4 +33,7 @@ public class SgNotificacionDTO {
 
   /** True si el usuario autenticado ya marcó esta notificación como vista. */
   private boolean visto;
+
+  /** True si esta notificación debe mostrarse como modal bloqueante al iniciar sesión. */
+  private boolean paraLogin;
 }

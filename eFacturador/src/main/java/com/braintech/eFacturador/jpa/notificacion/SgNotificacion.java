@@ -93,6 +93,10 @@ public class SgNotificacion implements Serializable {
   @Column(name = "menu_url_origen", length = 200)
   private String menuUrlOrigen;
 
+  /** Si true, esta notificación aparece como modal bloqueante al iniciar sesión. */
+  @Column(name = "para_login")
+  private Boolean paraLogin = false;
+
   // ── Estado ────────────────────────────────────────────────────────────────
 
   @Column(name = "estado_id", length = 10, nullable = false)

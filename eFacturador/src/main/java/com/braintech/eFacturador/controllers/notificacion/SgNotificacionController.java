@@ -1,6 +1,8 @@
 package com.braintech.eFacturador.controllers.notificacion;
 
 import com.braintech.eFacturador.dto.notificacion.SgNotificacionDTO;
+import com.braintech.eFacturador.dto.notificacion.SgNotificacionTipoConfigDTO;
+import com.braintech.eFacturador.dto.notificacion.SgNotificacionTipoConfigPatchDTO;
 import com.braintech.eFacturador.interfaces.notificacion.SgNotificacionService;
 import com.braintech.eFacturador.sse.InAlertaSseService;
 import com.braintech.eFacturador.util.TenantContext;
@@ -59,6 +61,43 @@ public class SgNotificacionController {
   @PutMapping("/{id}/cerrar")
   public ResponseEntity<Void> cerrar(@PathVariable Integer id) {
     notificacionService.cerrar(id);
+    return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * GET /login — Notificaciones pendientes de leer al iniciar sesión (para_login=true, no vistas,
+   * suscritas).
+   */
+  @GetMapping("/login")
+  public ResponseEntity<List<SgNotificacionDTO>> getLoginPendientes() {
+    return ResponseEntity.ok(notificacionService.findLoginPendientes());
+  }
+
+  /** GET /tipos — Catálogo de tipos activos (sin flag suscrito). */
+  @GetMapping("/tipos")
+  public ResponseEntity<List<SgNotificacionTipoConfigDTO>> getTodosTipos() {
+    return ResponseEntity.ok(notificacionService.getTiposConSuscripcion("__NONE__"));
+  }
+
+  /** GET /tipos/{username} — Catálogo de tipos activos con flag suscrito para el usuario dado. */
+  @GetMapping("/tipos/{username}")
+  public ResponseEntity<List<SgNotificacionTipoConfigDTO>> getTipos(@PathVariable String username) {
+    return ResponseEntity.ok(notificacionService.getTiposConSuscripcion(username));
+  }
+
+  /** PUT /tipos/{username}/suscripciones — Guarda los tipos suscritos del usuario (reemplaza). */
+  @PutMapping("/tipos/{username}/suscripciones")
+  public ResponseEntity<Void> saveSuscripciones(
+      @PathVariable String username, @RequestBody java.util.Set<String> tipoIds) {
+    notificacionService.saveSuscripciones(username, tipoIds);
+    return ResponseEntity.noContent().build();
+  }
+
+  /** PATCH /tipos/{tipoId} — Actualiza paraLogin y/o activo de un tipo (admin). */
+  @PatchMapping("/tipos/{tipoId}")
+  public ResponseEntity<Void> patchTipo(
+      @PathVariable String tipoId, @RequestBody SgNotificacionTipoConfigPatchDTO patch) {
+    notificacionService.patchTipoConfig(tipoId, patch);
     return ResponseEntity.noContent().build();
   }
 }

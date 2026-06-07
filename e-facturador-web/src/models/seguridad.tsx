@@ -129,3 +129,16 @@ export interface SgMenuResumenDTO {
     id?: number;
     menu: string;
 }
+
+export interface SgNotificacionTipoConfigDTO {
+    tipoId: string;
+    nombre: string;
+    descripcion?: string;
+    modulo: string;
+    paraLogin: boolean;
+    /** True = solo usuarios con el tipo marcado en su perfil lo reciben. False = lo reciben todos. */
+    accesoRestringido: boolean;
+    activo: boolean;
+    /** True si el usuario consultado tiene este tipo marcado en su perfil. */
+    suscrito: boolean;
+}

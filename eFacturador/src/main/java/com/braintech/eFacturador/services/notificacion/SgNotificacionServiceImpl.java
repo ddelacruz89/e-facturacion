@@ -1,13 +1,19 @@
 package com.braintech.eFacturador.services.notificacion;
 
 import com.braintech.eFacturador.dao.notificacion.SgNotificacionRepository;
+import com.braintech.eFacturador.dao.notificacion.SgNotificacionTipoConfigRepository;
 import com.braintech.eFacturador.dao.notificacion.SgNotificacionVistoRepository;
+import com.braintech.eFacturador.dao.notificacion.SgUsuarioNotifSuscripcionRepository;
 import com.braintech.eFacturador.dao.seguridad.SgPermisoRepository;
 import com.braintech.eFacturador.dto.notificacion.SgNotificacionDTO;
+import com.braintech.eFacturador.dto.notificacion.SgNotificacionTipoConfigDTO;
+import com.braintech.eFacturador.dto.notificacion.SgNotificacionTipoConfigPatchDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.notificacion.SgNotificacionService;
 import com.braintech.eFacturador.jpa.notificacion.SgNotificacion;
+import com.braintech.eFacturador.jpa.notificacion.SgNotificacionTipoConfig;
 import com.braintech.eFacturador.jpa.notificacion.SgNotificacionVisto;
+import com.braintech.eFacturador.jpa.notificacion.SgUsuarioNotifSuscripcion;
 import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -23,6 +29,8 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
   @Autowired private SgNotificacionRepository notificacionRepository;
   @Autowired private SgNotificacionVistoRepository vistoRepository;
   @Autowired private SgPermisoRepository permisoRepository;
+  @Autowired private SgNotificacionTipoConfigRepository tipoConfigRepository;
+  @Autowired private SgUsuarioNotifSuscripcionRepository suscripcionRepository;
   @Autowired private TenantContext tenantContext;
 
   @Override
@@ -100,6 +108,57 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
     notificacionRepository.save(notif);
   }
 
+  @Override
+  public List<SgNotificacionDTO> findLoginPendientes() {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    String username = tenantContext.getCurrentUsername();
+
+    // Tipos que llegan a todos (no restringidos)
+    Set<String> tiposNoRestringidos = tipoConfigRepository.findTiposNoRestringidos();
+
+    // Tipos restringidos a los que este usuario está suscrito
+    Set<String> tiposSuscritos =
+        suscripcionRepository.findTipoIdsByEmpresaIdAndUsername(empresaId, username);
+
+    // Si no hay nada que mostrar al usuario, retornar vacío rápido
+    if (tiposNoRestringidos.isEmpty() && tiposSuscritos.isEmpty()) return List.of();
+
+    Set<String> suscritos = tiposSuscritos.isEmpty() ? Set.of("__NONE__") : tiposSuscritos;
+    Set<String> noRestringidos =
+        tiposNoRestringidos.isEmpty() ? Set.of("__NONE__") : tiposNoRestringidos;
+
+    List<SgNotificacion> notifs =
+        notificacionRepository.findLoginPendientes(empresaId, username, noRestringidos, suscritos);
+    return notifs.stream().map(n -> toDTO(n, false)).toList();
+  }
+
+  @Override
+  public List<SgNotificacionTipoConfigDTO> getTiposConSuscripcion(String username) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    Set<String> suscritos =
+        suscripcionRepository.findTipoIdsByEmpresaIdAndUsername(empresaId, username);
+
+    return tipoConfigRepository.findByActivoTrueOrderByModuloAscNombreAsc().stream()
+        .map(t -> toTipoDTO(t, suscritos.contains(t.getTipoId())))
+        .toList();
+  }
+
+  @Override
+  @Transactional
+  public void saveSuscripciones(String username, Set<String> tipoIds) {
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    suscripcionRepository.deleteAllByEmpresaIdAndUsername(empresaId, username);
+    tipoIds.forEach(
+        tipoId -> {
+          SgUsuarioNotifSuscripcion s = new SgUsuarioNotifSuscripcion();
+          s.setEmpresaId(empresaId);
+          s.setUsername(username);
+          s.setTipoId(tipoId);
+          s.setFechaReg(LocalDateTime.now());
+          suscripcionRepository.save(s);
+        });
+  }
+
   private SgNotificacionDTO toDTO(SgNotificacion n, boolean visto) {
     return SgNotificacionDTO.builder()
         .id(n.getId())
@@ -116,6 +175,34 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
         .fechaReg(n.getFechaReg())
         .usuarioReg(n.getUsuarioReg())
         .visto(visto)
+        .paraLogin(Boolean.TRUE.equals(n.getParaLogin()))
         .build();
+  }
+
+  @Override
+  @Transactional
+  public void patchTipoConfig(String tipoId, SgNotificacionTipoConfigPatchDTO patch) {
+    SgNotificacionTipoConfig tipo =
+        tipoConfigRepository
+            .findById(tipoId)
+            .orElseThrow(
+                () -> new RecordNotFoundException("Tipo de notificación no encontrado: " + tipoId));
+    if (patch.getParaLogin() != null) tipo.setParaLogin(patch.getParaLogin());
+    if (patch.getAccesoRestringido() != null)
+      tipo.setAccesoRestringido(patch.getAccesoRestringido());
+    if (patch.getActivo() != null) tipo.setActivo(patch.getActivo());
+    tipoConfigRepository.save(tipo);
+  }
+
+  private SgNotificacionTipoConfigDTO toTipoDTO(SgNotificacionTipoConfig t, boolean suscrito) {
+    return new SgNotificacionTipoConfigDTO(
+        t.getTipoId(),
+        t.getNombre(),
+        t.getDescripcion(),
+        t.getModulo(),
+        Boolean.TRUE.equals(t.getParaLogin()),
+        Boolean.TRUE.equals(t.getAccesoRestringido()),
+        Boolean.TRUE.equals(t.getActivo()),
+        suscrito);
   }
 }
