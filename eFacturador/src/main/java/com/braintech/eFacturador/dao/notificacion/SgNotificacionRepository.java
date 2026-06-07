@@ -56,11 +56,20 @@ public interface SgNotificacionRepository extends JpaRepository<SgNotificacion, 
       @Param("urlsPermitidas") Collection<String> urlsPermitidas);
 
   /**
-   * Notificaciones activas con para_login=true, no vistas por el usuario y que el usuario puede
-   * recibir: - tipos NO restringidos → los ve todo el mundo. - tipos restringidos → solo si el
-   * usuario tiene ese tipo en su perfil (tiposSuscritos). tiposNoRestringidos = tipos activos con
-   * accesoRestringido=false (cargados en el service). Si tiposSuscritos está vacío se pasa
-   * ["__NONE__"] para evitar IN vacío.
+   * Notificaciones pendientes al login para el usuario.
+   *
+   * <p>Reglas de acceso (en orden):
+   * <ol>
+   *   <li>Si la notificación tiene destinatarios específicos → solo esos usuarios la ven.
+   *   <li>Si no tiene destinatarios → aplica tipo: noRestringido (todos) o suscrito (opt-in).
+   * </ol>
+   *
+   * <p>Reglas de visibilidad:
+   * <ul>
+   *   <li>{@code repetirLogin=false}: se oculta tras el primer "Entendido" (NOT EXISTS visto).
+   *   <li>{@code repetirLogin=true}: reaparece en cada login hasta {@code fechaExpiracion}.
+   *   <li>{@code fechaExpiracion} NULL = sin límite de tiempo.
+   * </ul>
    */
   @Query(
       """
@@ -68,13 +77,25 @@ public interface SgNotificacionRepository extends JpaRepository<SgNotificacion, 
       WHERE n.empresaId = :empresaId
         AND n.estadoId = 'ACT'
         AND n.paraLogin = TRUE
+        AND (n.fechaExpiracion IS NULL OR n.fechaExpiracion > CURRENT_TIMESTAMP)
         AND (
-            n.tipo IN :tiposNoRestringidos
-            OR n.tipo IN :tiposSuscritos
+            n.repetirLogin = TRUE
+            OR NOT EXISTS (
+                SELECT v FROM SgNotificacionVisto v
+                WHERE v.notificacion.id = n.id AND v.username = :username
+            )
         )
-        AND NOT EXISTS (
-            SELECT v FROM SgNotificacionVisto v
-            WHERE v.notificacion.id = n.id AND v.username = :username
+        AND (
+            EXISTS (
+                SELECT d FROM SgNotificacionDestinatario d
+                WHERE d.notificacion.id = n.id AND d.username = :username
+            )
+            OR (
+                NOT EXISTS (
+                    SELECT d FROM SgNotificacionDestinatario d WHERE d.notificacion.id = n.id
+                )
+                AND (n.tipo IN :tiposNoRestringidos OR n.tipo IN :tiposSuscritos)
+            )
         )
       ORDER BY n.fechaReg DESC
       """)

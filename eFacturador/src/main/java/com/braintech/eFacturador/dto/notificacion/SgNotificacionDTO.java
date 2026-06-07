@@ -36,4 +36,13 @@ public class SgNotificacionDTO {
 
   /** True si esta notificación debe mostrarse como modal bloqueante al iniciar sesión. */
   private boolean paraLogin;
+
+  /** Si true, reaparece en cada login hasta fechaExpiracion aunque el usuario ya la confirmó. */
+  private boolean repetirLogin;
+
+  /** Fecha límite de aparición en el login. NULL = sin límite. */
+  private java.time.LocalDateTime fechaExpiracion;
+
+  /** Usernames de destinatarios específicos. Vacío = aplica regla de tipo (acceso_restringido). */
+  private java.util.List<String> destinatarios;
 }

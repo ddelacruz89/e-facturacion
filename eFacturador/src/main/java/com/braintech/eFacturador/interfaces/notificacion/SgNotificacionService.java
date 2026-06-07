@@ -5,6 +5,7 @@ import com.braintech.eFacturador.dto.notificacion.SgNotificacionTipoConfigDTO;
 import com.braintech.eFacturador.dto.notificacion.SgNotificacionTipoConfigPatchDTO;
 import java.util.List;
 import java.util.Set;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface SgNotificacionService {
 
@@ -37,4 +38,16 @@ public interface SgNotificacionService {
 
   /** Actualiza paraLogin y/o activo de un tipo de notificación (admin). */
   void patchTipoConfig(String tipoId, SgNotificacionTipoConfigPatchDTO patch);
+
+  /** Crea una notificación desde la app de management. Acepta destinatarios opcionales. */
+  SgNotificacionDTO crear(SgNotificacionDTO dto);
+
+  /** Lista los destinatarios específicos de una notificación. */
+  List<String> getDestinatarios(Integer notificacionId);
+
+  /** Agrega un destinatario a una notificación. Idempotente. */
+  void addDestinatario(Integer notificacionId, String username);
+
+  /** Elimina un destinatario de una notificación. */
+  void removeDestinatario(Integer notificacionId, String username);
 }

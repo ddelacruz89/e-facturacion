@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
@@ -98,6 +99,39 @@ public class SgNotificacionController {
   public ResponseEntity<Void> patchTipo(
       @PathVariable String tipoId, @RequestBody SgNotificacionTipoConfigPatchDTO patch) {
     notificacionService.patchTipoConfig(tipoId, patch);
+    return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * POST / — Crea una notificación desde la app de management.
+   * Body: { modulo, tipo, titulo, descripcion, repetirLogin, fechaExpiracion, destinatarios[] }
+   * Si destinatarios es null o vacío → aplica regla de acceso_restringido del tipo.
+   */
+  @PostMapping
+  public ResponseEntity<SgNotificacionDTO> crear(@RequestBody SgNotificacionDTO dto) {
+    SgNotificacionDTO created = notificacionService.crear(dto);
+    return ResponseEntity.status(201).body(created);
+  }
+
+  /** GET /{id}/destinatarios — Lista los usernames destinatarios específicos de la notificación. */
+  @GetMapping("/{id}/destinatarios")
+  public ResponseEntity<List<String>> getDestinatarios(@PathVariable Integer id) {
+    return ResponseEntity.ok(notificacionService.getDestinatarios(id));
+  }
+
+  /** POST /{id}/destinatarios — Agrega un destinatario. Body: { "username": "..." } */
+  @PostMapping("/{id}/destinatarios")
+  public ResponseEntity<Void> addDestinatario(
+      @PathVariable Integer id, @RequestBody Map<String, String> body) {
+    notificacionService.addDestinatario(id, body.get("username"));
+    return ResponseEntity.noContent().build();
+  }
+
+  /** DELETE /{id}/destinatarios/{username} — Elimina un destinatario específico. */
+  @DeleteMapping("/{id}/destinatarios/{username}")
+  public ResponseEntity<Void> removeDestinatario(
+      @PathVariable Integer id, @PathVariable String username) {
+    notificacionService.removeDestinatario(id, username);
     return ResponseEntity.noContent().build();
   }
 }
