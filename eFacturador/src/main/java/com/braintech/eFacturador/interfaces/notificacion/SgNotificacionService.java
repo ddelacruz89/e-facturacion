@@ -5,7 +5,6 @@ import com.braintech.eFacturador.dto.notificacion.SgNotificacionTipoConfigDTO;
 import com.braintech.eFacturador.dto.notificacion.SgNotificacionTipoConfigPatchDTO;
 import java.util.List;
 import java.util.Set;
-import org.springframework.transaction.annotation.Transactional;
 
 public interface SgNotificacionService {
 

@@ -59,12 +59,14 @@ public interface SgNotificacionRepository extends JpaRepository<SgNotificacion, 
    * Notificaciones pendientes al login para el usuario.
    *
    * <p>Reglas de acceso (en orden):
+   *
    * <ol>
    *   <li>Si la notificación tiene destinatarios específicos → solo esos usuarios la ven.
    *   <li>Si no tiene destinatarios → aplica tipo: noRestringido (todos) o suscrito (opt-in).
    * </ol>
    *
    * <p>Reglas de visibilidad:
+   *
    * <ul>
    *   <li>{@code repetirLogin=false}: se oculta tras el primer "Entendido" (NOT EXISTS visto).
    *   <li>{@code repetirLogin=true}: reaparece en cada login hasta {@code fechaExpiracion}.

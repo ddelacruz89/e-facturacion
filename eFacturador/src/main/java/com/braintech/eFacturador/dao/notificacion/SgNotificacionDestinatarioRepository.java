@@ -15,7 +15,8 @@ public interface SgNotificacionDestinatarioRepository
   boolean existsByNotificacionIdAndUsername(Integer notificacionId, String username);
 
   @Modifying
-  @Query("DELETE FROM SgNotificacionDestinatario d WHERE d.notificacion.id = :notificacionId AND d.username = :username")
+  @Query(
+      "DELETE FROM SgNotificacionDestinatario d WHERE d.notificacion.id = :notificacionId AND d.username = :username")
   void deleteByNotificacionIdAndUsername(
       @Param("notificacionId") Integer notificacionId, @Param("username") String username);
 }

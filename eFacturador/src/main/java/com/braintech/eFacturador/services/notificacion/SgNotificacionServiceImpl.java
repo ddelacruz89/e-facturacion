@@ -176,7 +176,10 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
     n.setTipo(dto.getTipo());
     n.setTitulo(dto.getTitulo());
     n.setDescripcion(dto.getDescripcion());
-    n.setReferenciaKey(dto.getReferenciaTipo() != null ? dto.getReferenciaTipo() : "manual:" + System.currentTimeMillis());
+    n.setReferenciaKey(
+        dto.getReferenciaTipo() != null
+            ? dto.getReferenciaTipo()
+            : "manual:" + System.currentTimeMillis());
     n.setMenuUrlOrigen(null);
     n.setParaLogin(true);
     n.setRepetirLogin(dto.isRepetirLogin());
@@ -187,27 +190,33 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
     SgNotificacion saved = notificacionRepository.save(n);
 
     if (dto.getDestinatarios() != null) {
-      dto.getDestinatarios().forEach(u ->
-          destinatarioRepository.save(new SgNotificacionDestinatario(saved, u)));
+      dto.getDestinatarios()
+          .forEach(u -> destinatarioRepository.save(new SgNotificacionDestinatario(saved, u)));
     }
 
-    List<String> destinatarios = destinatarioRepository.findByNotificacionId(saved.getId())
-        .stream().map(SgNotificacionDestinatario::getUsername).collect(Collectors.toList());
+    List<String> destinatarios =
+        destinatarioRepository.findByNotificacionId(saved.getId()).stream()
+            .map(SgNotificacionDestinatario::getUsername)
+            .collect(Collectors.toList());
     return toDTO(saved, false, destinatarios);
   }
 
   @Override
   public List<String> getDestinatarios(Integer notificacionId) {
-    return destinatarioRepository.findByNotificacionId(notificacionId)
-        .stream().map(SgNotificacionDestinatario::getUsername).collect(Collectors.toList());
+    return destinatarioRepository.findByNotificacionId(notificacionId).stream()
+        .map(SgNotificacionDestinatario::getUsername)
+        .collect(Collectors.toList());
   }
 
   @Override
   @Transactional
   public void addDestinatario(Integer notificacionId, String username) {
     if (destinatarioRepository.existsByNotificacionIdAndUsername(notificacionId, username)) return;
-    SgNotificacion notif = notificacionRepository.findById(notificacionId)
-        .orElseThrow(() -> new RecordNotFoundException("Notificación no encontrada: " + notificacionId));
+    SgNotificacion notif =
+        notificacionRepository
+            .findById(notificacionId)
+            .orElseThrow(
+                () -> new RecordNotFoundException("Notificación no encontrada: " + notificacionId));
     destinatarioRepository.save(new SgNotificacionDestinatario(notif, username));
   }
 
@@ -218,8 +227,10 @@ public class SgNotificacionServiceImpl implements SgNotificacionService {
   }
 
   private SgNotificacionDTO toDTO(SgNotificacion n, boolean visto) {
-    List<String> destinatarios = destinatarioRepository.findByNotificacionId(n.getId())
-        .stream().map(SgNotificacionDestinatario::getUsername).collect(Collectors.toList());
+    List<String> destinatarios =
+        destinatarioRepository.findByNotificacionId(n.getId()).stream()
+            .map(SgNotificacionDestinatario::getUsername)
+            .collect(Collectors.toList());
     return toDTO(n, visto, destinatarios);
   }
 

@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
@@ -103,9 +102,9 @@ public class SgNotificacionController {
   }
 
   /**
-   * POST / — Crea una notificación desde la app de management.
-   * Body: { modulo, tipo, titulo, descripcion, repetirLogin, fechaExpiracion, destinatarios[] }
-   * Si destinatarios es null o vacío → aplica regla de acceso_restringido del tipo.
+   * POST / — Crea una notificación desde la app de management. Body: { modulo, tipo, titulo,
+   * descripcion, repetirLogin, fechaExpiracion, destinatarios[] } Si destinatarios es null o vacío
+   * → aplica regla de acceso_restringido del tipo.
    */
   @PostMapping
   public ResponseEntity<SgNotificacionDTO> crear(@RequestBody SgNotificacionDTO dto) {
