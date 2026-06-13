@@ -491,19 +491,56 @@ GET /api/v1/notificaciones
 }
 ```
 
+**Aviso de vencimiento de licencia — solo a usuarios con permiso de mensajes privados, 6 días, reaparece en cada login:**
+```json
+{
+  "modulo": "GENERAL", "tipo": "LICENCIA_VENCIMIENTO",
+  "titulo": "Tu licencia vence pronto",
+  "descripcion": "La licencia vence en 6 días. Contacta a soporte para renovarla.",
+  "repetirLogin": true,
+  "fechaExpiracion": "<NOW() + 6 days>",
+  "destinatarios": ["admin", "gerente"]
+}
+```
+> Los `destinatarios` deben ser los usernames que tienen el permiso de mensajes privados en la empresa. La app de management los consulta previamente y los incluye en el array.
+
+**Cerrar el aviso de licencia cuando se haga el pago (desaparece para todos instantáneamente):**
+```
+PUT /api/v1/notificaciones/{id}/cerrar
+→ 204 No Content
+```
+Una vez en `CER`, la notificación desaparece del login de todos los destinatarios sin necesidad de tocar `sg_notificacion_visto`. No hay que eliminar destinatarios ni marcar nada como visto.
+
 ---
 
-### Prerequisito — tipo `RECORDATORIO` en catálogo
+### Prerequisito — tipos en catálogo
 
-Antes de crear notificaciones de tipo `RECORDATORIO`, verificar que el tipo exista:
+Tipos recomendados para la app de management. Ejecutar una sola vez por ambiente:
 
 ```sql
+-- Recordatorio general: llega a todos sin suscripción
 INSERT INTO seguridad.sg_notificacion_tipo_config
     (tipo_id, nombre, descripcion, modulo, para_login, acceso_restringido, activo, fecha_reg, usuario_reg)
 VALUES ('RECORDATORIO', 'Recordatorio general', 'Avisos manuales desde management',
         'GENERAL', TRUE, FALSE, TRUE, NOW(), 'system')
 ON CONFLICT (tipo_id) DO NOTHING;
+
+-- Aviso de licencia: requiere destinatarios explícitos
+INSERT INTO seguridad.sg_notificacion_tipo_config
+    (tipo_id, nombre, descripcion, modulo, para_login, acceso_restringido, activo, fecha_reg, usuario_reg)
+VALUES ('LICENCIA_VENCIMIENTO', 'Vencimiento de licencia', 'Alerta de próximo vencimiento de licencia',
+        'GENERAL', TRUE, TRUE, TRUE, NOW(), 'system')
+ON CONFLICT (tipo_id) DO NOTHING;
+
+-- Mensaje privado: requiere destinatarios explícitos
+INSERT INTO seguridad.sg_notificacion_tipo_config
+    (tipo_id, nombre, descripcion, modulo, para_login, acceso_restringido, activo, fecha_reg, usuario_reg)
+VALUES ('MENSAJE_PRIVADO', 'Mensaje privado', 'Mensajes dirigidos a usuarios específicos',
+        'GENERAL', TRUE, TRUE, TRUE, NOW(), 'system')
+ON CONFLICT (tipo_id) DO NOTHING;
 ```
+
+> `acceso_restringido=TRUE` en `LICENCIA_VENCIMIENTO` y `MENSAJE_PRIVADO` significa que **requieren destinatarios explícitos** en `sg_notificacion_destinatario`. Sin filas ahí, nadie los ve.
 
 ---
 
