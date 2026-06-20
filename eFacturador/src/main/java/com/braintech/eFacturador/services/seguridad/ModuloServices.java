@@ -44,8 +44,39 @@ public class ModuloServices implements IBaseString<SgModulo> {
 
   @Override
   public Response<List<ModuloDto>> getFindByAll() {
-    String username = tenantContext.getCurrentUsername();
     Integer empresaId = tenantContext.getCurrentEmpresaId();
+
+    // Modo soporte: retornar todos los menús activos de módulos licenciados.
+    // El usuario soporte no tiene SgUsuarioRol en el tenant, pero puede
+    // ver todo en modo solo-lectura (PermisoAspect garantiza que no puede escribir).
+    if (tenantContext.isEsSoporte()) {
+      Set<String> modulosLicenciadosSoporte = getModulosLicenciados(empresaId);
+      List<ModuloDto> resultSoporte =
+          moduloDao.findAll().stream()
+              .filter(m -> modulosLicenciadosSoporte.contains(m.getId()))
+              .map(
+                  modulo -> {
+                    List<menuDto> menus =
+                        modulo.getMenus().stream()
+                            .filter(m -> Boolean.TRUE.equals(m.getActivo()))
+                            .map(
+                                m ->
+                                    (menuDto)
+                                        new MenuDtoImpl(
+                                            m.getId(), m.getMenu(), m.getUrl(), m.getUrlSql()))
+                            .toList();
+                    return (ModuloDto)
+                        new ModuloDtoImpl(modulo.getId(), modulo.getModulo(), menus, false);
+                  })
+              .filter(m -> !m.getMenus().isEmpty())
+              .toList();
+      return Response.<List<ModuloDto>>builder()
+          .content(resultSoporte)
+          .status(HttpStatus.OK)
+          .build();
+    }
+
+    String username = tenantContext.getCurrentUsername();
     Integer sucursalId = tenantContext.getCurrentSucursalId();
 
     Set<Integer> menuIdsPermitidos =

@@ -1,14 +1,21 @@
 package com.braintech.eFacturador.seguridad;
 
+import com.braintech.eFacturador.dao.seguridad.EmpresaDao;
+import com.braintech.eFacturador.dao.seguridad.SgAccesoSoporteRepository;
 import com.braintech.eFacturador.dao.seguridad.SgRecuperacionTokenRepository;
+import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRepository;
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRolRepository;
+import com.braintech.eFacturador.jpa.seguridad.SgAccesoSoporte;
+import com.braintech.eFacturador.jpa.seguridad.SgEmpresa;
 import com.braintech.eFacturador.jpa.seguridad.SgRecuperacionToken;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
 import com.braintech.eFacturador.seguridad.model.CambiarPasswordRequest;
+import com.braintech.eFacturador.seguridad.model.EmpresaSoporteOpcionDTO;
 import com.braintech.eFacturador.seguridad.model.LoginRequest;
 import com.braintech.eFacturador.seguridad.model.LoginResponse;
+import com.braintech.eFacturador.seguridad.model.SelectEmpresaSoporteRequest;
 import com.braintech.eFacturador.seguridad.model.SelectSucursalRequest;
 import com.braintech.eFacturador.seguridad.model.SolicitarRecuperacionRequest;
 import com.braintech.eFacturador.seguridad.model.SucursalOpcionDTO;
@@ -37,6 +44,9 @@ public class AuthController {
   private final SgUsuarioRepository usuarioRepository;
   private final SgUsuarioRolRepository usuarioRolRepository;
   private final SgRecuperacionTokenRepository recuperacionTokenRepository;
+  private final SgAccesoSoporteRepository accesoSoporteRepository;
+  private final SgSucursalRepository sucursalRepository;
+  private final EmpresaDao empresaDao;
   private final JwtUtil jwtUtil;
   private final PasswordEncoder passwordEncoder;
   private final TenantContext tenantContext;
@@ -51,11 +61,18 @@ public class AuthController {
       return ResponseEntity.status(401).body(null);
     }
 
+    // ── Flujo especial para usuarios de soporte ──────────────────────────────
+    if (Boolean.TRUE.equals(usuario.getEsSoporte())) {
+      return loginSoporte(usuario);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     List<SgSucursal> sucursales =
         usuarioRolRepository.findSucursalesActivasByUsername(usuario.getUsername());
 
     if (sucursales.isEmpty()) {
-      return ResponseEntity.status(403).body(null);
+      return ResponseEntity.status(403)
+          .body(new LoginResponse("Usuario sin sucursales activas asignadas"));
     }
 
     // Eliminar duplicados por id de sucursal (en caso de múltiples roles en la misma sucursal)
@@ -164,6 +181,132 @@ public class AuthController {
     return ResponseEntity.ok(response);
   }
 
+  // ── Soporte ───────────────────────────────────────────────────────────────
+
+  /**
+   * Flujo de login para usuarios con {@code es_soporte=true}.
+   *
+   * <p>Si el usuario tiene exactamente un grant activo se emite el JWT soporte directamente (igual
+   * que el flujo de sucursal única en usuarios normales). Si tiene más de uno se devuelve {@code
+   * requiresEmpresaSoporteSelection=true} y el frontend llama a {@code /select-empresa-soporte}.
+   */
+  private ResponseEntity<LoginResponse> loginSoporte(SgUsuario usuario) {
+    List<SgAccesoSoporte> accesos =
+        accesoSoporteRepository.findAccesosActivosByUsername(
+            usuario.getUsername(), java.time.LocalDateTime.now());
+
+    if (accesos.isEmpty()) {
+      log.warn("Soporte sin grants activos — username={}", usuario.getUsername());
+      return ResponseEntity.status(403).body(null);
+    }
+
+    List<EmpresaSoporteOpcionDTO> opciones =
+        accesos.stream()
+            .map(
+                a -> {
+                  SgEmpresa empresa = empresaDao.findById(a.getEmpresaId()).orElse(null);
+                  return new EmpresaSoporteOpcionDTO(
+                      a.getEmpresaId(),
+                      empresa != null ? empresa.getEmpresa() : "Empresa " + a.getEmpresaId(),
+                      a.getFechaExpiracion());
+                })
+            .toList();
+
+    LoginResponse response = new LoginResponse();
+    response.setUsername(usuario.getUsername());
+
+    if (opciones.size() == 1) {
+      // Auto-selección: único grant activo
+      return emitirTokenSoporte(response, usuario.getUsername(), opciones.get(0).getEmpresaId());
+    }
+
+    // Múltiples grants: el frontend presenta el selector de empresa
+    response.setPreAuthToken(jwtUtil.generatePreAuthToken(usuario.getUsername()));
+    response.setRequiresEmpresaSoporteSelection(true);
+    response.setEmpresasSoporteDisponibles(opciones);
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Segundo paso del login soporte: el usuario elige la empresa y se emite el JWT.
+   *
+   * <p>Endpoint público (no requiere JWT activo, solo un preAuthToken válido).
+   */
+  @PostMapping("/select-empresa-soporte")
+  public ResponseEntity<LoginResponse> selectEmpresaSoporte(
+      @RequestBody SelectEmpresaSoporteRequest request) {
+
+    // 1. Validar preAuthToken
+    String username;
+    try {
+      io.jsonwebtoken.Claims claims =
+          Jwts.parser()
+              .setSigningKey(jwtUtil.getSecretKey())
+              .parseClaimsJws(request.getPreAuthToken())
+              .getBody();
+      if (!Boolean.TRUE.equals(claims.get("preAuth", Boolean.class))) {
+        return ResponseEntity.status(401).build();
+      }
+      username = claims.getSubject();
+    } catch (JwtException | IllegalArgumentException e) {
+      return ResponseEntity.status(401).build();
+    }
+
+    // 2. Revalidar que el grant sigue activo (puede haber expirado entre los 5 min del preAuth)
+    boolean grantValido =
+        accesoSoporteRepository
+            .findAccesoActivoByUsernameAndEmpresa(
+                username, request.getEmpresaIdDestino(), java.time.LocalDateTime.now())
+            .isPresent();
+
+    if (!grantValido) {
+      log.warn(
+          "Grant soporte inválido o expirado — username={} empresaId={}",
+          username,
+          request.getEmpresaIdDestino());
+      return ResponseEntity.status(403).build();
+    }
+
+    LoginResponse response = new LoginResponse();
+    response.setUsername(username);
+    return emitirTokenSoporte(response, username, request.getEmpresaIdDestino());
+  }
+
+  /** Emite el JWT soporte y completa el LoginResponse con los datos de empresa/sucursal. */
+  private ResponseEntity<LoginResponse> emitirTokenSoporte(
+      LoginResponse response, String username, Integer empresaId) {
+
+    List<SgSucursal> sucursales = sucursalRepository.findByEmpresaId(empresaId);
+    if (sucursales.isEmpty()) {
+      log.error("Empresa sin sucursales — empresaId={}", empresaId);
+      return ResponseEntity.status(500).body(null);
+    }
+    // Tomar la primera sucursal activa; si todas están inactivas usar la primera de la lista.
+    SgSucursal sucursal =
+        sucursales.stream()
+            .filter(s -> Boolean.TRUE.equals(s.getActivo()))
+            .findFirst()
+            .orElse(sucursales.get(0));
+
+    SgEmpresa empresa = empresaDao.findById(empresaId).orElse(null);
+    String empresaNombre = empresa != null ? empresa.getEmpresa() : "Empresa " + empresaId;
+
+    String token =
+        jwtUtil.generateSoporteToken(
+            username, empresaId, sucursal.getId(), empresaNombre, sucursal.getNombre());
+
+    response.setToken(token);
+    response.setEmpresaId(empresaId);
+    response.setSucursalId(sucursal.getId());
+    response.setEmpresaNombre(empresaNombre);
+    response.setSucursalNombre(sucursal.getNombre());
+    response.setEsSoporte(true);
+    response.setRequiresEmpresaSoporteSelection(false);
+    return ResponseEntity.ok(response);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   @PostMapping("/recuperar-password/solicitar")
   public ResponseEntity<?> solicitarRecuperacion(@RequestBody SolicitarRecuperacionRequest req) {
     log.info("[RecuperarPassword] Solicitud recibida para email: {}", req.getEmail());
@@ -237,6 +380,7 @@ public class AuthController {
       response.setSucursalId(claims.get("sucursalId", Integer.class));
       response.setEmpresaNombre(claims.get("empresaNombre", String.class));
       response.setSucursalNombre(claims.get("sucursalNombre", String.class));
+      response.setEsSoporte(Boolean.TRUE.equals(claims.get("esSoporte", Boolean.class)));
       response.setToken(token);
 
       return ResponseEntity.ok(response);

@@ -36,6 +36,26 @@ public class PermisoAspect {
   @Before("@annotation(requierePermiso)")
   public void verificarPermiso(RequierePermiso requierePermiso) {
 
+    // Modo soporte: el usuario puede ver (LEER) cualquier módulo licenciado,
+    // pero no puede escribir, eliminar ni imprimir — sin excepción.
+    if (tenantContext.isEsSoporte()) {
+      if (requierePermiso.accion() != Accion.LEER) {
+        log.warn(
+            "Acceso denegado (soporte) — usuario={} accion={} menuUrl={}",
+            tenantContext.getCurrentUsername(),
+            requierePermiso.accion(),
+            requierePermiso.menuUrl());
+        throw new AccesoDenegadoException(
+            "Los usuarios de soporte tienen acceso de solo lectura. "
+                + "Esta acción no está permitida en modo soporte.");
+      }
+      log.debug(
+          "Soporte LEER OK — usuario={} menuUrl={}",
+          tenantContext.getCurrentUsername(),
+          requierePermiso.menuUrl());
+      return;
+    }
+
     String username = tenantContext.getCurrentUsername();
     Integer empresaId = tenantContext.getCurrentEmpresaId();
     Integer sucursalId = tenantContext.getCurrentSucursalId();

@@ -55,6 +55,8 @@ const MisEntregasView = lazy(() => import("./components/despacho/MisEntregasView
 const ReciboEntregaConfigView = lazy(() => import("./components/despacho/ReciboEntregaConfigView"));
 const DePrecioEnvioView = lazy(() => import("./components/despacho/DePrecioEnvioView"));
 const NotificacionTipoConfigView = lazy(() => import("./components/seguridad/NotificacionTipoConfigView"));
+const TicketListView    = lazy(() => import("./components/helpdesk/TicketListView"));
+const TicketDetalleView = lazy(() => import("./components/helpdesk/TicketDetalleView"));
 
 // Routes component that uses authentication context
 const AppRoutes = () => {
@@ -117,6 +119,8 @@ const AppRoutes = () => {
                     <Route path="despacho/config/recibo" element={<MenuRoute menuUrl="/despacho/config/recibo"><ReciboEntregaConfigView /></MenuRoute>} />
                     <Route path="despacho/precios-envio" element={<MenuRoute menuUrl="/despacho/precios-envio"><DePrecioEnvioView /></MenuRoute>} />
                     <Route path="seguridad/config-avisos" element={<NotificacionTipoConfigView />} />
+                    <Route path="helpdesk/tickets"     element={<TicketListView />} />
+                    <Route path="helpdesk/tickets/:id" element={<TicketDetalleView />} />
                 </Route>
 
                 {/* Catch all route */}

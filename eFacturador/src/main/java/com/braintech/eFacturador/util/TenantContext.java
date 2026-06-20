@@ -36,6 +36,22 @@ public class TenantContext {
     return getClaims().get("sucursalNombre", String.class);
   }
 
+  /**
+   * {@code true} si el token fue emitido para un usuario de soporte ({@code esSoporte=true} en los
+   * claims).
+   *
+   * <p>Cuando es {@code true}:
+   *
+   * <ul>
+   *   <li>{@link com.braintech.eFacturador.security.PermisoAspect} solo permite {@code LEER}.
+   *   <li>{@link com.braintech.eFacturador.services.seguridad.ModuloServices} retorna todos los
+   *       menús licenciados sin filtrar por rol.
+   * </ul>
+   */
+  public boolean isEsSoporte() {
+    return Boolean.TRUE.equals(getClaims().get("esSoporte", Boolean.class));
+  }
+
   private Claims getClaims() {
     try {
       Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

@@ -5,6 +5,22 @@ import java.util.List;
 public class LoginResponse {
   private String token;
   private String username;
+  private String message;
+
+  public LoginResponse() {}
+
+  public LoginResponse(String message) {
+    this.message = message;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public void setMessage(String message) {
+    this.message = message;
+  }
+
   private Integer empresaId;
   private Integer sucursalId;
   private String sucursalNombre;
@@ -14,6 +30,13 @@ public class LoginResponse {
   private Boolean requiresSucursalSelection;
   private String preAuthToken;
   private List<SucursalOpcionDTO> sucursalesDisponibles;
+
+  // Flujo soporte: el JWT lleva esSoporte=true y el frontend muestra el banner
+  private Boolean esSoporte;
+
+  // Flujo soporte multi-empresa: cuando el usuario soporte tiene grants en más de una empresa
+  private Boolean requiresEmpresaSoporteSelection;
+  private List<EmpresaSoporteOpcionDTO> empresasSoporteDisponibles;
 
   public String getToken() {
     return token;
@@ -85,5 +108,30 @@ public class LoginResponse {
 
   public void setSucursalesDisponibles(List<SucursalOpcionDTO> sucursalesDisponibles) {
     this.sucursalesDisponibles = sucursalesDisponibles;
+  }
+
+  public Boolean getEsSoporte() {
+    return esSoporte;
+  }
+
+  public void setEsSoporte(Boolean esSoporte) {
+    this.esSoporte = esSoporte;
+  }
+
+  public Boolean getRequiresEmpresaSoporteSelection() {
+    return requiresEmpresaSoporteSelection;
+  }
+
+  public void setRequiresEmpresaSoporteSelection(Boolean requiresEmpresaSoporteSelection) {
+    this.requiresEmpresaSoporteSelection = requiresEmpresaSoporteSelection;
+  }
+
+  public List<EmpresaSoporteOpcionDTO> getEmpresasSoporteDisponibles() {
+    return empresasSoporteDisponibles;
+  }
+
+  public void setEmpresasSoporteDisponibles(
+      List<EmpresaSoporteOpcionDTO> empresasSoporteDisponibles) {
+    this.empresasSoporteDisponibles = empresasSoporteDisponibles;
   }
 }
