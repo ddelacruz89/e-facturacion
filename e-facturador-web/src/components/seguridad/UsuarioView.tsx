@@ -120,8 +120,8 @@ const UsuarioView = () => {
             setIsNew(false);
             showSnackbar("Usuario guardado correctamente", "success");
         } catch (error) {
-            console.error("Error al guardar usuario:", error);
-            showSnackbar("Error al guardar el usuario", "error");
+            const msg = (error as any)?.message || "Error al guardar el usuario";
+            showSnackbar(msg, "error");
         }
     };
 
