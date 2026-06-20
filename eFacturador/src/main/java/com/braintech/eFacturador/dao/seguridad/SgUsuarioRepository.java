@@ -61,11 +61,13 @@ public interface SgUsuarioRepository extends JpaRepository<SgUsuario, String> {
         AND (CAST(:q AS String) IS NULL
              OR LOWER(u.username) LIKE LOWER(CONCAT('%', CAST(:q AS String), '%'))
              OR LOWER(u.nombre)   LIKE LOWER(CONCAT('%', CAST(:q AS String), '%')))
+        AND (:soloChoferes = false OR u.esChofer = true)
       ORDER BY u.nombre ASC
       """)
   List<SgUsuarioResumenDTO> buscar(
       @Param("empresaId") Integer empresaId,
       @Param("desde") LocalDateTime desde,
       @Param("hasta") LocalDateTime hasta,
-      @Param("q") String q);
+      @Param("q") String q,
+      @Param("soloChoferes") boolean soloChoferes);
 }

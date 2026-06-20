@@ -16,6 +16,13 @@ Extiende `BaseSucursal` (tiene `empresaId` + `sucursalId`).
 | `cambioPassword` | Boolean | Si `true`, el usuario debe cambiar contraseña al próximo login |
 | `nombre` | String (max 200) | Nombre completo |
 | `manager` | SgUsuario (ManyToOne, self-ref) | Manager directo, puede ser `null` |
+| `esChofer` | Boolean | Si `true`, aparece como opción en el selector de conductor en Rutas de Entrega. Default `false`. |
+
+**Migración:** `db-migrations/add_es_chofer_to_sg_usuario.sql`
+```sql
+ALTER TABLE seguridad.sg_usuario
+    ADD COLUMN IF NOT EXISTS es_chofer BOOLEAN NOT NULL DEFAULT FALSE;
+```
 
 **Controller:** `UsuariosController` — base `api/v1/seguridad/usuario`
 ```
@@ -32,8 +39,14 @@ POST   /{username}/resetear-password → resetearPassword()
 
 **DTOs:**
 - `SgUsuarioResumenDTO` — campos para la tabla de búsqueda
-- `SgUsuarioSearchCriteria` — filtros de búsqueda
+- `SgUsuarioSearchCriteria` — filtros: `q`, `fechaInicio`, `fechaFin`, `soloChoferes` (boolean, default `false` — si `true` retorna solo usuarios con `esChofer = true`)
 - `AdminResetPasswordResponse { String passwordTemporal }` — respuesta del reset por admin
+
+**Búsqueda con filtro de choferes (`SgUsuarioRepository.buscar`):**
+```sql
+AND (:soloChoferes = false OR u.esChofer = true)
+```
+Cuando `soloChoferes = false` (valor por defecto) retorna todos los usuarios. Cuando `true`, solo los marcados como chofer.
 
 ---
 
@@ -50,6 +63,10 @@ saveUsuario(usuario)              // POST /
 updateUsuario(username, usuario)  // PUT /{username}
 resetearPasswordUsuario(username) // POST /{username}/resetear-password
 ```
+
+**Sección "Otras opciones" en `UsuarioView`:**
+Aparece siempre al final del formulario, separada por un `Divider`. Actualmente contiene:
+- **Checkbox "Chofer"** — mapea a `esChofer`. Si está marcado, el usuario aparecerá en el selector de conductor de Rutas de Entrega.
 
 **Notificaciones:** usa `Snackbar` + `Alert` de MUI (estándar del proyecto). No usar `alert()`.
 ```typescript

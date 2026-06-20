@@ -24,6 +24,7 @@ const defaultValues: SgUsuario = {
     password: "",
     cambioPassword: true,
     manager: null,
+    esChofer: false,
 };
 
 const UsuarioView = () => {
@@ -55,6 +56,7 @@ const UsuarioView = () => {
 
     const usernameActual = watch("username");
     const managerActual = watch("manager");
+    const esChoferActual = watch("esChofer");
 
     // ── Cargar catálogo de tipos de notificación ──────────────────────────────
     const cargarTiposNotif = async (username: string) => {
@@ -294,6 +296,28 @@ const UsuarioView = () => {
                             </Box>
                         </Grid>
                     </Grid>
+                    {/* ── Otras opciones ─────────────────────────────────────── */}
+                    <Box sx={{ px: 2, pt: 2, pb: 1 }}>
+                        <Divider sx={{ mb: 1.5 }} />
+                        <Typography variant="body2" fontWeight={600} gutterBottom>
+                            Otras opciones
+                        </Typography>
+                        <FormGroup row>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        size="small"
+                                        checked={!!esChoferActual}
+                                        onChange={(e) => setValue("esChofer", e.target.checked)}
+                                    />
+                                }
+                                label={
+                                    <Typography variant="body2">Chofer</Typography>
+                                }
+                            />
+                        </FormGroup>
+                    </Box>
+
                     {/* ── Acceso a tipos de aviso privilegiados ──────────────── */}
                     {tiposNotif.some((t) => t.accesoRestringido) && (
                         <Box sx={{ px: 2, pt: 2, pb: 1 }}>

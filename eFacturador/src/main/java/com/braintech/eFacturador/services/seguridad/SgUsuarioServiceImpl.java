@@ -42,7 +42,7 @@ public class SgUsuarioServiceImpl implements SgUsuarioService {
     String q =
         (criteria.getQ() != null && !criteria.getQ().isBlank()) ? criteria.getQ().trim() : null;
 
-    return usuarioRepository.buscar(empresaId, desde, hasta, q);
+    return usuarioRepository.buscar(empresaId, desde, hasta, q, criteria.isSoloChoferes());
   }
 
   @Override
@@ -83,6 +83,7 @@ public class SgUsuarioServiceImpl implements SgUsuarioService {
     existing.setNombre(usuario.getNombre());
     existing.setLoginEmail(usuario.getLoginEmail());
     existing.setCambioPassword(usuario.getCambioPassword());
+    existing.setEsChofer(usuario.getEsChofer() != null ? usuario.getEsChofer() : false);
     if (usuario.getEstadoId() != null) existing.setEstadoId(usuario.getEstadoId());
 
     // Solo re-hashear si envían un nuevo password

@@ -26,6 +26,8 @@ export interface SgUsuario {
     usuarioReg?: string;
     /** Manager directo (opcional). Se envía solo { username } al guardar. */
     manager?: { username: string; nombre: string } | null;
+    /** Indica que el usuario puede ser asignado como conductor en rutas de despacho. */
+    esChofer?: boolean;
 }
 
 export interface SgUsuarioResumenDTO {
@@ -43,6 +45,7 @@ export interface SgUsuarioSearchCriteria {
     q?: string;
     fechaInicio?: string;
     fechaFin?: string;
+    soloChoferes?: boolean;
 }
 export interface SgPermiso {
     id?: number;

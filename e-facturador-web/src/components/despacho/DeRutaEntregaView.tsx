@@ -428,6 +428,7 @@ export const DeRutaEntregaView: React.FC = () => {
                                         value={ruta.conductorUsername ?? ""}
                                         onChange={(username) => setRuta({ ...ruta, conductorUsername: username })}
                                         disabled={!isEditable}
+                                        soloChoferes
                                     />
                                 </Grid>
                                 <Grid size={12}>
