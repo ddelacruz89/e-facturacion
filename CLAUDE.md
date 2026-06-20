@@ -283,6 +283,8 @@ Archivos disponibles en `contexto/` — lee solo los relevantes a la tarea:
 - `factura-suplidor.md` — módulo de facturas de proveedores: e-CF/NCF, retenciones ISR/ITBIS, descuentos por renglón, pagos, validación QR DGII
 - `despacho.md` — módulo de despacho y entrega: tipos de vehículo, vehículos, órdenes desde factura, rutas, vista conductor, flujos de estado, reglas de apiClient vs axios
 - `ubicacion-delivery.md` — catálogo División Territorial RD 2021 (ONE): jerarquía provincia→municipio→sección→barrio→sub-barrio, schema SQL, backend Java, componente DireccionSelector, regla de precio en barrio_paraje
+- `login.md` — flujo completo de autenticación: login, multi-sucursal, soporte, mensajes de error HTTP, `LoginResponse`, endpoints de auth, recuperación de contraseña
+- `empresa.md` — configuración de empresa y sucursales: entidades SgEmpresa/SgSucursal, endpoints, reglas multi-tenant, hooks singleton, advertencias de constructores JPA
 
 ---
 

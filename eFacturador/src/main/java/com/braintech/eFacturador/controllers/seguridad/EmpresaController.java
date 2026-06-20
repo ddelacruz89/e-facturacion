@@ -17,7 +17,7 @@ public class EmpresaController {
 
   @GetMapping
   public ResponseEntity<Response<?>> getEmpresa() {
-    Response<?> response = services.getFindById(1);
+    Response<?> response = services.getCurrent();
     return ResponseEntity.ok(response);
   }
 

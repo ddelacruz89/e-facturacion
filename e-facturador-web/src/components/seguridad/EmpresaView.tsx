@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { SgEmpresa } from "../../models/seguridad";
 import { SgSucursal } from "../../models/seguridad/SgSucursal";
-import { Box, Grid, Button, Tabs, Tab, Divider } from "@mui/material";
+import { Box, Grid, Button, Tabs, Tab, Divider, Snackbar, Alert } from "@mui/material";
 import { NumericInput, AlphanumericInput } from "../../customers/CustomMUIComponents";
 import { SwitchInput, TableComponent } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
@@ -31,6 +31,16 @@ const EmpresaView = () => {
     const [tabIndex, setTabIndex] = useState(0);
     const [sucursales, setSucursales] = useState<SgSucursal[]>([]);
     const [empresaId, setEmpresaId] = useState<number | undefined>();
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: "success" | "error" | "warning" | "info";
+    }>({ open: false, message: "", severity: "info" });
+
+    const showSnackbar = (message: string, severity: "success" | "error" | "warning" | "info") =>
+        setSnackbar({ open: true, message, severity });
+
+    const handleCloseSnackbar = () => setSnackbar((s) => ({ ...s, open: false }));
 
     const {
         control,
@@ -92,9 +102,12 @@ const EmpresaView = () => {
                 setValue("reportePath", response.reportePath);
                 setValue("apiKeyActivo", response.apiKeyActivo);
                 setValue("apikey", response.apikey);
-                alert("Datos guardados correctamente");
+                showSnackbar("Datos guardados correctamente", "success");
             })
-            .catch(() => alert("Error al guardar los datos"));
+            .catch((error) => {
+                const msg = error?.response?.data?.message || "Error al guardar los datos";
+                showSnackbar(msg, "error");
+            });
     };
 
     const onSubmitSucursal: SubmitHandler<SucursalForm> = (data) => {
@@ -112,10 +125,16 @@ const EmpresaView = () => {
 
         promise
             .then(() => {
-                getSucursales().then(setSucursales).catch(() => { });
+                getSucursales()
+                    .then((data) => setSucursales(data ?? []))
+                    .catch(() => { });
                 resetSucursal(SUCURSAL_DEFAULTS);
+                showSnackbar("Sucursal guardada correctamente", "success");
             })
-            .catch(() => alert("Error al guardar la sucursal"));
+            .catch((error) => {
+                const msg = error?.response?.data?.message || "Error al guardar la sucursal";
+                showSnackbar(msg, "error");
+            });
     };
 
     const handleNuevaSucursal = () => resetSucursal(SUCURSAL_DEFAULTS);
@@ -346,6 +365,17 @@ const EmpresaView = () => {
                     </Box>
                 </section>
             )}
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: "top", horizontal: "right" }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </main>
     );
 };
