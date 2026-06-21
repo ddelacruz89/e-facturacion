@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-    Alert,
     Box,
     Button,
     Chip,
@@ -17,7 +16,6 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import SendIcon from "@mui/icons-material/Send";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import ActionBar from "../../customers/ActionBar";
 import {
     obtenerTicket,
@@ -26,6 +24,7 @@ import {
     descargarAdjuntoUrl,
 } from "../../apis/HelpdeskController";
 import { HdComentario, HdTicketDetalle } from "../../models/helpdesk";
+import { formatDateTimeShort } from "../../types/modalSearchTypes";
 import { toast } from "react-toastify";
 
 const ESTADO_COLORES: Record<string, "default" | "warning" | "info" | "primary" | "success" | "error"> = {
@@ -85,9 +84,6 @@ const TicketDetalleView = () => {
 
     if (!ticket) return <Typography sx={{ p: 3 }}>Cargando...</Typography>;
 
-    const vencido = new Date(ticket.fechaLimite) < new Date();
-    const proximo = !vencido && new Date(ticket.fechaLimite) < new Date(Date.now() + 24 * 60 * 60 * 1000);
-
     return (
         <main>
             <ActionBar title={`Ticket #${ticket.id}`}>
@@ -97,17 +93,6 @@ const TicketDetalleView = () => {
             </ActionBar>
 
             <Box sx={{ p: 2 }}>
-                {(vencido || proximo) && (
-                    <Alert
-                        severity={vencido ? "error" : "warning"}
-                        icon={<WarningAmberIcon />}
-                        sx={{ mb: 2 }}
-                    >
-                        {vencido
-                            ? "Este ticket superó su tiempo de respuesta (SLA)"
-                            : "Este ticket vence en menos de 24 horas"}
-                    </Alert>
-                )}
 
                 {/* Encabezado */}
                 <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
@@ -132,21 +117,17 @@ const TicketDetalleView = () => {
                                     label={ticket.prioridadNombre}
                                     variant="outlined"
                                     size="small"
-                                    color={ticket.prioridadId === "ALTA" ? "error" : ticket.prioridadId === "MEDIA" ? "warning" : "default"}
+                                    color={
+                                        ticket.prioridadId === "CRITICA" ? "error" :
+                                        ticket.prioridadId === "ALTA"    ? "warning" :
+                                        ticket.prioridadId === "MEDIA"   ? "default" : "default"
+                                    }
                                 />
                             </Stack>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <Typography variant="body2" color="text.secondary">
-                                Creado: {new Date(ticket.fechaReg).toLocaleString()}
-                            </Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Typography
-                                variant="body2"
-                                color={vencido ? "error" : proximo ? "warning.main" : "text.secondary"}
-                            >
-                                Vence: {new Date(ticket.fechaLimite).toLocaleString()}
+                                Creado: {formatDateTimeShort(ticket.fechaReg)}
                             </Typography>
                         </Grid>
                         {ticket.soporteAsignado.length > 0 && (
@@ -251,7 +232,7 @@ const TicketDetalleView = () => {
                         <Stack spacing={0.5}>
                             {ticket.historial.map((h, i) => (
                                 <Typography key={i} variant="caption" color="text.secondary">
-                                    {new Date(h.fecha).toLocaleString()} — {h.usuario}:{" "}
+                                    {formatDateTimeShort(h.fecha)} — {h.usuario}:{" "}
                                     {h.estadoAnterior ? `${h.estadoAnterior} → ` : ""}{h.estadoNuevo}
                                     {h.observacion ? ` (${h.observacion})` : ""}
                                 </Typography>
@@ -279,7 +260,7 @@ const ComentarioBurbuja = ({ comentario }: { comentario: HdComentario }) => {
             >
                 <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                     {esCliente ? "Tú" : `Soporte — ${comentario.autor}`} ·{" "}
-                    {new Date(comentario.fechaReg).toLocaleString()}
+                    {formatDateTimeShort(comentario.fechaReg)}
                 </Typography>
                 <Typography variant="body2" whiteSpace="pre-wrap">
                     {comentario.contenido}

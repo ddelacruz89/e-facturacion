@@ -13,11 +13,11 @@ import {
     Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { TableComponent } from "../../customers/CustomComponents";
 import ActionBar from "../../customers/ActionBar";
 import { listarTickets, getEstados } from "../../apis/HelpdeskController";
 import { HdEstado, HdTicketResumen } from "../../models/helpdesk";
+import { formatDateTimeShort } from "../../types/modalSearchTypes";
 import { toast } from "react-toastify";
 import TicketNuevoDialog from "./TicketNuevoDialog";
 
@@ -80,23 +80,15 @@ const TicketListView = () => {
                     label={row.prioridadNombre}
                     variant="outlined"
                     size="small"
-                    color={row.prioridadId === "ALTA" ? "error" : row.prioridadId === "MEDIA" ? "warning" : "default"}
+                    color={
+                        row.prioridadId === "CRITICA" ? "error" :
+                        row.prioridadId === "ALTA"    ? "warning" :
+                        row.prioridadId === "MEDIA"   ? "default" : "default"
+                    }
                 />
             ),
         },
-        { id: "fechaReg",    label: "Creado",   render: (r: HdTicketResumen) => new Date(r.fechaReg).toLocaleDateString() },
-        {
-            id: "fechaLimite",
-            label: "SLA",
-            render: (r: HdTicketResumen) => (
-                <Box display="flex" alignItems="center" gap={0.5}>
-                    {r.proximoAVencer && <WarningAmberIcon color="warning" fontSize="small" />}
-                    <Typography variant="body2" color={r.proximoAVencer ? "warning.main" : "inherit"}>
-                        {new Date(r.fechaLimite).toLocaleDateString()}
-                    </Typography>
-                </Box>
-            ),
-        },
+        { id: "fechaReg", label: "Creado", render: (r: HdTicketResumen) => formatDateTimeShort(r.fechaReg) },
     ];
 
     return (

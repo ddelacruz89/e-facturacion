@@ -47,14 +47,18 @@ public class HelpdeskCatalogoInitializer implements CommandLineRunner {
   }
 
   private void seedPrioridades() {
-    if (prioridadRepository.count() > 0) return;
-
-    log.info("Inicializando catálogo hd_prioridad...");
-    prioridadRepository.saveAll(
+    List<HdPrioridad> catalog =
         List.of(
+            new HdPrioridad("CRITICA", "Crítica", 0, 0),
             new HdPrioridad("ALTA", "Alta", 4, 1),
             new HdPrioridad("MEDIA", "Media", 24, 2),
-            new HdPrioridad("BAJA", "Baja", 72, 3)));
-    log.info("hd_prioridad inicializado con {} registros.", prioridadRepository.count());
+            new HdPrioridad("BAJA", "Baja", 72, 3));
+
+    long nuevas =
+        catalog.stream()
+            .filter(p -> !prioridadRepository.existsById(p.getId()))
+            .peek(prioridadRepository::save)
+            .count();
+    if (nuevas > 0) log.info("hd_prioridad: {} registro(s) nuevos insertados.", nuevas);
   }
 }

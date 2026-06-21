@@ -1,7 +1,7 @@
 package com.braintech.eFacturador.interfaces.helpdesk;
 
 import com.braintech.eFacturador.dto.helpdesk.*;
-import com.braintech.eFacturador.jpa.helpdesk.*;
+import com.braintech.eFacturador.jpa.helpdesk.HdEstado;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -23,5 +23,5 @@ public interface HdTicketClienteService {
 
   List<HdEstado> listarEstados();
 
-  List<HdPrioridad> listarPrioridades();
+  List<HdPrioridadClienteDTO> listarPrioridades();
 }

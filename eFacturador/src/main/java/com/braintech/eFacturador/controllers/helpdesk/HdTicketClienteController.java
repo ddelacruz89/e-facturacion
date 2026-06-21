@@ -64,7 +64,7 @@ public class HdTicketClienteController {
   }
 
   @GetMapping("/prioridades")
-  public List<HdPrioridad> prioridades() {
+  public List<HdPrioridadClienteDTO> prioridades() {
     return ticketService.listarPrioridades();
   }
 }

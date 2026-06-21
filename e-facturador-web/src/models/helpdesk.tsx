@@ -9,7 +9,6 @@ export interface HdEstado {
 export interface HdPrioridad {
     id: string;
     nombre: string;
-    slaHoras: number;
     orden: number;
 }
 

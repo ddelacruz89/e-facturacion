@@ -187,8 +187,10 @@ public class HdTicketClienteServiceImpl implements HdTicketClienteService {
   }
 
   @Override
-  public List<HdPrioridad> listarPrioridades() {
-    return prioridadRepository.findAllByOrderByOrdenAsc();
+  public List<HdPrioridadClienteDTO> listarPrioridades() {
+    return prioridadRepository.findAllByOrderByOrdenAsc().stream()
+        .map(p -> new HdPrioridadClienteDTO(p.getId(), p.getNombre(), p.getOrden()))
+        .toList();
   }
 
   // ── Mappers ──────────────────────────────────────────────────────────────

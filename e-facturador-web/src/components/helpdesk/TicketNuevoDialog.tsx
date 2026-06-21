@@ -95,7 +95,7 @@ const TicketNuevoDialog = ({ open, onClose, onCreado }: Props) => {
                                         <Select {...field} label="Prioridad">
                                             {prioridades.map((p) => (
                                                 <MenuItem key={p.id} value={p.id}>
-                                                    {p.nombre} ({p.slaHoras}h SLA)
+                                                    {p.nombre}
                                                 </MenuItem>
                                             ))}
                                         </Select>
