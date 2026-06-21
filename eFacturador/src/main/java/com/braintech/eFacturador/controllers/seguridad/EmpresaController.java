@@ -2,6 +2,8 @@ package com.braintech.eFacturador.controllers.seguridad;
 
 import com.braintech.eFacturador.jpa.seguridad.SgEmpresa;
 import com.braintech.eFacturador.models.Response;
+import com.braintech.eFacturador.security.Accion;
+import com.braintech.eFacturador.security.RequierePermiso;
 import com.braintech.eFacturador.services.seguridad.EmpresaServices;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
@@ -22,6 +24,7 @@ public class EmpresaController {
   }
 
   @PostMapping
+  @RequierePermiso(menuUrl = "/empresa", accion = Accion.ESCRIBIR)
   public ResponseEntity<Response<?>> addEmpresa(@RequestBody SgEmpresa empresa) {
     final String username = "Master";
     empresa.setFechaReg(LocalDateTime.now());
