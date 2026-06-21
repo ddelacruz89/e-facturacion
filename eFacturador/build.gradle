@@ -1,5 +1,6 @@
 import com.github.spotbugs.snom.Confidence
 import com.github.spotbugs.snom.Effort
+import com.github.spotbugs.snom.SpotBugsTask
 
 plugins {
 	id 'java'
@@ -53,7 +54,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
 	// Storage backends para Recibo de Entrega
@@ -82,7 +83,7 @@ spotbugs {
 }
 
 
-tasks.withType(com.github.spotbugs.snom.SpotBugsTask) {
+tasks.withType(SpotBugsTask) {
 	reports {
 		html.required = true
 		html.outputLocation = file("$buildDir/reports/spotbugs.html")
