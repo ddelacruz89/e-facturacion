@@ -8,6 +8,7 @@ import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.interfaces.seguridad.LicenciaService;
 import com.braintech.eFacturador.interfaces.seguridad.SgUsuarioService;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
+import com.braintech.eFacturador.seguridad.LoginAttemptService;
 import com.braintech.eFacturador.util.TenantContext;
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ public class SgUsuarioServiceImpl implements SgUsuarioService {
   @Autowired private PasswordEncoder passwordEncoder;
   @Autowired private TenantContext tenantContext;
   @Autowired private LicenciaService licenciaService;
+  @Autowired private LoginAttemptService loginAttemptService;
 
   @Override
   public List<SgUsuarioResumenDTO> buscar(SgUsuarioSearchCriteria criteria) {
@@ -109,6 +111,7 @@ public class SgUsuarioServiceImpl implements SgUsuarioService {
     usuario.setPassword(passwordEncoder.encode(passwordTemporal));
     usuario.setCambioPassword(true);
     usuarioRepository.save(usuario);
+    loginAttemptService.clearLockout(username);
 
     return new AdminResetPasswordResponse(passwordTemporal);
   }

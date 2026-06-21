@@ -4,6 +4,7 @@ import com.braintech.eFacturador.jpa.SuperClass.BaseSucursal;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -49,6 +50,12 @@ public class SgUsuario extends BaseSucursal implements Serializable {
    */
   @Column(name = "es_soporte")
   private Boolean esSoporte = false;
+
+  @Column(name = "login_locked_until")
+  private LocalDateTime loginLockedUntil;
+
+  @Column(name = "login_escalated")
+  private Boolean loginEscalated = false;
 
   @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<SgUsuarioSucursal> sucursalesAsignadas = new ArrayList<>();

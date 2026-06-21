@@ -6,6 +6,7 @@ import com.braintech.eFacturador.dao.seguridad.SgRecuperacionTokenRepository;
 import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRepository;
 import com.braintech.eFacturador.dao.seguridad.SgUsuarioRolRepository;
+import com.braintech.eFacturador.interfaces.seguridad.SgEmpresaIpPermitidaService;
 import com.braintech.eFacturador.jpa.seguridad.SgAccesoSoporte;
 import com.braintech.eFacturador.jpa.seguridad.SgEmpresa;
 import com.braintech.eFacturador.jpa.seguridad.SgRecuperacionToken;
@@ -26,9 +27,11 @@ import com.braintech.eFacturador.util.TenantContext;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,21 +54,57 @@ public class AuthController {
   private final PasswordEncoder passwordEncoder;
   private final TenantContext tenantContext;
   private final EmailService emailService;
+  private final LoginAttemptService loginAttemptService;
+  private final SgEmpresaIpPermitidaService ipPermitidaService;
 
   private static final SecureRandom RNG = new SecureRandom();
 
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+  public ResponseEntity<LoginResponse> login(
+      @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+    String ip = resolverIp(httpRequest);
     SgUsuario usuario = usuarioRepository.findByLoginEmailOrUsernameV1(request.getUsername());
-    if (usuario == null || !passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
+    String trackingUsername = usuario != null ? usuario.getUsername() : request.getUsername();
+
+    Optional<LocalDateTime> lockedUntil = loginAttemptService.getLockedUntil(trackingUsername);
+    if (lockedUntil.isPresent()) {
+      loginAttemptService.registrarIntento(
+          trackingUsername, ip, false, LoginAttemptService.MOTIVO_BLOQUEADO);
+      long min = loginAttemptService.minutosRestantes(lockedUntil.get());
+      String msg =
+          "Cuenta bloqueada por múltiples intentos fallidos. Intente de nuevo en "
+              + min
+              + " minuto(s).";
+      return ResponseEntity.status(429).body(new LoginResponse(msg));
+    }
+
+    if (usuario == null) {
+      loginAttemptService.registrarIntento(
+          trackingUsername, ip, false, LoginAttemptService.MOTIVO_NO_EXISTE);
       return ResponseEntity.status(401).body(null);
     }
 
-    // ── Flujo especial para usuarios de soporte ──────────────────────────────
+    if (!passwordEncoder.matches(request.getPassword(), usuario.getPassword())) {
+      loginAttemptService.registrarIntento(
+          usuario.getUsername(), ip, false, LoginAttemptService.MOTIVO_CONTRASENA);
+      return ResponseEntity.status(401).body(null);
+    }
+
+    loginAttemptService.registrarIntento(usuario.getUsername(), ip, true, null);
+
+    // ── Flujo especial para usuarios de soporte (exento de restricción IP) ───
     if (Boolean.TRUE.equals(usuario.getEsSoporte())) {
       return loginSoporte(usuario);
     }
     // ─────────────────────────────────────────────────────────────────────────
+
+    // Verificar IP si la empresa tiene lista blanca configurada
+    if (!ipPermitidaService.ipAutorizada(usuario.getEmpresaId(), ip)) {
+      loginAttemptService.registrarIntento(
+          usuario.getUsername(), ip, false, LoginAttemptService.MOTIVO_IP_NO_AUTORIZADA);
+      return ResponseEntity.status(403)
+          .body(new LoginResponse("Acceso no permitido desde esta dirección IP."));
+    }
 
     List<SgSucursal> sucursales =
         usuarioRolRepository.findSucursalesActivasByUsername(usuario.getUsername());
@@ -345,6 +384,7 @@ public class AuthController {
     usuario.setPassword(passwordEncoder.encode(req.getPasswordNueva()));
     usuarioRepository.save(usuario);
     recuperacionTokenRepository.invalidarTokensDeEmail(req.getEmail());
+    loginAttemptService.clearLockout(usuario.getUsername());
     return ResponseEntity.ok().build();
   }
 
@@ -360,6 +400,7 @@ public class AuthController {
     }
     usuario.setPassword(passwordEncoder.encode(request.getPasswordNueva()));
     usuarioRepository.save(usuario);
+    loginAttemptService.clearLockout(username);
     return ResponseEntity.ok().build();
   }
 
@@ -387,5 +428,13 @@ public class AuthController {
     } catch (JwtException | IllegalArgumentException e) {
       return ResponseEntity.status(401).body("Invalid or expired token");
     }
+  }
+
+  private String resolverIp(HttpServletRequest request) {
+    String xfwd = request.getHeader("X-Forwarded-For");
+    if (xfwd != null && !xfwd.isBlank()) {
+      return xfwd.split(",")[0].trim();
+    }
+    return request.getRemoteAddr();
   }
 }

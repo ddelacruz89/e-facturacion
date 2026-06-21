@@ -2,10 +2,12 @@ package com.braintech.eFacturador.dao.seguridad;
 
 import com.braintech.eFacturador.dto.seguridad.SgUsuarioResumenDTO;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,6 +18,11 @@ public interface SgUsuarioRepository extends JpaRepository<SgUsuario, String> {
 
   // For authentication (no filtering - finds user globally)
   SgUsuario findByUsername(String username);
+
+  // SELECT FOR UPDATE — usado en evaluarBloqueo para atomicidad entre instancias
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT u FROM SgUsuario u WHERE u.username = :username")
+  Optional<SgUsuario> findByUsernameForUpdate(@Param("username") String username);
 
   SgUsuario findByLoginEmail(String loginEmail);
 

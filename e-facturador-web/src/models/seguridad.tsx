@@ -145,3 +145,13 @@ export interface SgNotificacionTipoConfigDTO {
     /** True si el usuario consultado tiene este tipo marcado en su perfil. */
     suscrito: boolean;
 }
+
+export interface SgEmpresaIpPermitida {
+    id?: number;
+    empresaId?: number;
+    ipOrigen: string;
+    descripcion?: string;
+    activo?: boolean;
+    fechaReg?: string;
+    usuarioReg?: string;
+}

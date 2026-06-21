@@ -18,6 +18,7 @@ const UsuarioView = lazy(() => import("./components/seguridad/UsuarioView"));
 const RolView = lazy(() => import("./components/seguridad/RolView"));
 const AprobacionConfigView = lazy(() => import("./components/seguridad/AprobacionConfigView"));
 const AprobacionBandejaView = lazy(() => import("./components/seguridad/AprobacionBandejaView"));
+const IpPermitidaView = lazy(() => import("./components/seguridad/IpPermitidaView"));
 const TipoFacturaView = lazy(() => import("./components/facturacion/TipoFacturaView"));
 const TipoItbisView = lazy(() => import("./components/facturacion/TipoItbisView"));
 const RetencionView = lazy(() => import("./components/facturacion/TipoRetencionView"));
@@ -81,6 +82,7 @@ const AppRoutes = () => {
                     <Route path="empresa" element={<EmpresaView />} />
                     <Route path="usuario" element={<UsuarioView />} />
                     <Route path="roles" element={<RolView />} />
+                    <Route path="seguridad/ip-permitida" element={<MenuRoute menuUrl="/seguridad/ip-permitida"><IpPermitidaView /></MenuRoute>} />
                     <Route path="tipo/factura" element={<TipoFacturaView />} />
                     <Route path="tipo/itbis" element={<TipoItbisView />} />
                     <Route path="tipo/retencion" element={<RetencionView />} />
