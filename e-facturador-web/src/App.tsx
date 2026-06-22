@@ -44,6 +44,7 @@ const FacturaSuplidorView = lazy(() => import("./components/facturacion/FacturaS
 const FacturaSuplidorPagosView = lazy(() => import("./components/facturacion/FacturaSuplidorPagosView"));
 const FormaPagoSuplidorView = lazy(() => import("./components/facturacion/FormaPagoSuplidorView"));
 const MfItbisView = lazy(() => import("./components/facturacion/MfItbisView"));
+const MfCotizacionView = lazy(() => import("./components/facturacion/MfCotizacionView"));
 const NotificacionesView = lazy(() => import("./components/notificaciones/NotificacionesView"));
 const RequisicionView = lazy(() => import("./components/inventario/RequisicionView"));
 const ReportesInventarioView = lazy(() => import("./components/inventario/ReportesInventarioView"));
@@ -108,6 +109,7 @@ const AppRoutes = () => {
                     <Route path="pagos-suplidor" element={<FacturaSuplidorPagosView />} />
                     <Route path="formas-pago-suplidor" element={<FormaPagoSuplidorView />} />
                     <Route path="mf-itbis" element={<MfItbisView />} />
+                    <Route path="facturacion/cotizacion" element={<MfCotizacionView />} />
                     <Route path="alertas" element={<NotificacionesView />} />
                     <Route path="inventario/requisicion" element={<RequisicionView />} />
                     <Route path="inventario/reportes" element={<ReportesInventarioView />} />

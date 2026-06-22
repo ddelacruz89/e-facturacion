@@ -42,3 +42,12 @@ export interface CotizacionDetalle {
     retencionItbis: number;
     retencionIsr: number;
 }
+
+export interface ICotizacionResumen {
+    id: number;
+    secuencia: number;
+    razonSocial: string;
+    fechaReg: string;
+    rnc: string;
+    total: number;
+}

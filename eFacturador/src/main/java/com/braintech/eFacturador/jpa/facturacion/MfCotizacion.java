@@ -25,9 +25,6 @@ public class MfCotizacion extends BaseEntitySucursal implements Serializable {
   @Column(name = "activo")
   private Boolean activo;
 
-  @Column(name = "empresa_id")
-  private Integer empresaId;
-
   @Column(name = "razon_social")
   private String razonSocial;
 

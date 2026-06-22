@@ -14,4 +14,10 @@ public class ReportServices {
     params.put("p_id", id);
     return reportGeneration.generateReport(params, "repFactura.jasper");
   }
+
+  public byte[] getCotizacion(Integer id) {
+    var params = new java.util.HashMap<String, Object>();
+    params.put("p_id", id);
+    return reportGeneration.generateReport(params, "repMfContizacion.jasper");
+  }
 }
