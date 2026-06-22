@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { LoginRequest, LoginResponse, SelectSucursalRequest } from '../models/auth';
+import { LoginRequest, LoginResponse, SelectEmpresaSoporteRequest, SelectSucursalRequest } from '../models/auth';
 import { TokenService } from './tokenService';
 
 const authApi = axios.create({
@@ -21,6 +21,11 @@ export class AuthService {
         return response.data;
       }
 
+      if (response.data.requiresEmpresaSoporteSelection) {
+        // Usuario soporte con múltiples empresas: no guardamos token aún
+        return response.data;
+      }
+
       if (response.data?.token) {
         TokenService.setToken(response.data.token);
         TokenService.setUser({
@@ -30,6 +35,7 @@ export class AuthService {
           sucursalNombre: response.data.sucursalNombre,
           empresaNombre: response.data.empresaNombre,
           isAuthenticated: true,
+          esSoporte: response.data.esSoporte ?? false,
         });
       }
 
@@ -60,6 +66,7 @@ export class AuthService {
           sucursalNombre: response.data.sucursalNombre,
           empresaNombre: response.data.empresaNombre,
           isAuthenticated: true,
+          esSoporte: response.data.esSoporte ?? false,
         });
       }
 
@@ -67,6 +74,33 @@ export class AuthService {
     } catch (error: any) {
       if (error.response) {
         throw new Error(error.response.data?.message || 'Error al seleccionar sucursal');
+      }
+      throw new Error('Error de conexión.');
+    }
+  }
+
+  static async selectEmpresaSoporte(preAuthToken: string, empresaIdDestino: number): Promise<LoginResponse> {
+    try {
+      const body: SelectEmpresaSoporteRequest = { preAuthToken, empresaIdDestino };
+      const response: AxiosResponse<LoginResponse> = await authApi.post('/api/auth/select-empresa-soporte', body);
+
+      if (response.data?.token) {
+        TokenService.setToken(response.data.token);
+        TokenService.setUser({
+          username: response.data.username,
+          empresaId: response.data.empresaId!,
+          sucursalId: response.data.sucursalId,
+          sucursalNombre: response.data.sucursalNombre,
+          empresaNombre: response.data.empresaNombre,
+          isAuthenticated: true,
+          esSoporte: true,
+        });
+      }
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        throw new Error(error.response.data?.message || 'Error al seleccionar empresa de soporte');
       }
       throw new Error('Error de conexión.');
     }

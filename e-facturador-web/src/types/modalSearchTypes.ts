@@ -70,6 +70,14 @@ const to12Hour = (hour24: number): { hour12: number; meridian: "AM" | "PM" } => 
     return { hour12, meridian };
 };
 
+export const formatDateTimeShort = (value: any): string => {
+    if (value === null || value === undefined || value === "") return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    const { hour12, meridian } = to12Hour(date.getHours());
+    return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(hour12)}:${pad2(date.getMinutes())} ${meridian.toLowerCase()}`;
+};
+
 export const formatDateTimeForUi = (value: any): string => {
     if (value === null || value === undefined || value === "") return "-";
 

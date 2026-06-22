@@ -13,8 +13,8 @@ public interface SgSucursalRepository extends JpaRepository<SgSucursal, Integer>
   @Query("SELECT s FROM SgSucursal s WHERE s.empresa.id = :empresaId")
   List<SgSucursal> findByEmpresaId(@Param("empresaId") Integer empresaId);
 
-  @Query("SELECT s FROM SgSucursal s WHERE s.activo = true")
-  List<SgSucursal> findAllActive();
+  @Query("SELECT s FROM SgSucursal s WHERE s.empresa.id = :empresaId AND s.activo = true")
+  List<SgSucursal> findActiveByEmpresaId(@Param("empresaId") Integer empresaId);
 
   @Query("SELECT COUNT(s) FROM SgSucursal s WHERE s.empresa.id = :empresaId AND s.activo = true")
   long countByEmpresaIdAndActivoTrue(@Param("empresaId") Integer empresaId);

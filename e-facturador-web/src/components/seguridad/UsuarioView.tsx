@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import {
     Alert,
     Box, Grid, Button, Chip, TextField, IconButton, Tooltip, InputAdornment,
     Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText,
-    Snackbar,
+    Snackbar, FormGroup, FormControlLabel, Checkbox, Typography, Divider,
 } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
@@ -12,9 +12,10 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { AlphanumericInput } from "../../customers/CustomMUIComponents";
 import ActionBar from "../../customers/ActionBar";
 import { getUsuario, saveUsuario, updateUsuario, resetearPasswordUsuario } from "../../apis/UsuarioController";
-import { SgUsuario } from "../../models/seguridad";
+import { SgNotificacionTipoConfigDTO, SgUsuario } from "../../models/seguridad";
 import { ModalSearch } from "../search/ModalSearch";
 import { SEARCH_CONFIGS, SearchResultItem } from "../../types/modalSearchTypes";
+import { getTodosTipos, getTiposConSuscripcion, saveSuscripciones } from "../../apis/SgNotificacionController";
 
 const defaultValues: SgUsuario = {
     username: "",
@@ -23,6 +24,7 @@ const defaultValues: SgUsuario = {
     password: "",
     cambioPassword: true,
     manager: null,
+    esChofer: false,
 };
 
 const UsuarioView = () => {
@@ -32,6 +34,8 @@ const UsuarioView = () => {
     const [busquedaInput, setBusquedaInput] = useState("");
     const [confirmResetOpen, setConfirmResetOpen] = useState(false);
     const [passwordTemporal, setPasswordTemporal] = useState<string | null>(null);
+    const [tiposNotif, setTiposNotif] = useState<SgNotificacionTipoConfigDTO[]>([]);
+    const [suscripcionesSeleccionadas, setSuscripcionesSeleccionadas] = useState<Set<string>>(new Set());
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
         message: string;
@@ -52,6 +56,28 @@ const UsuarioView = () => {
 
     const usernameActual = watch("username");
     const managerActual = watch("manager");
+    const esChoferActual = watch("esChofer");
+
+    // ── Cargar catálogo de tipos de notificación ──────────────────────────────
+    const cargarTiposNotif = async (username: string) => {
+        try {
+            const tipos = await getTiposConSuscripcion(username);
+            setTiposNotif(tipos);
+            setSuscripcionesSeleccionadas(new Set(tipos.filter((t) => t.suscrito).map((t) => t.tipoId)));
+        } catch {
+            setTiposNotif([]);
+        }
+    };
+
+    // Cargar catálogo al montar (sin suscripciones para usuario nuevo)
+    useEffect(() => {
+        getTodosTipos()
+            .then((tipos) => {
+                setTiposNotif(tipos.map((t) => ({ ...t, suscrito: false })));
+                setSuscripcionesSeleccionadas(new Set());
+            })
+            .catch(() => {});
+    }, []);
 
     // ── Selección de usuario desde modal ─────────────────────────────────────
     const handleSelect = async (resumen: SearchResultItem) => {
@@ -60,6 +86,7 @@ const UsuarioView = () => {
         setIsNew(false);
         setBusquedaInput("");
         setSearchOpen(false);
+        await cargarTiposNotif(resumen.username as string);
     };
 
     // ── Selección de manager desde modal ─────────────────────────────────────
@@ -80,7 +107,6 @@ const UsuarioView = () => {
     // ── Guardar ──────────────────────────────────────────────────────────────
     const onSubmit: SubmitHandler<SgUsuario> = async (data) => {
         try {
-            // Enviar manager solo con username (el backend resuelve la entidad completa)
             const payload: SgUsuario = {
                 ...data,
                 manager: data.manager?.username ? { username: data.manager.username, nombre: data.manager.nombre } : null,
@@ -88,18 +114,22 @@ const UsuarioView = () => {
             const saved = isNew
                 ? await saveUsuario(payload)
                 : await updateUsuario(data.username, payload);
+            // Guardar suscripciones
+            await saveSuscripciones(saved.username, Array.from(suscripcionesSeleccionadas));
             reset({ ...saved, password: "" });
             setIsNew(false);
             showSnackbar("Usuario guardado correctamente", "success");
         } catch (error) {
-            console.error("Error al guardar usuario:", error);
-            showSnackbar("Error al guardar el usuario", "error");
+            const msg = (error as any)?.message || "Error al guardar el usuario";
+            showSnackbar(msg, "error");
         }
     };
 
     const handleNuevo = () => {
         reset(defaultValues);
         setIsNew(true);
+        setSuscripcionesSeleccionadas(new Set());
+        setTiposNotif((prev) => prev.map((t) => ({ ...t, suscrito: false })));
     };
 
     const handleConfirmarReset = async () => {
@@ -266,6 +296,73 @@ const UsuarioView = () => {
                             </Box>
                         </Grid>
                     </Grid>
+                    {/* ── Otras opciones ─────────────────────────────────────── */}
+                    <Box sx={{ px: 2, pt: 2, pb: 1 }}>
+                        <Divider sx={{ mb: 1.5 }} />
+                        <Typography variant="body2" fontWeight={600} gutterBottom>
+                            Otras opciones
+                        </Typography>
+                        <FormGroup row>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        size="small"
+                                        checked={!!esChoferActual}
+                                        onChange={(e) => setValue("esChofer", e.target.checked)}
+                                    />
+                                }
+                                label={
+                                    <Typography variant="body2">Chofer</Typography>
+                                }
+                            />
+                        </FormGroup>
+                    </Box>
+
+                    {/* ── Acceso a tipos de aviso privilegiados ──────────────── */}
+                    {tiposNotif.some((t) => t.accesoRestringido) && (
+                        <Box sx={{ px: 2, pt: 2, pb: 1 }}>
+                            <Divider sx={{ mb: 1.5 }} />
+                            <Typography variant="body2" fontWeight={600} gutterBottom>
+                                Avisos con acceso restringido
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+                                Los tipos marcados le aparecerán a este usuario como aviso al iniciar sesión.
+                                Los tipos sin marcar son recibidos por todos los usuarios.
+                            </Typography>
+                            <FormGroup row>
+                                {tiposNotif.filter((t) => t.accesoRestringido).map((tipo) => (
+                                    <FormControlLabel
+                                        key={tipo.tipoId}
+                                        control={
+                                            <Checkbox
+                                                size="small"
+                                                checked={suscripcionesSeleccionadas.has(tipo.tipoId)}
+                                                onChange={(e) => {
+                                                    setSuscripcionesSeleccionadas((prev) => {
+                                                        const next = new Set(prev);
+                                                        if (e.target.checked) next.add(tipo.tipoId);
+                                                        else next.delete(tipo.tipoId);
+                                                        return next;
+                                                    });
+                                                }}
+                                            />
+                                        }
+                                        label={
+                                            <Box>
+                                                <Typography variant="body2">{tipo.nombre}</Typography>
+                                                {tipo.descripcion && (
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {tipo.descripcion}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        }
+                                        sx={{ alignItems: "flex-start", mr: 3, mb: 0.5 }}
+                                    />
+                                ))}
+                            </FormGroup>
+                        </Box>
+                    )}
                 </section>
             </Box>
 

@@ -19,7 +19,7 @@ interface LoginFormData {
 }
 
 const LoginView: React.FC = () => {
-    const { login, selectSucursal, pendingAuth, isLoading, error } = useAuth();
+    const { login, selectSucursal, selectEmpresaSoporte, pendingAuth, pendingSoporteAuth, isLoading, error } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
     const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -117,6 +117,72 @@ const LoginView: React.FC = () => {
             setLoginError(error.message || "Error al seleccionar sucursal");
         }
     };
+
+    const handleSelectEmpresaSoporte = async (empresaId: number) => {
+        try {
+            setLoginError(null);
+            await selectEmpresaSoporte(empresaId);
+        } catch (error: any) {
+            setLoginError(error.message || "Error al seleccionar empresa de soporte");
+        }
+    };
+
+    // ── Paso 2b: selector de empresa soporte ──────────────────────────────────
+    if (pendingSoporteAuth) {
+        return (
+            <Container component="main" maxWidth="sm">
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", py: 4 }}>
+                    <Paper elevation={8} sx={{ padding: 4, width: "100%", maxWidth: 440, borderRadius: 2, borderTop: "4px solid #ed6c02" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 1, gap: 1 }}>
+                            <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: "#ed6c02", flexShrink: 0 }} />
+                            <Typography component="h1" variant="h5" fontWeight="bold">
+                                Acceso de Soporte
+                            </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                            <strong>{pendingSoporteAuth.username}</strong> — elige la empresa a la que deseas acceder:
+                        </Typography>
+                        <Typography variant="caption" color="warning.main" sx={{ display: "block", mb: 2 }}>
+                            Modo solo lectura. No podrás crear, editar ni eliminar registros.
+                        </Typography>
+
+                        {(error || loginError) && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                {error || loginError}
+                            </Alert>
+                        )}
+
+                        <List disablePadding>
+                            {pendingSoporteAuth.empresas.map((e, idx) => (
+                                <React.Fragment key={e.empresaId}>
+                                    {idx > 0 && <Divider />}
+                                    <ListItemButton
+                                        onClick={() => handleSelectEmpresaSoporte(e.empresaId)}
+                                        disabled={isLoading}
+                                        sx={{ borderRadius: 1, py: 1.5 }}>
+                                        <ListItemText
+                                            primary={<Typography fontWeight={600}>{e.empresaNombre}</Typography>}
+                                            secondary={`Acceso expira: ${new Date(e.fechaExpiracion).toLocaleDateString("es-DO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}`}
+                                        />
+                                        {isLoading && <CircularProgress size={20} />}
+                                    </ListItemButton>
+                                </React.Fragment>
+                            ))}
+                        </List>
+
+                        <Button
+                            startIcon={<ArrowBack />}
+                            onClick={() => window.location.reload()}
+                            size="small"
+                            sx={{ mt: 2 }}
+                            color="inherit">
+                            Volver al login
+                        </Button>
+                    </Paper>
+                </Box>
+            </Container>
+        );
+    }
 
     // ── Paso 2: selector de sucursal ──────────────────────────────────────────
     if (pendingAuth) {

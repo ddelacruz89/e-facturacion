@@ -1,4 +1,5 @@
 import apiClient from "../services/apiClient";
+import { SgNotificacionTipoConfigDTO } from "../models/seguridad";
 
 const api = "/api/v1/notificaciones";
 
@@ -42,4 +43,24 @@ export function marcarVisto(id: number): Promise<void> {
 
 export function cerrarNotificacion(id: number): Promise<void> {
     return apiClient.put(`${api}/${id}/cerrar`);
+}
+
+export function getNotificacionesLogin(): Promise<SgNotificacionDTO[]> {
+    return apiClient.get(`${api}/login`).then((x: { data: SgNotificacionDTO[] }) => x.data);
+}
+
+export function getTodosTipos(): Promise<SgNotificacionTipoConfigDTO[]> {
+    return apiClient
+        .get(`${api}/tipos`)
+        .then((x: { data: SgNotificacionTipoConfigDTO[] }) => x.data);
+}
+
+export function getTiposConSuscripcion(username: string): Promise<SgNotificacionTipoConfigDTO[]> {
+    return apiClient
+        .get(`${api}/tipos/${username}`)
+        .then((x: { data: SgNotificacionTipoConfigDTO[] }) => x.data);
+}
+
+export function saveSuscripciones(username: string, tipoIds: string[]): Promise<void> {
+    return apiClient.put(`${api}/tipos/${username}/suscripciones`, tipoIds);
 }

@@ -31,6 +31,9 @@ Define qué módulos contrató cada empresa. FK a `sg_modulo`.
 | UNIQUE | (empresa_id, modulo_id) | |
 
 ### Módulos disponibles en `sg_modulo`
+
+Columna del nombre: `modulo` (VARCHAR). La entidad JPA `SgModulo` la mapea como campo `nombre` con `@Column(name = "modulo")`.
+
 | ID | Nombre |
 |---|---|
 | `FA` | Facturación |
@@ -39,6 +42,7 @@ Define qué módulos contrató cada empresa. FK a `sg_modulo`.
 | `SEG` | Seguridad |
 | `CONT` | Contabilidad |
 | `TAR` | Tarifario |
+| `HD` | Helpdesk |
 
 ---
 
@@ -72,7 +76,8 @@ Ruta base: `api/v1/admin/licencias`
 | GET | `/{empresaId}` | Licencia de una empresa |
 | POST | `/` | Crear licencia |
 | PUT | `/{empresaId}` | Actualizar límites o estado |
-| GET | `/{empresaId}/modulos` | Módulos habilitados |
+| GET | `/modulos/catalogo` | Lista todos los módulos de `sg_modulo` (catálogo global) |
+| GET | `/{empresaId}/modulos` | Módulos habilitados de una empresa |
 | POST | `/{empresaId}/modulos/{moduloId}` | Habilitar módulo |
 | DELETE | `/{empresaId}/modulos/{moduloId}` | Deshabilitar módulo |
 
@@ -120,6 +125,7 @@ Ruta base: `api/v1/admin/licencias`
 | `controllers/seguridad/LicenciaController.java` | REST controller |
 | `exceptions/LicenciaExcedidaException.java` | HTTP 402 |
 | `db-migrations/create_sg_licencia.sql` | DDL |
+| `dto/seguridad/ModuloDto.java` | Record `(id, nombre)` para catálogo de módulos |
 
 ### Frontend
 | Archivo | Campo/Cambio |

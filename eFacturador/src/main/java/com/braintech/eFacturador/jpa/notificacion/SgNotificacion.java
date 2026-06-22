@@ -93,6 +93,21 @@ public class SgNotificacion implements Serializable {
   @Column(name = "menu_url_origen", length = 200)
   private String menuUrlOrigen;
 
+  /** Si true, esta notificación aparece como modal bloqueante al iniciar sesión. */
+  @Column(name = "para_login")
+  private Boolean paraLogin = false;
+
+  /**
+   * Si true, reaparece en cada login aunque el usuario ya la haya confirmado, hasta que llegue
+   * {@code fechaExpiracion}. Si false (default), desaparece tras el primer "Entendido".
+   */
+  @Column(name = "repetir_login", nullable = false, columnDefinition = "boolean default false")
+  private Boolean repetirLogin = false;
+
+  /** Fecha límite hasta la que se muestra en el login. NULL = sin límite de tiempo. */
+  @Column(name = "fecha_expiracion")
+  private java.time.LocalDateTime fechaExpiracion;
+
   // ── Estado ────────────────────────────────────────────────────────────────
 
   @Column(name = "estado_id", length = 10, nullable = false)

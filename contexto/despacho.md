@@ -18,12 +18,18 @@ Flujo ruta:  `PLANIFICADA ↔ EN_CURSO → COMPLETADA | ANU`
 El flujo de negocio va completamente desde **Rutas de Entrega**, sin necesidad de pasar por Órdenes de Despacho:
 
 ```
-1. Crear Ruta  → fecha + vehículo + conductor (UserSelectorField)
+1. Crear Ruta  → fecha + vehículo + conductor (UserSelectorField con soloChoferes=true)
 2. Seleccionar facturas elegibles con checkbox (PAG + envio=true + sin orden activa)
 3. Botón "Asignar (N)" → POST /{id}/asignar-facturas
    El backend crea las DeOrdenDespacho automáticamente y las asigna a la ruta
 4. La lista se refresca — las facturas asignadas desaparecen
 ```
+
+**Selector de conductor (`UserSelectorField`):**
+- Componente en `src/components/shared/UserSelectorField.tsx`.
+- En `DeRutaEntregaView` se usa con `soloChoferes` prop activa, lo que hace `POST /api/v1/seguridad/usuario/buscar` con `{ soloChoferes: true }`.
+- **Si la lista está vacía** (ningún usuario tiene `esChofer = true`), el dropdown muestra un mensaje guía: _"No hay choferes registrados. Ir a Usuarios y marcar la opción Chofer"_ — el texto es un botón que navega a `/usuario`.
+- Para que un usuario aparezca como conductor, un administrador debe abrir su perfil en el módulo Usuarios, marcar el checkbox **"Chofer"** en la sección **"Otras opciones"** y guardar.
 
 Una factura es **elegible para despacho** si cumple:
 - `facturacion.mf_factura.estado_id = 'PAG'`

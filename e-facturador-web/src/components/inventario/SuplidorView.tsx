@@ -11,8 +11,8 @@ import {
     Select,
     MenuItem,
     FormControl,
+    FormHelperText,
     InputLabel,
-    Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import SearchIcon from "@mui/icons-material/Search";
@@ -340,34 +340,40 @@ export const SuplidorView: React.FC = () => {
                     error={errors.nombre}
                     size={3}
                 />
-                <Grid size={{ xs: 12, sm: 3 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 0.5 }}>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                            Razón Social&nbsp;<span style={{ color: "#d32f2f" }}>*</span>
-                        </Typography>
-                        <Tooltip
-                            title="Si el nombre y la razón social son las mismas, colóquelo."
-                            placement="top"
-                            arrow>
-                            <InfoOutlinedIcon sx={{ fontSize: 13, ml: 0.5, color: "info.main", cursor: "help" }} />
-                        </Tooltip>
-                    </Box>
-                    <Controller
-                        name="razonSocial"
-                        control={control}
-                        rules={{ required: "La razón social es requerida" }}
-                        render={({ field }) => (
-                            <TextField
-                                {...field}
-                                size="small"
-                                fullWidth
-                                placeholder="Razón Social"
-                                error={!!errors.razonSocial}
-                                helperText={errors.razonSocial?.message}
-                            />
-                        )}
-                    />
-                </Grid>
+                <Controller
+                    name="razonSocial"
+                    control={control}
+                    rules={{ required: "La razón social es requerida" }}
+                    render={({ field }) => (
+                        <Grid size={{ xs: 12, sm: 3 }}>
+                            <FormControl fullWidth error={!!errors.razonSocial}>
+                                <TextField
+                                    {...field}
+                                    size="small"
+                                    fullWidth
+                                    label="Razón Social"
+                                    variant="outlined"
+                                    error={!!errors.razonSocial}
+                                    slotProps={{
+                                        input: {
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <Tooltip
+                                                        title="Si el nombre y la razón social son las mismas, colóquelo."
+                                                        placement="top"
+                                                        arrow>
+                                                        <InfoOutlinedIcon sx={{ fontSize: 16, color: "info.main", cursor: "help" }} />
+                                                    </Tooltip>
+                                                </InputAdornment>
+                                            ),
+                                        },
+                                    }}
+                                />
+                                {errors.razonSocial && <FormHelperText>{errors.razonSocial.message}</FormHelperText>}
+                            </FormControl>
+                        </Grid>
+                    )}
+                />
                 {/* Tipo de identificación + campo formateado (Cédula o RNC) */}
                 {selectedTipoComprobante?.id !== "43" && (
                     <>

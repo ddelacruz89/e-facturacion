@@ -2,10 +2,13 @@ package com.braintech.eFacturador.services.seguridad;
 
 import com.braintech.eFacturador.dao.seguridad.SgSucursalRepository;
 import com.braintech.eFacturador.exceptions.DataNotFoundDTO;
+import com.braintech.eFacturador.exceptions.LicenciaExcedidaException;
 import com.braintech.eFacturador.interfaces.seguridad.LicenciaService;
 import com.braintech.eFacturador.interfaces.seguridad.SgSucursalService;
+import com.braintech.eFacturador.jpa.seguridad.SgEmpresa;
 import com.braintech.eFacturador.jpa.seguridad.SgSucursal;
 import com.braintech.eFacturador.models.Response;
+import com.braintech.eFacturador.util.TenantContext;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Service;
 public class SgSucursalServiceImpl implements SgSucursalService {
   @Autowired private SgSucursalRepository sucursalRepository;
   @Autowired private LicenciaService licenciaService;
+  @Autowired private TenantContext tenantContext;
 
   private SgSucursal updateSucursal(Integer id, SgSucursal sucursal) {
     Optional<SgSucursal> opt = sucursalRepository.findById(id);
@@ -45,7 +49,8 @@ public class SgSucursalServiceImpl implements SgSucursalService {
   // Response-based methods that the controller expects
   @Override
   public Response<?> getFindByAll() {
-    List<SgSucursal> sucursales = sucursalRepository.findAll();
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    List<SgSucursal> sucursales = sucursalRepository.findByEmpresaId(empresaId);
     if (sucursales.isEmpty()) {
       return Response.builder()
           .status(HttpStatus.BAD_REQUEST)
@@ -58,7 +63,8 @@ public class SgSucursalServiceImpl implements SgSucursalService {
 
   @Override
   public Response<?> getFindAllActive() {
-    List<SgSucursal> sucursales = sucursalRepository.findAllActive();
+    Integer empresaId = tenantContext.getCurrentEmpresaId();
+    List<SgSucursal> sucursales = sucursalRepository.findActiveByEmpresaId(empresaId);
     if (sucursales.isEmpty()) {
       return Response.builder()
           .status(HttpStatus.BAD_REQUEST)
@@ -85,17 +91,20 @@ public class SgSucursalServiceImpl implements SgSucursalService {
   @Override
   public Response<?> save(SgSucursal sucursal) {
     try {
+      Integer empresaId = tenantContext.getCurrentEmpresaId();
+      SgEmpresa empresa = new SgEmpresa();
+      empresa.setId(empresaId);
+      sucursal.setEmpresa(empresa);
       if (sucursal.getId() == null) {
-        // Validar límite de sucursales según licencia
-        if (sucursal.getEmpresa() != null && sucursal.getEmpresa().getId() != null) {
-          licenciaService.validarLimiteSucursales(sucursal.getEmpresa().getId());
-        }
+        licenciaService.validarLimiteSucursales(empresaId);
         sucursal.setFechaReg(LocalDateTime.now());
-        sucursal.setUsuarioReg("SYSTEM");
+        sucursal.setUsuarioReg(tenantContext.getCurrentUsername());
         sucursal.setEstadoId("ACT");
       }
       SgSucursal savedSucursal = sucursalRepository.save(sucursal);
       return Response.builder().status(HttpStatus.OK).content(savedSucursal).build();
+    } catch (LicenciaExcedidaException e) {
+      throw e;
     } catch (Exception e) {
       return Response.builder()
           .status(HttpStatus.BAD_REQUEST)

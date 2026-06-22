@@ -68,7 +68,7 @@ export interface MfFacturaSuplidorRequest {
     estadoId?: string;
     // DgII
     ncf?: string;
-    tipoCfId?: string;
+    tipoComprobanteId?: string;
     razonSocial?: string;
     rnc?: string;
     // Montos

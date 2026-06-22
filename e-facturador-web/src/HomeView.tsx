@@ -12,8 +12,9 @@ import logo from "./assets/logo-braintech.png";
 import { AuthService } from "./services/authService";
 import { useSharedModulos } from "./hooks/useSharedModulos";
 import { ModuloDto } from "./models/seguridad";
-import { SgNotificacionDTO, getNotificaciones, getContadorNoVistas } from "./apis/SgNotificacionController";
+import { SgNotificacionDTO, getNotificaciones, getContadorNoVistas, getNotificacionesLogin } from "./apis/SgNotificacionController";
 import { TokenService } from "./services/tokenService";
+import NotificacionLoginModal from "./components/notificaciones/NotificacionLoginModal";
 
 const tipoColor: Record<string, "error" | "warning" | "info" | "default"> = {
     VENCIMIENTO: "error",
@@ -27,6 +28,17 @@ const HomeView = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [moduloActivo, setModuloActivo] = useState<ModuloDto>({ id: "", menus: [], modulo: "" });
+
+    // ── modal de avisos al login ───────────────────────────────────────────────
+    const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+    useEffect(() => {
+        if (!user?.isAuthenticated) return;
+        getNotificacionesLogin()
+            .then((notifs) => { if (notifs.length > 0) setLoginModalOpen(true); })
+            .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.isAuthenticated]);
 
     // ── alertas ────────────────────────────────────────────────────────────────
     const [noVistas, setNoVistas] = useState(0);
@@ -431,6 +443,12 @@ const HomeView = () => {
                     )}
                 </DialogActions>
             </Dialog>
+
+            {/* ── Modal avisos de login ───────────────────────────────────────── */}
+            <NotificacionLoginModal
+                open={loginModalOpen}
+                onClose={() => setLoginModalOpen(false)}
+            />
         </div>
     );
 };

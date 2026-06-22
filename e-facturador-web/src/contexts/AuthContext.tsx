@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { AuthContextType, AuthUser, LoginRequest, PendingAuth } from "../models/auth";
+import { AuthContextType, AuthUser, LoginRequest, PendingAuth, PendingSoporteAuth } from "../models/auth";
 import { AuthService } from "../services/authService";
 import { TokenService } from "../services/tokenService";
 
@@ -12,6 +12,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [pendingAuth, setPendingAuth] = useState<PendingAuth | null>(null);
+    const [pendingSoporteAuth, setPendingSoporteAuth] = useState<PendingSoporteAuth | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +79,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     sucursales: response.sucursalesDisponibles!,
                     username: response.username,
                 });
+            } else if (response.requiresEmpresaSoporteSelection) {
+                // Usuario soporte con múltiples empresas: mostrar selector de empresa
+                setPendingSoporteAuth({
+                    preAuthToken: response.preAuthToken!,
+                    empresas: response.empresasSoporteDisponibles!,
+                    username: response.username,
+                });
             } else {
                 const userData: AuthUser = {
                     username: response.username,
@@ -86,6 +94,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     sucursalNombre: response.sucursalNombre,
                     empresaNombre: response.empresaNombre,
                     isAuthenticated: true,
+                    esSoporte: response.esSoporte ?? false,
                 };
                 setUser(userData);
             }
@@ -114,6 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 sucursalNombre: response.sucursalNombre,
                 empresaNombre: response.empresaNombre,
                 isAuthenticated: true,
+                esSoporte: false,
             };
 
             setPendingAuth(null);
@@ -127,11 +137,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     };
 
+    const selectEmpresaSoporte = async (empresaId: number): Promise<void> => {
+        if (!pendingSoporteAuth) throw new Error("No hay sesión de soporte pendiente");
+
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            const response = await AuthService.selectEmpresaSoporte(
+                pendingSoporteAuth.preAuthToken,
+                empresaId
+            );
+
+            const userData: AuthUser = {
+                username: response.username,
+                empresaId: response.empresaId!,
+                sucursalId: response.sucursalId,
+                sucursalNombre: response.sucursalNombre,
+                empresaNombre: response.empresaNombre,
+                isAuthenticated: true,
+                esSoporte: true,
+            };
+
+            setPendingSoporteAuth(null);
+            setUser(userData);
+        } catch (error: any) {
+            const errorMessage = error.message || "Error al seleccionar empresa de soporte";
+            setError(errorMessage);
+            throw error;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const logout = (): void => {
         try {
             AuthService.logout();
             setUser(null);
             setPendingAuth(null);
+            setPendingSoporteAuth(null);
             setError(null);
         } catch (error) {
             console.error("Logout error:", error);
@@ -141,8 +185,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const value: AuthContextType = {
         user,
         pendingAuth,
+        pendingSoporteAuth,
         login,
         selectSucursal,
+        selectEmpresaSoporte,
         logout,
         isLoading,
         error,

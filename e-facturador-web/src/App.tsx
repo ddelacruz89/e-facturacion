@@ -18,6 +18,7 @@ const UsuarioView = lazy(() => import("./components/seguridad/UsuarioView"));
 const RolView = lazy(() => import("./components/seguridad/RolView"));
 const AprobacionConfigView = lazy(() => import("./components/seguridad/AprobacionConfigView"));
 const AprobacionBandejaView = lazy(() => import("./components/seguridad/AprobacionBandejaView"));
+const IpPermitidaView = lazy(() => import("./components/seguridad/IpPermitidaView"));
 const TipoFacturaView = lazy(() => import("./components/facturacion/TipoFacturaView"));
 const TipoItbisView = lazy(() => import("./components/facturacion/TipoItbisView"));
 const RetencionView = lazy(() => import("./components/facturacion/TipoRetencionView"));
@@ -55,6 +56,9 @@ const DeRutaEntregaView = lazy(() => import("./components/despacho/DeRutaEntrega
 const MisEntregasView = lazy(() => import("./components/despacho/MisEntregasView"));
 const ReciboEntregaConfigView = lazy(() => import("./components/despacho/ReciboEntregaConfigView"));
 const DePrecioEnvioView = lazy(() => import("./components/despacho/DePrecioEnvioView"));
+const NotificacionTipoConfigView = lazy(() => import("./components/seguridad/NotificacionTipoConfigView"));
+const TicketListView    = lazy(() => import("./components/helpdesk/TicketListView"));
+const TicketDetalleView = lazy(() => import("./components/helpdesk/TicketDetalleView"));
 
 // Routes component that uses authentication context
 const AppRoutes = () => {
@@ -79,6 +83,7 @@ const AppRoutes = () => {
                     <Route path="empresa" element={<EmpresaView />} />
                     <Route path="usuario" element={<UsuarioView />} />
                     <Route path="roles" element={<RolView />} />
+                    <Route path="seguridad/ip-permitida" element={<MenuRoute menuUrl="/seguridad/ip-permitida"><IpPermitidaView /></MenuRoute>} />
                     <Route path="tipo/factura" element={<TipoFacturaView />} />
                     <Route path="tipo/itbis" element={<TipoItbisView />} />
                     <Route path="tipo/retencion" element={<RetencionView />} />
@@ -117,6 +122,9 @@ const AppRoutes = () => {
                     <Route path="despacho/mis-entregas" element={<MenuRoute menuUrl="/despacho/mis-entregas"><MisEntregasView /></MenuRoute>} />
                     <Route path="despacho/config/recibo" element={<MenuRoute menuUrl="/despacho/config/recibo"><ReciboEntregaConfigView /></MenuRoute>} />
                     <Route path="despacho/precios-envio" element={<MenuRoute menuUrl="/despacho/precios-envio"><DePrecioEnvioView /></MenuRoute>} />
+                    <Route path="seguridad/config-avisos" element={<NotificacionTipoConfigView />} />
+                    <Route path="helpdesk/tickets"     element={<TicketListView />} />
+                    <Route path="helpdesk/tickets/:id" element={<TicketDetalleView />} />
                 </Route>
 
                 {/* Catch all route */}

@@ -1,0 +1,2 @@
+ALTER TABLE seguridad.sg_usuario
+    ADD COLUMN IF NOT EXISTS es_chofer BOOLEAN NOT NULL DEFAULT FALSE;

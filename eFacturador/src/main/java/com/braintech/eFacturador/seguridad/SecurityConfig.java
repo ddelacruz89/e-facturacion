@@ -38,6 +38,7 @@ public class SecurityConfig {
                         "/api/auth/login",
                         "/api/auth/validate",
                         "/api/auth/select-sucursal",
+                        "/api/auth/select-empresa-soporte",
                         "/api/auth/recuperar-password/solicitar",
                         "/api/auth/recuperar-password/verificar")
                     .permitAll()
