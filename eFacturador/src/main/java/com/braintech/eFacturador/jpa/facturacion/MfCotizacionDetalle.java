@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
+import com.braintech.eFacturador.jpa.general.MgItbis;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -56,6 +57,10 @@ public class MfCotizacionDetalle implements Serializable {
   @Column(name = "itbis_id")
   private Integer itbisId;
 
+  @JoinColumn(name = "itbis_id", insertable = false, updatable = false)
+  @ManyToOne(optional = false)
+  private MgItbis oItbisId;
+
   @Column(name = "monto_itbis", precision = 18, scale = 2)
   private BigDecimal montoItbis;
 
@@ -67,4 +72,10 @@ public class MfCotizacionDetalle implements Serializable {
 
   @Column(name = "retencion_isr", precision = 18, scale = 2)
   private BigDecimal retencionIsr;
+
+  public BigDecimal getPrecioItbis() {
+    BigDecimal precioVenta = getPrecioVenta() != null ? getPrecioVenta() : BigDecimal.ZERO;
+    return precioVenta.multiply(oItbisId.getItbis());
+  }
 }
+

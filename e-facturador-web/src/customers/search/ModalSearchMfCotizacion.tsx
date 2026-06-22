@@ -7,22 +7,14 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
-import { getClientes } from '../../apis/ClienteController';
-import { TableContainer, Paper, Table, TableHead, TableRow, TableCell, TableBody, ButtonGroup } from '@mui/material';
-import { Cliente } from '../../models/cliente/Cliente';
+import { TableContainer, Paper, Table, TableHead, TableRow, TableCell, TableBody, Box, Typography, Select, MenuItem, InputLabel, FormControl } from '@mui/material';
 import { Control } from 'react-hook-form';
 import { TextInputPkSearch, TextInputSearch } from '../CustomComponents';
-import Select, { SelectChangeEvent } from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { Factura } from '../../models/facturacion';
-import { Cotizacion } from '../../models/MfContizacion';
-
+import { SelectChangeEvent } from '@mui/material/Select';
+import { ICotizacionResumen } from '../../models/MfContizacion';
+import { getCotizaciones } from '../../apis/MfCotizacionController';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialogContent-root': {
@@ -94,7 +86,7 @@ const CustomPagination = ({ page, count, rowsPerPage, onPageChange, onRowsPerPag
                 </IconButton>
                 <IconButton
                     onClick={() => onPageChange(page + 1)}
-                    disabled={page >= count - 1}
+                    disabled={count === 0 || page >= count - 1}
                     aria-label="siguiente página"
                 >
                     <ArrowForwardIcon />
@@ -103,60 +95,58 @@ const CustomPagination = ({ page, count, rowsPerPage, onPageChange, onRowsPerPag
         </Box>
     );
 };
+
 type Size = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
-interface ModalSearchClientesProps {
-    control: Control<Cliente> | Control<Factura> | Control<Cotizacion>;
+
+interface ModalSearchMfCotizacionProps {
+    control: Control<any>;
     name: string;
     label: string;
     size: Size;
     pk?: boolean;
-    onSelect: (cliente: Cliente) => void;
+    onSelect: (cotizacion: ICotizacionResumen) => void;
 }
 
-export default function ModalSearchClientes({ control, name, label, size, onSelect, pk = true }: ModalSearchClientesProps) {
+export default function ModalSearchMfCotizacion({ control, name, label, size, onSelect, pk = true }: ModalSearchMfCotizacionProps) {
     const [open, setOpen] = React.useState(false);
-    const [clientes, setClientes] = React.useState<Cliente[]>([]);
+    const [facturas, setFacturas] = React.useState<ICotizacionResumen[]>([]);
     const [page, setPage] = React.useState(0);
     const [sizePage, setSizePage] = React.useState(200);
     const [totalPage, setTotalPage] = React.useState(0);
     const [totalElements, setTotalElements] = React.useState(0);
 
-    React.useEffect(() => {
-        getClientes(page, sizePage).then((data) => {
+    const loadData = () => {
+        getCotizaciones(page, sizePage).then((data) => {
             if (data) {
-                setClientes(data.content);
+                setFacturas(data.content);
                 setPage(data.page);
                 setSizePage(data.size);
                 setTotalPage(data.totalPage);
                 setTotalElements(data.totalElements);
             }
         });
-    }, [page, sizePage]);
+    };
+
     React.useEffect(() => {
-        getClientes(page, sizePage).then((data) => {
-            if (data) {
-                setClientes([...data.content]);
-                setPage(data.page);
-                setSizePage(data.size);
-                setTotalPage(data.totalPage);
-                setTotalElements(data.totalElements);
-                console.log(data);
-            }
-        });
-    }, []);
+        if (open) {
+            loadData();
+        }
+    }, [page, sizePage, open]);
 
     const handleClickOpen = () => {
         setOpen(true);
     };
+
     const handleClose = () => {
         setOpen(false);
+        setPage(0);
     };
+
     return (
-        <React.Fragment >
-            {pk && (
+        <React.Fragment>
+            {pk ? (
                 <TextInputPkSearch control={control} name={name} label={label} disabled size={size} handleSearch={handleClickOpen} />
-            )}
-            {!pk && (
+            ) : (
                 <TextInputSearch control={control} name={name} label={label} disabled size={size} handleSearch={handleClickOpen} />
             )}
             <BootstrapDialog
@@ -168,7 +158,7 @@ export default function ModalSearchClientes({ control, name, label, size, onSele
                 style={{ userSelect: "none" }}
             >
                 <DialogTitle sx={{ m: 0, p: 2 }} id="customized-dialog-title">
-                    Consultar Clientes
+                    Consultar Facturas
                 </DialogTitle>
                 <IconButton
                     aria-label="close"
@@ -187,31 +177,33 @@ export default function ModalSearchClientes({ control, name, label, size, onSele
                         <Table stickyHeader sx={{ minWidth: 650 }} aria-label="simple table">
                             <TableHead>
                                 <TableRow sx={{ backgroundColor: "#525c71", color: "white" }}>
-                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }}>Id</TableCell>
-                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Numero Identificacion</TableCell>
-                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Razon Social/Nombre</TableCell>
-                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Email</TableCell>
-                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Telefono</TableCell>
-                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Direccion</TableCell>
-                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Action</TableCell>
+                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }}>ID</TableCell>
+                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Secuencia</TableCell>
+                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">RNC</TableCell>
+                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Razón Social</TableCell>
+                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Fecha</TableCell>
+                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Total</TableCell>
+                                    <TableCell style={{ backgroundColor: "transparent", color: "white" }} align="right">Acción</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {clientes.map((cliente) => (
+                                {facturas.map((cotizacion) => (
                                     <TableRow
-                                        key={cliente.secuencia}
+                                        key={cotizacion.id}
                                         sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                                     >
                                         <TableCell component="th" scope="row">
-                                            {cliente.secuencia}
+                                            {cotizacion.id}
                                         </TableCell>
-                                        <TableCell align="right">{cliente.numeroIdentificacion}</TableCell>
-                                        <TableCell align="right">{cliente.razonSocial}</TableCell>
-                                        <TableCell align="right">{cliente.email}</TableCell>
-                                        <TableCell align="right">{cliente.telefono}</TableCell>
-                                        <TableCell align="right">{cliente.direccion}</TableCell>
+                                        <TableCell align="right">{cotizacion.secuencia}</TableCell>
+                                        <TableCell align="right">{cotizacion.rnc}</TableCell>
+                                        <TableCell align="right">{cotizacion.razonSocial}</TableCell>
+                                        <TableCell align="right">{cotizacion.fechaReg}</TableCell>
                                         <TableCell align="right">
-                                            <Button variant="outlined" onClick={() => { onSelect(cliente); handleClose() }}>
+                                            {new Intl.NumberFormat('es-DO', { style: 'currency', currency: 'DOP' }).format(cotizacion.total)}
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            <Button variant="outlined" onClick={() => { onSelect(cotizacion); handleClose() }}>
                                                 Seleccionar
                                             </Button>
                                         </TableCell>
