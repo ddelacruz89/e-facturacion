@@ -16,9 +16,7 @@ import com.braintech.eFacturador.jpa.seguridad.SgUsuario;
 import com.braintech.eFacturador.jpa.seguridad.SgUsuarioRol;
 import com.braintech.eFacturador.services.seguridad.SgRolService;
 import com.braintech.eFacturador.util.TenantContext;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
 import lombok.AllArgsConstructor;
@@ -40,22 +38,11 @@ public class SgRolServiceImpl implements SgRolService {
   @Override
   public List<SgRolResumenDTO> buscar(SgRolSearchCriteria criteria) {
     Integer empresaId = tenantContext.getCurrentEmpresaId();
-
-    LocalDate inicio =
-        criteria.getFechaInicio() != null
-            ? criteria.getFechaInicio()
-            : LocalDate.now().minusDays(30);
-    LocalDate fin = criteria.getFechaFin() != null ? criteria.getFechaFin() : LocalDate.now();
-
-    LocalDateTime desde = inicio.atStartOfDay();
-    LocalDateTime hasta = fin.atTime(LocalTime.MAX);
-
     String nombre =
         (criteria.getNombre() != null && !criteria.getNombre().isBlank())
             ? criteria.getNombre().trim()
             : null;
-
-    return rolRepository.buscar(empresaId, desde, hasta, nombre);
+    return rolRepository.buscar(empresaId, nombre);
   }
 
   @Override

@@ -2,7 +2,6 @@ package com.braintech.eFacturador.dao.seguridad;
 
 import com.braintech.eFacturador.dto.seguridad.SgRolResumenDTO;
 import com.braintech.eFacturador.jpa.seguridad.SgRol;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,15 +21,11 @@ public interface SgRolRepository extends JpaRepository<SgRol, Integer> {
           r.usuarioReg, r.activo)
       FROM SgRol r
       WHERE r.empresaId = :empresaId
-        AND r.fechaReg BETWEEN :desde AND :hasta
         AND (CAST(:nombre AS String) IS NULL OR LOWER(r.nombre) LIKE LOWER(CONCAT('%', CAST(:nombre AS String), '%')))
-      ORDER BY r.fechaReg DESC
+      ORDER BY r.nombre ASC
       """)
   List<SgRolResumenDTO> buscar(
-      @Param("empresaId") Integer empresaId,
-      @Param("desde") LocalDateTime desde,
-      @Param("hasta") LocalDateTime hasta,
-      @Param("nombre") String nombre);
+      @Param("empresaId") Integer empresaId, @Param("nombre") String nombre);
 
   Optional<SgRol> findByIdAndEmpresaId(Integer id, Integer empresaId);
 }

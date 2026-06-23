@@ -142,14 +142,8 @@ export const SEARCH_CONFIGS = {
         method: "POST" as const,
         keyField: "id",
         searchOnLoad: true,
-        defaultParams: {
-            fechaInicio: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-            fechaFin: new Date().toISOString().split("T")[0],
-        },
         fields: [
             { key: "nombre", label: "Nombre", type: "text" as const, placeholder: "Nombre del rol" },
-            { key: "fechaInicio", label: "Fecha inicio", type: "date" as const },
-            { key: "fechaFin", label: "Fecha fin", type: "date" as const },
         ],
         displayColumns: [
             { key: "id", label: "ID", width: "7%" },

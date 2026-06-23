@@ -86,8 +86,6 @@ export interface SgRolResumenDTO {
 
 export interface SgRolSearchCriteria {
     nombre?: string;
-    fechaInicio?: string;
-    fechaFin?: string;
 }
 
 export interface SgUsuarioRol {

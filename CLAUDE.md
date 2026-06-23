@@ -285,6 +285,7 @@ Archivos disponibles en `contexto/` — lee solo los relevantes a la tarea:
 - `ubicacion-delivery.md` — catálogo División Territorial RD 2021 (ONE): jerarquía provincia→municipio→sección→barrio→sub-barrio, schema SQL, backend Java, componente DireccionSelector, regla de precio en barrio_paraje
 - `login.md` — flujo completo de autenticación: login, multi-sucursal, soporte, mensajes de error HTTP, `LoginResponse`, endpoints de auth, recuperación de contraseña
 - `empresa.md` — configuración de empresa y sucursales: entidades SgEmpresa/SgSucursal, endpoints, reglas multi-tenant, hooks singleton, advertencias de constructores JPA
+- `roles.md` — RBAC multi-tenant y multi-sucursal: sg_rol/sg_permiso/sg_usuario_rol, PermisoAspect, @RequierePermiso, RolView (matriz de permisos), lógica upsert en update, verificación de licencia de módulo
 
 ---
 
