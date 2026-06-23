@@ -91,7 +91,7 @@ const AppRoutes = () => {
                     <Route path="facturacion" element={<FacturacionView />} />
                     <Route path="producto" element={<ProductoView />} />
                     <Route path="producto/categoria" element={<CategoriaView />} />
-                    <Route path="producto/unidad" element={<UnidadView />} />
+                    <Route path="unidad" element={<UnidadView />} />
                     <Route path="paquete" element={<PaqueteView />} />
                     <Route path="suplidores" element={<SuplidorView />} />
                     <Route path="/inventario/cotizacion" element={<CotizacionView />} />

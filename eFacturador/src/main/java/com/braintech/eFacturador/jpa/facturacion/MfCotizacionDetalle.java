@@ -78,4 +78,3 @@ public class MfCotizacionDetalle implements Serializable {
     return precioVenta.multiply(oItbisId.getItbis());
   }
 }
-
