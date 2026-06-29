@@ -55,11 +55,14 @@ public class CotizacionServices implements IContizacion {
     entity.setSucursalId(sucursalId);
     entity.setUsuarioReg(username);
     entity.setFechaReg(LocalDateZone.toLocalDateTime());
-    entity.getDetalles().forEach(entityDetalle -> entityDetalle.setCotizacion(entity));
-    int nextSecuencia =
-        secuenciasDao.getNextSecuencia(
-            empresaId, MfCotizacion.class.getSimpleName().toUpperCase(Locale.ROOT));
-    entity.setSecuencia(nextSecuencia);
+    if (entity.getId() < 1) {
+      entity.getDetalles().forEach(entityDetalle -> entityDetalle.setCotizacion(entity));
+      int nextSecuencia =
+          secuenciasDao.getNextSecuencia(
+              empresaId, MfCotizacion.class.getSimpleName().toUpperCase(Locale.ROOT));
+      entity.setSecuencia(nextSecuencia);
+    }
+
     MfCotizacion save = cotizacionDao.save(entity);
     return save;
   }

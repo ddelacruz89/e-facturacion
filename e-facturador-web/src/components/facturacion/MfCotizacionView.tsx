@@ -56,10 +56,10 @@ export default function MfCotizacionView() {
 
     useEffect(() => { }, []);
 
-    const cotizacionDetalleItbis = (producto: ProductoVenta, detalle: CotizacionDetalle, retencion: number): CotizacionDetalle => {
-        let montoTotal = (producto.precioItbis + producto.precioVenta) * detalle.cantidad;
-        let montoItbis = producto.precioItbis * detalle.cantidad;
-        let precioVentaUnd = producto.precioVenta;
+    const cotizacionDetalleItbis = (detalle: CotizacionDetalle, retencion: number): CotizacionDetalle => {
+        let montoTotal = (detalle.precioItbis + detalle.precioVenta) * detalle.cantidad;
+        let montoItbis = detalle.precioItbis * detalle.cantidad;
+        let precioVentaUnd = detalle.precioVenta;
         let montoVenta = precioVentaUnd * detalle.cantidad;
 
         detalle.precioVenta = precioVentaUnd;
@@ -164,7 +164,7 @@ export default function MfCotizacionView() {
         };
         let detalles = watch("detalles");
         detalles.push(detalleCotizacion);
-        detalleCotizacion = cotizacionDetalleItbis(producto, detalleCotizacion, retencionValue);
+        detalleCotizacion = cotizacionDetalleItbis(detalleCotizacion, retencionValue);
         detalleCotizacion.linea = detalles.length;
         toast.success("Producto agregado a la cotización");
 
@@ -178,7 +178,7 @@ export default function MfCotizacionView() {
         let detalles = watch("detalles");
         let detalle = detalles[row.linea - 1];
         detalle.cantidad = Number(value);
-        detalle = cotizacionDetalleItbis(detalle.producto!, detalle, retencionValue);
+        detalle = cotizacionDetalleItbis(detalle, retencionValue);
         detalles[row.linea - 1] = detalle;
         setValue("detalles", detalles);
     }
@@ -193,7 +193,7 @@ export default function MfCotizacionView() {
     function handleSelectRetenciones(retencion: MgRetencion): void {
         let detalles = watch("detalles");
         setRetencionValue(retencion?.valor || 0);
-        detalles = detalles.map((detalle) => cotizacionDetalleItbis(detalle.producto!, detalle, retencion?.valor || 0));
+        detalles = detalles.map((detalle) => cotizacionDetalleItbis(detalle, retencion?.valor || 0));
         setValue("retencionId", retencion?.id || 0);
         setValue("detalles", detalles);
     }

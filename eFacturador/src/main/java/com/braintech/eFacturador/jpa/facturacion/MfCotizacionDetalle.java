@@ -4,6 +4,7 @@ import com.braintech.eFacturador.jpa.general.MgItbis;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -75,6 +76,8 @@ public class MfCotizacionDetalle implements Serializable {
 
   public BigDecimal getPrecioItbis() {
     BigDecimal precioVenta = getPrecioVenta() != null ? getPrecioVenta() : BigDecimal.ZERO;
-    return precioVenta.multiply(oItbisId.getItbis());
+    return precioVenta
+        .multiply(oItbisId.getItbis())
+        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
   }
 }
