@@ -26,6 +26,7 @@ public class MfCotizacionDetalle implements Serializable {
   private MfCotizacion cotizacion;
 
   @Column(name = "linea")
+  @OrderBy("linea ASC")
   private Integer linea;
 
   @Column(name = "producto_id")

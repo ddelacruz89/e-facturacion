@@ -214,31 +214,34 @@ export function RetencionesSelect({ handleGetItem, name, disabled, readOnly, lab
         <Controller
             name={name}
             control={control}
-            rules={{ ...rules }}
-            render={({ field }) => (
-                <Grid size={{ xs: 12, sm: size }}>
-                    <FormControl fullWidth error={!!error}>
-                        <InputLabel id="demo-simple-select-label">Retencion</InputLabel>
-                        <Select
-                            size="small"
-                            labelId="demo-simple-select-label"
-                            id="demo-simple-select"
-                            label="retencionId"
-                            {...field}
-                            {...rest}>
-                            <MenuItem value="">Elegir</MenuItem>
-                            {
-                                retenciones.map((option: any) =>
-                                    <MenuItem
-                                        onClick={() => handleGetItem && handleGetItem(option)}
-                                        key={option.id}
-                                        value={option.id}>{option.nombre}</MenuItem>)
-                            }
-                        </Select>
-                        {error && <FormHelperText>{error.message}</FormHelperText>}
-                    </FormControl>
-                </Grid>
+            rules={rules}
+            render={({ field, fieldState }) => (
+                <FormControl fullWidth error={!!fieldState.error}>
+                    <InputLabel>{label}</InputLabel>
 
+                    <Select
+                        {...field}
+                        label={label}
+                        onChange={(e) => {
+                            field.onChange(e);
+                            handleGetItem?.(
+                                retenciones.find(r => r.id === e.target.value)
+                            );
+                        }}
+                    >
+                        <MenuItem value="">Elegir</MenuItem>
+
+                        {retenciones.map(option => (
+                            <MenuItem key={option.id} value={option.id}>
+                                {option.nombre}
+                            </MenuItem>
+                        ))}
+                    </Select>
+
+                    <FormHelperText>
+                        {fieldState.error?.message}
+                    </FormHelperText>
+                </FormControl>
             )}
         />
 

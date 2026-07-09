@@ -195,15 +195,15 @@ export default function FacturacionView() {
 
         setValue("detalles", detalles);
     };
-    function handleOnChangeCantidad(value: string, row: any, column: string) {
+    function handleOnChangeCantidad(index: number, value: string, column: string) {
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
         let detalles = watch("detalles");
-        let detalle = detalles[row.linea - 1];
+        let detalle = detalles[index];
         detalle.cantidad = Number(value);
         detalle = detalleItbis(detalle.producto!, detalle, retencionValue);
-        detalles[row.linea - 1] = detalle;
+        detalles[index] = detalle;
         setValue("detalles", detalles);
     }
 
@@ -459,7 +459,7 @@ export default function FacturacionView() {
                             {
                                 id: "cantidad",
                                 label: "Cantidad",
-                                onChange: (value: string, row: any, column: string) => handleOnChangeCantidad(value, row, column),
+                                onChange: (index: number, value: any, column: string) => handleOnChangeCantidad(index, value, column),
                             },
                             { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
                             { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },

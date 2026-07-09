@@ -367,7 +367,8 @@ export interface Column {
     minWidth?: number;
     align?: "right" | "left" | "center";
     format?: (value: number) => string;
-    onChange?: (value: string, row: any, column: string) => void;
+    isNumeric?: boolean;
+    onChange?: (index: number, value: any, column: string) => void;
 }
 export interface PropsTable {
     disabled?: boolean
@@ -415,7 +416,7 @@ export function TableComponent({ columns, rows, selected }: PropsTable) {
                                     tabIndex={-1}
                                     key={row.code}
                                     onClick={() => selected && selected(row)}>
-                                    {columns.map((column) => {
+                                    {columns.map((column, index) => {
                                         const value = row[column.id];
                                         let displayValue = value;
 
@@ -429,7 +430,7 @@ export function TableComponent({ columns, rows, selected }: PropsTable) {
                                                 {column.onChange && typeof value === 'number' && column.id !== 'id' ? (
                                                     <TextField
                                                         value={value}
-                                                        onChange={(e) => column.onChange && column.onChange(e.target.value, row, column.id)}
+                                                        onChange={(e) => column.onChange && column.onChange(index, Number(e.target.value), column.id)}
                                                         type="number"
                                                         size="small"
                                                         variant="standard"
@@ -494,7 +495,7 @@ export function TableComponentFacturacion({ columns, rows, selected, handleDelet
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {(rows || []).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row) => {
+                        {(rows || []).slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                             return (
                                 <TableRow
                                     style={{ cursor: "pointer" }}
@@ -514,10 +515,10 @@ export function TableComponentFacturacion({ columns, rows, selected, handleDelet
 
                                         return (
                                             <TableCell key={column.id} align={column.align}>
-                                                {column.onChange && typeof value === 'number' && column.id !== 'id' ? (
+                                                {column.onChange && column.isNumeric && column.id !== 'id' ? (
                                                     <TextField
                                                         value={value}
-                                                        onChange={(e) => column.onChange && column.onChange(e.target.value, row, column.id)}
+                                                        onChange={(e) => column.onChange && column.onChange(index, e.target.value, column.id)}
                                                         type="number"
                                                         size="small"
                                                         variant="standard"
@@ -530,7 +531,7 @@ export function TableComponentFacturacion({ columns, rows, selected, handleDelet
                                         );
                                     })}
                                     <TableCell align="center">
-                                        <IconButton disabled={disabled} color="error" aria-label="delete" onClick={() => handleDelete && handleDelete(row)}>
+                                        <IconButton disabled={disabled} color="error" aria-label="delete" onClick={() => handleDelete && handleDelete(index)}>
                                             <DeleteOutlinedIcon />
                                         </IconButton>
                                     </TableCell>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
+import { useForm, SubmitHandler, FieldErrors, useFieldArray } from "react-hook-form";
 import { Cotizacion, CotizacionDetalle, ICotizacionResumen } from "../../models/MfContizacion";
 import { MgRetencion } from "../../models/facturacion";
 import { Button, Divider } from "@mui/material";
@@ -54,9 +54,20 @@ export default function MfCotizacionView() {
         formState: { errors },
     } = cotizacionForm;
 
+    const {
+        fields,
+        append,
+        remove,
+        update,
+        replace
+    } = useFieldArray({
+        control,
+        name: "detalles"
+    });
     useEffect(() => { }, []);
 
     const cotizacionDetalleItbis = (detalle: CotizacionDetalle, retencion: number): CotizacionDetalle => {
+        debugger
         let montoTotal = (detalle.precioItbis + detalle.precioVenta) * detalle.cantidad;
         let montoItbis = detalle.precioItbis * detalle.cantidad;
         let precioVentaUnd = detalle.precioVenta;
@@ -134,27 +145,21 @@ export default function MfCotizacionView() {
         setSave(false);
     };
 
-    const handleOnSelect = (row: any) => {
-        Object.entries(row).forEach(([key, value]) => setValue(key as any, value));
-    };
-
-    const handleOnDelete = (row: CotizacionDetalle) => {
-        let detalles = watch("detalles");
-        detalles = detalles.filter((detalle) => detalle.linea !== row.linea);
-        setValue("detalles", detalles);
+    const handleOnDelete = (index: number) => {
+        remove(index)
     };
 
     const handleSelectProducto = (producto: ProductoVenta) => {
         let detalleCotizacion: CotizacionDetalle = {
-            linea: 0,
+            linea: fields.length + 1,
             productoId: producto.id,
             producto: producto,
             productoDesc: producto.nombreProducto,
             precioCosto: producto.precioCostoAvg,
-            precioVentaUnd: 0,
-            precioVenta: 0,
+            precioVentaUnd: producto.precioVenta,
+            precioVenta: producto.precioVenta,
             montoDescuento: 0,
-            precioItbis: 0,
+            precioItbis: producto.precioItbis,
             cantidad: 1,
             montoVenta: 0,
             itbisId: producto.itbisId.id,
@@ -162,25 +167,22 @@ export default function MfCotizacionView() {
             retencionItbis: 0,
             retencionIsr: 0,
         };
-        let detalles = watch("detalles");
-        detalles.push(detalleCotizacion);
+
         detalleCotizacion = cotizacionDetalleItbis(detalleCotizacion, retencionValue);
-        detalleCotizacion.linea = detalles.length;
+        append(detalleCotizacion);
         toast.success("Producto agregado a la cotización");
 
-        setValue("detalles", detalles);
+
     };
 
-    function handleOnChangeCantidad(value: string, row: any, column: string) {
+    function handleOnChangeCantidad(index: number, value: number) {
+        let detalle = watch(`detalles.${index}`);
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
-        let detalles = watch("detalles");
-        let detalle = detalles[row.linea - 1];
-        detalle.cantidad = Number(value);
-        detalle = cotizacionDetalleItbis(detalle, retencionValue);
-        detalles[row.linea - 1] = detalle;
-        setValue("detalles", detalles);
+        detalle.cantidad = value;
+        // detalle = cotizacionDetalleItbis(detalle, retencionValue);
+        update(index, detalle);
     }
 
     function handleSelectCliente(cliente: Cliente): void {
@@ -191,11 +193,15 @@ export default function MfCotizacionView() {
     }
 
     function handleSelectRetenciones(retencion: MgRetencion): void {
-        let detalles = watch("detalles");
         setRetencionValue(retencion?.valor || 0);
-        detalles = detalles.map((detalle) => cotizacionDetalleItbis(detalle, retencion?.valor || 0));
+
+
         setValue("retencionId", retencion?.id || 0);
-        setValue("detalles", detalles);
+        let detalles = watch("detalles") || [];
+        if (detalles.length > 0) {
+            detalles = detalles.map((detalle) => cotizacionDetalleItbis(detalle, retencion?.valor || 0));
+            setValue("detalles", detalles);
+        }
     }
 
     function handleSelectTipoComprobante(selected: any): void {
@@ -242,7 +248,6 @@ export default function MfCotizacionView() {
     return (
         <main style={{ display: "flex", flexDirection: "row", gap: 20, padding: 10 }}>
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
-
             <form style={{ flexGrow: 1, minWidth: "50%" }} onSubmit={handleSubmit(onSubmit, onError)}>
                 <ActionBar title="Cotización">
                     <Button
@@ -366,10 +371,11 @@ export default function MfCotizacionView() {
                     <Divider>Listado</Divider>
                     <TableComponentFacturacion
                         disabled={save}
-                        selected={handleOnSelect}
-                        rows={watch("detalles")}
+                        // selected={handleOnSelect}
+                        rows={fields}
                         handleDelete={handleOnDelete}
                         columns={[
+                            { id: "id", label: "Id" },
                             { id: "linea", label: "Linea" },
                             { id: "productoId", label: "Producto ID" },
                             { id: "productoDesc", label: "Producto" },
@@ -378,7 +384,8 @@ export default function MfCotizacionView() {
                             {
                                 id: "cantidad",
                                 label: "Cantidad",
-                                onChange: (value: string, row: any, column: string) => handleOnChangeCantidad(value, row, column),
+                                isNumeric: true,
+                                onChange: (index: number, value: number, column: string) => handleOnChangeCantidad(index, value),
                             },
                             { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
                             { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },

@@ -18,18 +18,18 @@ public class BaseEntityPk implements Serializable {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
-  protected Integer id;
+  public Integer id;
 
   @NotNull(message = "La empresa no puede ser nulo")
   @FieldDescription("Empresa")
   @Column(name = "empresa_id", updatable = false)
-  protected Integer empresaId;
+  public Integer empresaId;
 
   @FieldDescription("Secuencia")
   @Column(name = "secuencia")
-  protected Integer secuencia;
+  public Integer secuencia;
 
-  protected BaseEntityPk(Integer id) {
+  public BaseEntityPk(Integer id) {
     this.id = id;
   }
 

@@ -21,7 +21,7 @@ public class BaseEntitySucursal extends BaseEntityPk implements Serializable {
   private LocalDateTime fechaReg;
 
   @Column(name = "sucursal_id", updatable = false)
-  @NotNull(message = "SucursalId no puede ser nulo")
+  @NotNull(message = "Sucursal Id no puede ser nulo")
   private Integer sucursalId;
 
   @Column(name = "activo")
