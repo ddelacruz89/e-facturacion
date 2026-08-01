@@ -1,5 +1,6 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
+import com.braintech.eFacturador.dto.facturacion.PrecioVentaDto;
 import com.braintech.eFacturador.jpa.general.MgItbis;
 import jakarta.persistence.*;
 import java.io.Serializable;
@@ -80,5 +81,17 @@ public class MfCotizacionDetalle implements Serializable {
     return precioVenta
         .multiply(oItbisId.getItbis())
         .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+  }
+
+  public PrecioVentaDto getPrecioVentaDto() {
+    return new PrecioVentaDto(
+        this.productoId,
+        this.linea,
+        null, // Assuming codigoBarra is not available in MfCotizacionDetalle
+        this.productoDesc,
+        null, // Assuming descripcion is not available in MfCotizacionDetalle
+        this.oItbisId,
+        this.precioVentaUnd,
+        this.precioCosto);
   }
 }

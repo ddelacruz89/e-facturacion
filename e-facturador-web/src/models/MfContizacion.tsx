@@ -41,7 +41,10 @@ export interface CotizacionDetalle {
     montoTotal?: number;
     retencionItbis: number;
     retencionIsr: number;
+    precioVentaDto?: ProductoVenta;
 }
+
+
 
 export interface ICotizacionResumen {
     id: number;

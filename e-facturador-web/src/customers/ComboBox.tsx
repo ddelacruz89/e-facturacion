@@ -1,5 +1,5 @@
 import { FormControl, InputLabel, Select, MenuItem, Grid, FormHelperText } from "@mui/material";
-import { TipoComprobante, TipoFactura } from "../models/facturacion";
+import { MgRetencion, TipoComprobante, TipoFactura } from "../models/facturacion";
 import { useEffect, useState } from "react";
 import { getTipoFacturas } from "../apis/TipoFacturaController";
 import { Control, Controller, FieldError } from "react-hook-form";
@@ -198,6 +198,8 @@ export function TipoRetencionSelect({ handleGetItem, name, disabled, readOnly, l
             )}
         />
 
+
+
     )
 }
 
@@ -207,43 +209,41 @@ export function RetencionesSelect({ handleGetItem, name, disabled, readOnly, lab
     useEffect(() => {
         if (retenciones.length === 0)
             getRetenciones().then(x => setRetenciones(x))
-
     }, [])
 
     return (
         <Controller
             name={name}
             control={control}
-            rules={rules}
-            render={({ field, fieldState }) => (
-                <FormControl fullWidth error={!!fieldState.error}>
-                    <InputLabel>{label}</InputLabel>
+            rules={{ ...rules }}
+            render={({ field }) => (
+                <Grid size={{ xs: 12, sm: size }}>
+                    <FormControl fullWidth error={!!error}>
+                        <InputLabel id="demo-simple-select-label">{label}</InputLabel>
+                        <Select
+                            size="small"
+                            labelId="demo-simple-select-label"
+                            id="demo-simple-select"
+                            label={label}
+                            {...field}
+                            {...rest}>
+                            <MenuItem value="">Elegir</MenuItem>
+                            {
+                                retenciones.map((option: MgRetencion) =>
+                                    <MenuItem
+                                        onClick={() => handleGetItem && handleGetItem(option)}
+                                        key={option.id}
+                                        value={option.id}>{option.id} - {option.nombre}</MenuItem>)
+                            }
 
-                    <Select
-                        {...field}
-                        label={label}
-                        onChange={(e) => {
-                            field.onChange(e);
-                            handleGetItem?.(
-                                retenciones.find(r => r.id === e.target.value)
-                            );
-                        }}
-                    >
-                        <MenuItem value="">Elegir</MenuItem>
+                        </Select>
+                        {error && <FormHelperText>{error.message}</FormHelperText>}
+                    </FormControl>
+                </Grid>
 
-                        {retenciones.map(option => (
-                            <MenuItem key={option.id} value={option.id}>
-                                {option.nombre}
-                            </MenuItem>
-                        ))}
-                    </Select>
-
-                    <FormHelperText>
-                        {fieldState.error?.message}
-                    </FormHelperText>
-                </FormControl>
             )}
         />
+
 
     )
 }

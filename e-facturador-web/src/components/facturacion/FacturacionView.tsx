@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
+import { useForm, SubmitHandler, FieldErrors, useFieldArray } from "react-hook-form";
 import { Factura, FacturaDetalle, IFacturaResumen, MgRetencion, TipoFactura } from "../../models/facturacion";
 import { Button, Checkbox, Divider, FormControlLabel } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -18,6 +18,9 @@ import { Cliente } from "../../models/cliente/Cliente";
 import ModalSearchFacturas from "../../customers/search/ModalSearchFacturas";
 import ModalReciboPago from "./modals/ModalReciboPago";
 import { CallReportById } from "../../customers/search/CallReport";
+import ModalSearchMfCotizacion from "../../customers/search/ModalSearchMfCotizacion";
+import { ICotizacionResumen } from "../../models/MfContizacion";
+import { getByNumeroCotizacion } from "../../apis/MfCotizacionController";
 
 export default function FacturacionView() {
 
@@ -57,6 +60,16 @@ export default function FacturacionView() {
         watch,
         formState: { errors },
     } = facturaForm
+    const {
+        fields,
+        append,
+        remove,
+        update,
+        replace
+    } = useFieldArray({
+        control,
+        name: "detalles"
+    });
 
     // const [factura, setFactura] = useState<Factura>({
     //     activo: true,
@@ -153,10 +166,8 @@ export default function FacturacionView() {
         Object.entries(row).forEach(([key, value]) => setValue(key as any, value));
     };
 
-    const handleOnDelete = (row: FacturaDetalle) => {
-        let detalles = watch("detalles");
-        detalles = detalles.filter((detalle) => detalle.linea !== row.linea);
-        setValue("detalles", detalles);
+    const handleOnDelete = (index: number) => {
+        remove(index);
     };
 
     const handleSelectTipoFactura = (item: TipoFactura) => {
@@ -187,24 +198,21 @@ export default function FacturacionView() {
             retencionIsr: 0,
             almacenId: 0,
         };
-        let detalles = watch("detalles");
-        detalles.push(detalleFactura);
+        append(detalleFactura);
         detalleFactura = detalleItbis(producto, detalleFactura, retencionValue);
-        detalleFactura.linea = detalles.length;
+        detalleFactura.linea = fields.length;
         toast.success("Producto agregado a la factura");
-
-        setValue("detalles", detalles);
     };
     function handleOnChangeCantidad(index: number, value: string, column: string) {
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
-        let detalles = watch("detalles");
-        let detalle = detalles[index];
-        detalle.cantidad = Number(value);
-        detalle = detalleItbis(detalle.producto!, detalle, retencionValue);
-        detalles[index] = detalle;
-        setValue("detalles", detalles);
+        let detalle = {
+            ...fields[index],
+            cantidad: Number(value),
+        };
+        let detalleConItbis = detalleItbis(detalle.producto!, detalle, retencionValue);
+        update(index, detalleConItbis);
     }
 
     function handleSelectCliente(cliente: Cliente): void {
@@ -234,11 +242,11 @@ export default function FacturacionView() {
     }
 
     function handleSelectRetenciones(retencion: MgRetencion): void {
-        let detalles = watch("detalles");
+        // let detalles = fields;
         setRetencionValue(retencion?.valor || 0);
-        detalles = detalles.map((detalle) => detalleItbis(detalle.producto!, detalle, retencion?.valor || 0));
-        setValue("retencionId", retencion?.id || 0);
-        setValue("detalles", detalles);
+        replace(fields.map((detalle) => detalleItbis(detalle.producto!, detalle, retencion?.valor || 0)));
+        // setValue("retencionId", retencion?.id || 0);
+        // setValue("detalles", detalles);
     }
 
     function handleSelectTipoComprobante(selected: any): void {
@@ -261,6 +269,49 @@ export default function FacturacionView() {
     }
 
 
+    function handleSelectCotizacion(cotizacion: ICotizacionResumen): void {
+        getByNumeroCotizacion(cotizacion.secuencia).then((response) => {
+            console.log(response);
+            setValue("secuencia", response?.secuencia);
+            setValue("tipoComprobanteId", response?.tipoComprobanteId || "");
+            setValue("razonSocial", response?.razonSocial || "");
+            setValue("rnc", response?.rnc || "");
+            setValue("tipoFacturaId", 1);
+            setValue("clienteId", response?.clienteId || 0);
+            setValue("monto", response?.monto || 0);
+            setValue("descuento", response?.descuento || 0);
+            setValue("itbis", response?.itbis || 0);
+            setValue("retencionItbis", response?.retencionItbis || 0);
+            setValue("retencionIsr", response?.retencionIsr || 0);
+            setValue("total", response?.total || 0);
+            setValue("nota", response?.nota || "");
+            response?.detalles?.forEach((detalle) => {
+                let detalleFactura: FacturaDetalle = {
+                    linea: 0,
+                    productoId: detalle.productoId,
+                    producto: detalle.precioVentaDto,
+                    productoDesc: detalle.productoDesc,
+                    precioCosto: detalle.precioCosto,
+                    precioVentaUnd: detalle.precioVentaUnd,
+                    precioVenta: detalle.precioVenta,
+                    montoDescuento: detalle.montoDescuento,
+                    precioItbis: detalle.precioItbis,
+                    cantidad: detalle.cantidad,
+                    montoVenta: detalle.montoVenta,
+                    itbisId: detalle.itbisId,
+                    montoItbis: detalle.montoItbis,
+                    retencionItbis: detalle.retencionItbis,
+                    retencionIsr: detalle.retencionIsr,
+                    almacenId: 1,
+                    montoTotal: detalle.montoTotal,
+                };
+                // detalleFactura = detalleItbis(detalleFactura.producto!, detalleFactura, retencionValue);
+                append(detalleFactura);
+            });
+
+        });
+    }
+
     return (
 
         <main style={{ display: "flex", flexDirection: "row", gap: 20, padding: 10 }}>
@@ -273,6 +324,7 @@ export default function FacturacionView() {
                     setOpenModalReciboPago(false)
                 }} />
                 <ActionBar title="Factura">
+                    <ModalSearchMfCotizacion control={control} name="secuencia" label="No. Factura" size={2} onSelect={handleSelectCotizacion} type="button" />
                     {watch("tipoFacturaId") === 2 ? <Button
                         variant="contained"
                         color="success"
@@ -299,6 +351,7 @@ export default function FacturacionView() {
                     <Button variant="contained" color="primary" onClick={handleGenerateReport}>
                         <ArticleIcon /> Reporte
                     </Button>
+
                 </ActionBar>
                 <fieldset disabled={save}>
 
@@ -337,7 +390,7 @@ export default function FacturacionView() {
                             <RetencionesSelect
                                 disabled={save}
                                 control={control}
-                                name="retencion"
+                                name="retencionId"
                                 label="retencion"
                                 rules={{
                                     required: "Debe seleccionar retenciones",
@@ -448,7 +501,7 @@ export default function FacturacionView() {
                     <TableComponentFacturacion
                         disabled={save}
                         selected={handleOnSelect}
-                        rows={watch("detalles")}
+                        rows={fields}
                         handleDelete={handleOnDelete}
                         columns={[
                             { id: "linea", label: "Linea" },
@@ -459,6 +512,7 @@ export default function FacturacionView() {
                             {
                                 id: "cantidad",
                                 label: "Cantidad",
+                                isNumeric: true,
                                 onChange: (index: number, value: any, column: string) => handleOnChangeCantidad(index, value, column),
                             },
                             { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },

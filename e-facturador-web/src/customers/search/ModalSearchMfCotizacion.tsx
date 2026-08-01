@@ -15,6 +15,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { ICotizacionResumen } from '../../models/MfContizacion';
 import { getCotizaciones } from '../../apis/MfCotizacionController';
+import ArticleIcon from '@mui/icons-material/NoteAlt';
 
 const BootstrapDialog = styled(Dialog)(({ theme }) => ({
     '& .MuiDialogContent-root': {
@@ -103,11 +104,11 @@ interface ModalSearchMfCotizacionProps {
     name: string;
     label: string;
     size: Size;
-    pk?: boolean;
+    type?: "button" | "PK" | "Search";
     onSelect: (cotizacion: ICotizacionResumen) => void;
 }
 
-export default function ModalSearchMfCotizacion({ control, name, label, size, onSelect, pk = true }: ModalSearchMfCotizacionProps) {
+export default function ModalSearchMfCotizacion({ control, name, label, size, onSelect, type = "PK" }: ModalSearchMfCotizacionProps) {
     const [open, setOpen] = React.useState(false);
     const [facturas, setFacturas] = React.useState<ICotizacionResumen[]>([]);
     const [page, setPage] = React.useState(0);
@@ -144,11 +145,13 @@ export default function ModalSearchMfCotizacion({ control, name, label, size, on
 
     return (
         <React.Fragment>
-            {pk ? (
-                <TextInputPkSearch control={control} name={name} label={label} disabled size={size} handleSearch={handleClickOpen} />
-            ) : (
-                <TextInputSearch control={control} name={name} label={label} disabled size={size} handleSearch={handleClickOpen} />
-            )}
+            {type === "PK" && <TextInputPkSearch control={control} name={name} label={label} disabled size={size} handleSearch={handleClickOpen} />}
+            {type === "Search" && <TextInputSearch control={control} name={name} label={label} disabled size={size} handleSearch={handleClickOpen} />}
+
+            <Button variant="contained" color="primary" onClick={handleClickOpen}>
+                <ArticleIcon />  Cotizaciones
+            </Button>
+
             <BootstrapDialog
                 onClose={handleClose}
                 aria-labelledby="customized-dialog-title"
@@ -170,6 +173,7 @@ export default function ModalSearchMfCotizacion({ control, name, label, size, on
                         color: theme.palette.grey[500],
                     })}
                 >
+
                     <CloseIcon />
                 </IconButton>
                 <DialogContent dividers>
