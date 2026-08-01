@@ -199,6 +199,7 @@ export default function FacturacionView() {
             retencionIsr: 0,
             almacenId: 0,
         };
+        detalleFactura = detalleItbis(detalleFactura.producto!, detalleFactura, retencionValueRef.current);
         append(detalleFactura);
         toast.success("Producto agregado a la factura");
     }, [append]);
@@ -210,7 +211,7 @@ export default function FacturacionView() {
         const detalle = { ...fields[index], cantidad: Number(value) };
         const detalleActualizado = detalleItbis(detalle.producto!, detalle, retencionValueRef.current);
         update(index, detalleActualizado);
-    }, [fields, retencionValueRef, update]);
+    }, [update]);
 
     function handleSelectCliente(cliente: Cliente): void {
         setValue("clienteId", cliente.secuencia);
