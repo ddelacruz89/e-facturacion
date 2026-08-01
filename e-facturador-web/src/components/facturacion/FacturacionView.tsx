@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useForm, useWatch, Controller, Control, SubmitHandler, FieldErrors } from "react-hook-form";
+import { useForm, useWatch, Controller, Control, SubmitHandler, FieldErrors, useFieldArray } from "react-hook-form";
 import { Factura, FacturaDetalle, IFacturaResumen, MgRetencion, TipoFactura } from "../../models/facturacion";
 import { Button, Checkbox, Divider, FormControlLabel } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -57,6 +57,17 @@ export default function FacturacionView() {
         watch,
         formState: { errors },
     } = facturaForm
+
+    const {
+        fields,
+        append,
+        remove,
+        update,
+        replace
+    } = useFieldArray({
+        control,
+        name: "detalles"
+    });
 
     // const [factura, setFactura] = useState<Factura>({
     //     activo: true,
@@ -155,11 +166,9 @@ export default function FacturacionView() {
         Object.entries(row).forEach(([key, value]) => setValue(key as any, value));
     }, [setValue]);
 
-    const handleOnDelete = useCallback((row: FacturaDetalle) => {
-        let detalles = watch("detalles");
-        detalles = detalles.filter((detalle) => detalle.linea !== row.linea);
-        setValue("detalles", detalles);
-    }, [watch, setValue]);
+    const handleOnDelete = useCallback((index: number) => {
+        remove(index)
+    }, [remove]);
 
     const handleSelectTipoFactura = (item: TipoFactura) => {
         setValue("tipoFacturaId", item?.id || 2);
@@ -423,7 +432,7 @@ export default function FacturacionView() {
                     </Grid>
                     <Divider>Listado</Divider>
                     <FacturaDetalleTable
-                        control={control}
+                        fields={fields}
                         disabled={save}
                         selected={handleOnSelect}
                         handleDelete={handleOnDelete}
@@ -479,24 +488,23 @@ function EnvioCheckbox({ control, save }: { control: Control<Factura>; save: boo
 }
 
 function FacturaDetalleTable({
-    control,
+    fields,
     disabled,
     selected,
     handleDelete,
     handleOnChangeCantidad,
 }: {
-    control: Control<Factura>;
+    fields: FacturaDetalle[];
     disabled: boolean;
     selected: (row: Factura) => void;
-    handleDelete: (row: FacturaDetalle) => void;
+    handleDelete: (index: number) => void;
     handleOnChangeCantidad: (index: number, value: string, column: string) => void;
 }) {
-    const detalles = useWatch({ control, name: "detalles" }) ?? [];
     return (
         <TableComponentFacturacion
             disabled={disabled}
             selected={selected}
-            rows={detalles}
+            rows={fields}
             handleDelete={handleDelete}
             columns={[
                 { id: "linea", label: "Linea" },

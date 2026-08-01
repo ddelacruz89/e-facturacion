@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useForm, SubmitHandler, FieldErrors, useFieldArray } from "react-hook-form";
 import { Cotizacion, CotizacionDetalle, ICotizacionResumen } from "../../models/MfContizacion";
 import { MgRetencion } from "../../models/facturacion";
@@ -175,15 +175,17 @@ export default function MfCotizacionView() {
 
     };
 
-    function handleOnChangeCantidad(index: number, value: number) {
-        let detalle = watch(`detalles.${index}`);
+    const handleOnChangeCantidad = useCallback((index: number, value: string) => {
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
-        detalle.cantidad = value;
-        // detalle = cotizacionDetalleItbis(detalle, retencionValue);
-        update(index, detalle);
-    }
+        let detalles = watch("detalles");
+        let detalle = detalles[index];
+        detalle.cantidad = Number(value);
+        // detalle = detalleItbis(detalle.producto!, detalle, retencionValueRef.current);
+        detalles[index] = detalle;
+        setValue("detalles", detalles);
+    }, [watch, setValue]);
 
     function handleSelectCliente(cliente: Cliente): void {
         setValue("clienteId", cliente.secuencia);
@@ -369,7 +371,7 @@ export default function MfCotizacionView() {
                         </GridRow>
                     </Grid>
                     <Divider>Listado</Divider>
-                    <TableComponentFacturacion
+                    {/* <TableComponentFacturacion
                         disabled={save}
                         // selected={handleOnSelect}
                         rows={fields}
@@ -393,9 +395,58 @@ export default function MfCotizacionView() {
                             { id: "retencionItbis", label: "Retencion Itbis", format: (value: number) => formatCurrency(value) },
                             { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) },
                         ]}
+                    /> */}
+                    <FacturaDetalleTable
+                        fields={fields}
+                        disabled={save}
+                        // selected={handleOnSelect}
+                        handleDelete={handleOnDelete}
+                        handleOnChangeCantidad={handleOnChangeCantidad}
                     />
                 </fieldset>
             </form>
         </main>
     );
 }
+
+function FacturaDetalleTable({
+    fields,
+    disabled,
+    // selected,
+    handleDelete,
+    handleOnChangeCantidad,
+}: {
+    fields: CotizacionDetalle[];
+    disabled: boolean;
+    // selected: (row: Cotizacion) => void;
+    handleDelete: (index: number) => void;
+    handleOnChangeCantidad: (index: number, value: string) => void;
+}) {
+    return (
+        <TableComponentFacturacion
+            disabled={disabled}
+            // selected={selected}
+            rows={fields}
+            handleDelete={handleDelete}
+            columns={[
+                { id: "linea", label: "Linea" },
+                { id: "productoId", label: "Producto ID" },
+                { id: "productoDesc", label: "Producto" },
+                { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
+                { id: "montoDescuento", label: "Monto Descuento", format: (value: number) => formatCurrency(value) },
+                {
+                    id: "cantidad",
+                    label: "Cantidad",
+                    onChange: (index: number, value: any) => handleOnChangeCantidad(index, value),
+                    isNumeric: true
+                },
+                { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
+                { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },
+                { id: "retencionIsr", label: "Retencion ISR", format: (value: number) => formatCurrency(value) },
+                { id: "retencionItbis", label: "Retencion Itbis", format: (value: number) => formatCurrency(value) },
+                { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) },
+            ]}
+        />
+    );
+}
+
