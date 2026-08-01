@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useForm, SubmitHandler, FieldErrors, useFieldArray } from "react-hook-form";
 import { Cotizacion, CotizacionDetalle, ICotizacionResumen } from "../../models/MfContizacion";
 import { MgRetencion } from "../../models/facturacion";
@@ -19,9 +19,27 @@ import { Cliente } from "../../models/cliente/Cliente";
 import ModalSearchMfCotizacion from "../../customers/search/ModalSearchMfCotizacion";
 import { CallReportById, CallReportByNumero } from "../../customers/search/CallReport";
 
+const cotizacionDetalleItbis = (detalle: CotizacionDetalle, retencion: number): CotizacionDetalle => {
+    const montoTotal = (detalle.precioItbis + detalle.precioVenta) * detalle.cantidad;
+    const montoItbis = detalle.precioItbis * detalle.cantidad;
+    const precioVentaUnd = detalle.precioVenta;
+    const montoVenta = precioVentaUnd * detalle.cantidad;
+
+    return {
+        ...detalle,
+        precioVenta: precioVentaUnd,
+        precioVentaUnd: precioVentaUnd,
+        montoItbis,
+        montoVenta,
+        montoTotal,
+        retencionIsr: retencion > 0 ? 0 : (detalle.retencionIsr || 0),
+        retencionItbis: retencion > 0 ? (montoItbis * retencion) / 100 : (detalle.retencionItbis || 0),
+    };
+};
+
 export default function MfCotizacionView() {
     const [save, setSave] = useState<boolean>(false);
-    const [retencionValue, setRetencionValue] = useState<number>(0);
+    const retencionValueRef = useRef<number>(0);
 
     const cotizacionForm = useForm<Cotizacion>({
         defaultValues: {
@@ -64,24 +82,7 @@ export default function MfCotizacionView() {
         name: "detalles"
     });
 
-    const cotizacionDetalleItbis = (detalle: CotizacionDetalle, retencion: number): CotizacionDetalle => {
-        let montoTotal = (detalle.precioItbis + detalle.precioVenta) * detalle.cantidad;
-        let montoItbis = detalle.precioItbis * detalle.cantidad;
-        let precioVentaUnd = detalle.precioVenta;
-        let montoVenta = precioVentaUnd * detalle.cantidad;
 
-        detalle.precioVenta = precioVentaUnd;
-        detalle.precioVentaUnd = precioVentaUnd;
-        detalle.montoItbis = montoItbis;
-        detalle.montoVenta = montoVenta;
-        detalle.montoTotal = montoTotal;
-        if (retencion > 0) {
-            detalle.retencionIsr = 0;
-            detalle.retencionItbis = (montoItbis * retencion) / 100;
-        }
-
-        return detalle;
-    };
 
     const onSubmit: SubmitHandler<Cotizacion> = (data) => {
         const detalles = fields || [];
@@ -139,16 +140,18 @@ export default function MfCotizacionView() {
         setValue("activo", true);
         setValue("detalles", []);
         setValue("nota", "");
+        retencionValueRef.current = 0;
         setSave(false);
     };
 
-    const handleOnDelete = (index: number) => {
+    const handleOnDelete = useCallback((index: number) => {
         remove(index)
-    };
+    }, [remove]);
 
-    const handleSelectProducto = (producto: ProductoVenta) => {
+    const handleSelectProducto = useCallback((producto: ProductoVenta) => {
+        const currentDetalles = getValues("detalles") || [];
         let detalleCotizacion: CotizacionDetalle = {
-            linea: fields.length + 1,
+            linea: currentDetalles.length + 1,
             productoId: producto.id,
             producto: producto,
             productoDesc: producto.nombreProducto,
@@ -165,23 +168,20 @@ export default function MfCotizacionView() {
             retencionIsr: 0,
         };
 
-        detalleCotizacion = cotizacionDetalleItbis(detalleCotizacion, retencionValue);
+        detalleCotizacion = cotizacionDetalleItbis(detalleCotizacion, retencionValueRef.current);
         append(detalleCotizacion);
-        toast.success("Producto agregado a la cotización");
-
-
-    };
+        toast.success("Producto agregado to the cotización");
+    }, [append, getValues]);
 
     const handleOnChangeCantidad = useCallback((index: number, value: string) => {
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
 
-        let detalle = fields[index];
-        detalle.cantidad = Number(value);
-        cotizacionDetalleItbis(detalle, retencionValue);
-        update(index, detalle);
-    }, [fields, retencionValue, update]);
+        const detalle = { ...fields[index], cantidad: Number(value) };
+        const updatedDetalle = cotizacionDetalleItbis(detalle, retencionValueRef.current);
+        update(index, updatedDetalle);
+    }, [fields, update]);
 
     function handleSelectCliente(cliente: Cliente): void {
         setValue("clienteId", cliente.secuencia);
@@ -191,14 +191,15 @@ export default function MfCotizacionView() {
     }
 
     function handleSelectRetenciones(retencion: MgRetencion): void {
-        setRetencionValue(retencion?.valor || 0);
-
+        const retValue = retencion?.valor || 0;
+        retencionValueRef.current = retValue;
 
         setValue("retencionId", retencion?.id || 0);
-        let detalles = fields || [];
         if (fields.length > 0) {
-            detalles.forEach((detalle) => cotizacionDetalleItbis(detalle, retencion?.valor || 0));
-            replace(detalles)
+            const detallesActualizados = fields.map((detalle) =>
+                cotizacionDetalleItbis(detalle, retValue)
+            );
+            replace(detallesActualizados);
         }
     }
 
@@ -222,7 +223,7 @@ export default function MfCotizacionView() {
                 setValue("retencionItbis", response.retencionItbis || 0);
                 setValue("retencionIsr", response.retencionIsr || 0);
                 setValue("total", response.total || 0);
-                setValue("detalles", response.detalles || []);
+                replace(response.detalles || []);
                 setValue("nota", response.nota || "");
                 setValue("activo", response.activo);
                 toast.success("Cotización cargada correctamente");
