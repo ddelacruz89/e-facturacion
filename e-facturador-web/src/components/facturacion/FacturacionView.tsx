@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useForm, SubmitHandler, FieldErrors, useFieldArray } from "react-hook-form";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useForm, useWatch, Controller, Control, SubmitHandler, FieldErrors } from "react-hook-form";
 import { Factura, FacturaDetalle, IFacturaResumen, MgRetencion, TipoFactura } from "../../models/facturacion";
 import { Button, Checkbox, Divider, FormControlLabel } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -18,9 +18,6 @@ import { Cliente } from "../../models/cliente/Cliente";
 import ModalSearchFacturas from "../../customers/search/ModalSearchFacturas";
 import ModalReciboPago from "./modals/ModalReciboPago";
 import { CallReportById } from "../../customers/search/CallReport";
-import ModalSearchMfCotizacion from "../../customers/search/ModalSearchMfCotizacion";
-import { ICotizacionResumen } from "../../models/MfContizacion";
-import { getByNumeroCotizacion } from "../../apis/MfCotizacionController";
 
 export default function FacturacionView() {
 
@@ -60,16 +57,6 @@ export default function FacturacionView() {
         watch,
         formState: { errors },
     } = facturaForm
-    const {
-        fields,
-        append,
-        remove,
-        update,
-        replace
-    } = useFieldArray({
-        control,
-        name: "detalles"
-    });
 
     // const [factura, setFactura] = useState<Factura>({
     //     activo: true,
@@ -96,7 +83,9 @@ export default function FacturacionView() {
 
     useEffect(() => { }, []);
 
-    const [retencionValue, setRetencionValue] = useState<number>(0);
+    // No es estado reactivo: solo se lee dentro de callbacks (nunca en el JSX),
+    // así su cambio no re-renderiza FacturacionView ni rompe el React.memo de ListaProductoVenta.
+    const retencionValueRef = useRef<number>(0);
 
     const onSubmit: SubmitHandler<Factura> = (data) => {
         setOpenModalReciboPago(false);
@@ -162,19 +151,21 @@ export default function FacturacionView() {
         setSave(false)
     };
 
-    const handleOnSelect = (row: Factura) => {
+    const handleOnSelect = useCallback((row: Factura) => {
         Object.entries(row).forEach(([key, value]) => setValue(key as any, value));
-    };
+    }, [setValue]);
 
-    const handleOnDelete = (index: number) => {
-        remove(index);
-    };
+    const handleOnDelete = useCallback((row: FacturaDetalle) => {
+        let detalles = watch("detalles");
+        detalles = detalles.filter((detalle) => detalle.linea !== row.linea);
+        setValue("detalles", detalles);
+    }, [watch, setValue]);
 
     const handleSelectTipoFactura = (item: TipoFactura) => {
         setValue("tipoFacturaId", item?.id || 2);
     };
 
-    const handleSelectProducto = (producto: ProductoVenta) => {
+    const handleSelectProducto = useCallback((producto: ProductoVenta) => {
         // if (watch('detalles').find((detalle) => detalle.productoId === producto.id)) {
         //     toast.error("Producto ya agregado a la factura");
         //     return;
@@ -198,22 +189,26 @@ export default function FacturacionView() {
             retencionIsr: 0,
             almacenId: 0,
         };
-        append(detalleFactura);
-        detalleFactura = detalleItbis(producto, detalleFactura, retencionValue);
-        detalleFactura.linea = fields.length;
+        let detalles = watch("detalles");
+        detalles.push(detalleFactura);
+        detalleFactura = detalleItbis(producto, detalleFactura, retencionValueRef.current);
+        detalleFactura.linea = detalles.length;
         toast.success("Producto agregado a la factura");
-    };
-    function handleOnChangeCantidad(index: number, value: string, column: string) {
+
+        setValue("detalles", detalles);
+    }, [watch, setValue]);
+
+    const handleOnChangeCantidad = useCallback((index: number, value: string, column: string) => {
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
-        let detalle = {
-            ...fields[index],
-            cantidad: Number(value),
-        };
-        let detalleConItbis = detalleItbis(detalle.producto!, detalle, retencionValue);
-        update(index, detalleConItbis);
-    }
+        let detalles = watch("detalles");
+        let detalle = detalles[index];
+        detalle.cantidad = Number(value);
+        detalle = detalleItbis(detalle.producto!, detalle, retencionValueRef.current);
+        detalles[index] = detalle;
+        setValue("detalles", detalles);
+    }, [watch, setValue]);
 
     function handleSelectCliente(cliente: Cliente): void {
         setValue("clienteId", cliente.secuencia);
@@ -242,11 +237,11 @@ export default function FacturacionView() {
     }
 
     function handleSelectRetenciones(retencion: MgRetencion): void {
-        // let detalles = fields;
-        setRetencionValue(retencion?.valor || 0);
-        replace(fields.map((detalle) => detalleItbis(detalle.producto!, detalle, retencion?.valor || 0)));
-        // setValue("retencionId", retencion?.id || 0);
-        // setValue("detalles", detalles);
+        let detalles = watch("detalles");
+        retencionValueRef.current = retencion?.valor || 0;
+        detalles = detalles.map((detalle) => detalleItbis(detalle.producto!, detalle, retencion?.valor || 0));
+        setValue("retencionId", retencion?.id || 0);
+        setValue("detalles", detalles);
     }
 
     function handleSelectTipoComprobante(selected: any): void {
@@ -269,49 +264,6 @@ export default function FacturacionView() {
     }
 
 
-    function handleSelectCotizacion(cotizacion: ICotizacionResumen): void {
-        getByNumeroCotizacion(cotizacion.secuencia).then((response) => {
-            console.log(response);
-            setValue("secuencia", response?.secuencia);
-            setValue("tipoComprobanteId", response?.tipoComprobanteId || "");
-            setValue("razonSocial", response?.razonSocial || "");
-            setValue("rnc", response?.rnc || "");
-            setValue("tipoFacturaId", 1);
-            setValue("clienteId", response?.clienteId || 0);
-            setValue("monto", response?.monto || 0);
-            setValue("descuento", response?.descuento || 0);
-            setValue("itbis", response?.itbis || 0);
-            setValue("retencionItbis", response?.retencionItbis || 0);
-            setValue("retencionIsr", response?.retencionIsr || 0);
-            setValue("total", response?.total || 0);
-            setValue("nota", response?.nota || "");
-            response?.detalles?.forEach((detalle) => {
-                let detalleFactura: FacturaDetalle = {
-                    linea: 0,
-                    productoId: detalle.productoId,
-                    producto: detalle.precioVentaDto,
-                    productoDesc: detalle.productoDesc,
-                    precioCosto: detalle.precioCosto,
-                    precioVentaUnd: detalle.precioVentaUnd,
-                    precioVenta: detalle.precioVenta,
-                    montoDescuento: detalle.montoDescuento,
-                    precioItbis: detalle.precioItbis,
-                    cantidad: detalle.cantidad,
-                    montoVenta: detalle.montoVenta,
-                    itbisId: detalle.itbisId,
-                    montoItbis: detalle.montoItbis,
-                    retencionItbis: detalle.retencionItbis,
-                    retencionIsr: detalle.retencionIsr,
-                    almacenId: 1,
-                    montoTotal: detalle.montoTotal,
-                };
-                // detalleFactura = detalleItbis(detalleFactura.producto!, detalleFactura, retencionValue);
-                append(detalleFactura);
-            });
-
-        });
-    }
-
     return (
 
         <main style={{ display: "flex", flexDirection: "row", gap: 20, padding: 10 }}>
@@ -319,29 +271,14 @@ export default function FacturacionView() {
             <ListaProductoVenta onSelectProducto={handleSelectProducto} />
 
             <form style={{ flexGrow: 1, minWidth: "50%" }} onSubmit={handleSubmit(onSubmit, onError)}>
-                <ModalReciboPago facturaForm={facturaForm} isOpen={openModalReciboPago} onClose={() => { setOpenModalReciboPago(false) }} onConfirm={() => {
-                    handleSubmit(onSubmit, onError)();
-                    setOpenModalReciboPago(false)
-                }} />
+                {openModalReciboPago && (
+                    <ModalReciboPago facturaForm={facturaForm} isOpen={openModalReciboPago} onClose={() => { setOpenModalReciboPago(false) }} onConfirm={() => {
+                        handleSubmit(onSubmit, onError)();
+                        setOpenModalReciboPago(false)
+                    }} />
+                )}
                 <ActionBar title="Factura">
-                    <ModalSearchMfCotizacion control={control} name="secuencia" label="No. Factura" size={2} onSelect={handleSelectCotizacion} type="button" />
-                    {watch("tipoFacturaId") === 2 ? <Button
-                        variant="contained"
-                        color="success"
-                        type="submit"
-                        disabled={save}>
-                        {" "}
-                        <SaveIcon /> Guardar
-                    </Button> :
-                        <Button
-                            variant="contained"
-                            color="warning"
-                            onClick={() => setOpenModalReciboPago(true)}
-                            disabled={save}>
-                            {" "}
-                            <SaveIcon /> Guardar
-                        </Button>
-                    }
+                    <GuardarButton control={control} save={save} onOpenRecibo={() => setOpenModalReciboPago(true)} />
                     <Button variant="contained" color="primary" onClick={handleClean}>
                         <ArticleIcon /> Nuevo
                     </Button>
@@ -351,7 +288,6 @@ export default function FacturacionView() {
                     <Button variant="contained" color="primary" onClick={handleGenerateReport}>
                         <ArticleIcon /> Reporte
                     </Button>
-
                 </ActionBar>
                 <fieldset disabled={save}>
 
@@ -390,7 +326,7 @@ export default function FacturacionView() {
                             <RetencionesSelect
                                 disabled={save}
                                 control={control}
-                                name="retencionId"
+                                name="retencion"
                                 label="retencion"
                                 rules={{
                                     required: "Debe seleccionar retenciones",
@@ -466,19 +402,7 @@ export default function FacturacionView() {
                                 }}
                                 size={2}
                             />
-                            <Grid size={2} sx={{ display: "flex", alignItems: "center" }}>
-                                <FormControlLabel
-                                    control={
-                                        <Checkbox
-                                            checked={!!watch("envio")}
-                                            onChange={(e) => setValue("envio", e.target.checked)}
-                                            disabled={save}
-                                            color="primary"
-                                        />
-                                    }
-                                    label="Para Envío"
-                                />
-                            </Grid>
+                            <EnvioCheckbox control={control} save={save} />
                         </GridRow>
                         <GridRow>
                             <TextInput
@@ -498,32 +422,99 @@ export default function FacturacionView() {
                         </GridRow>
                     </Grid>
                     <Divider>Listado</Divider>
-                    <TableComponentFacturacion
+                    <FacturaDetalleTable
+                        control={control}
                         disabled={save}
                         selected={handleOnSelect}
-                        rows={fields}
                         handleDelete={handleOnDelete}
-                        columns={[
-                            { id: "linea", label: "Linea" },
-                            { id: "productoId", label: "Producto ID" },
-                            { id: "productoDesc", label: "Producto" },
-                            { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
-                            { id: "montoDescuento", label: "Monto Descuento", format: (value: number) => formatCurrency(value) },
-                            {
-                                id: "cantidad",
-                                label: "Cantidad",
-                                isNumeric: true,
-                                onChange: (index: number, value: any, column: string) => handleOnChangeCantidad(index, value, column),
-                            },
-                            { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
-                            { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },
-                            { id: "retencionIsr", label: "Retencion ISR", format: (value: number) => formatCurrency(value) },
-                            { id: "retencionItbis", label: "Retencion Itbis", format: (value: number) => formatCurrency(value) },
-                            { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) },
-                        ]}
+                        handleOnChangeCantidad={handleOnChangeCantidad}
                     />
                 </fieldset>
             </form>
         </main>
+    );
+}
+
+// Componentes aislados: cada uno se suscribe solo al campo que necesita vía useWatch/Controller,
+// para que agregar un producto o cambiar un dropdown no re-renderice todo FacturacionView
+// (incluyendo el catálogo de productos de la izquierda).
+
+function GuardarButton({ control, save, onOpenRecibo }: { control: Control<Factura>; save: boolean; onOpenRecibo: () => void }) {
+    const tipoFacturaId = useWatch({ control, name: "tipoFacturaId" });
+    return tipoFacturaId === 2 ? (
+        <Button variant="contained" color="success" type="submit" disabled={save}>
+            {" "}
+            <SaveIcon /> Guardar
+        </Button>
+    ) : (
+        <Button variant="contained" color="warning" onClick={onOpenRecibo} disabled={save}>
+            {" "}
+            <SaveIcon /> Guardar
+        </Button>
+    );
+}
+
+function EnvioCheckbox({ control, save }: { control: Control<Factura>; save: boolean }) {
+    return (
+        <Grid size={2} sx={{ display: "flex", alignItems: "center" }}>
+            <Controller
+                name="envio"
+                control={control}
+                render={({ field }) => (
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={!!field.value}
+                                onChange={(e) => field.onChange(e.target.checked)}
+                                disabled={save}
+                                color="primary"
+                            />
+                        }
+                        label="Para Envío"
+                    />
+                )}
+            />
+        </Grid>
+    );
+}
+
+function FacturaDetalleTable({
+    control,
+    disabled,
+    selected,
+    handleDelete,
+    handleOnChangeCantidad,
+}: {
+    control: Control<Factura>;
+    disabled: boolean;
+    selected: (row: Factura) => void;
+    handleDelete: (row: FacturaDetalle) => void;
+    handleOnChangeCantidad: (index: number, value: string, column: string) => void;
+}) {
+    const detalles = useWatch({ control, name: "detalles" }) ?? [];
+    return (
+        <TableComponentFacturacion
+            disabled={disabled}
+            selected={selected}
+            rows={detalles}
+            handleDelete={handleDelete}
+            columns={[
+                { id: "linea", label: "Linea" },
+                { id: "productoId", label: "Producto ID" },
+                { id: "productoDesc", label: "Producto" },
+                { id: "precioVentaUnd", label: "Precio Venta Und", format: (value: number) => formatCurrency(value) },
+                { id: "montoDescuento", label: "Monto Descuento", format: (value: number) => formatCurrency(value) },
+                {
+                    id: "cantidad",
+                    label: "Cantidad",
+                    onChange: (index: number, value: any, column: string) => handleOnChangeCantidad(index, value, column),
+                },
+                { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
+                { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },
+                { id: "retencionIsr", label: "Retencion ISR", format: (value: number) => formatCurrency(value) },
+                { id: "retencionItbis", label: "Retencion Itbis", format: (value: number) => formatCurrency(value) },
+                { id: "montoTotal", label: "Total", format: (value: number) => formatCurrency(value) },
+            ]}
+        />
     );
 }
