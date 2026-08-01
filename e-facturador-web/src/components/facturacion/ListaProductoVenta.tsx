@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import {
     Box,
     TextField,
@@ -23,7 +23,7 @@ interface ListaProductoVentaProps {
     onSelectProducto: (producto: ProductoVenta) => void;
 }
 
-export default function ListaProductoVenta({ onSelectProducto }: ListaProductoVentaProps) {
+function ListaProductoVenta({ onSelectProducto }: ListaProductoVentaProps) {
     const [productos, setProductos] = useState<ProductoVenta[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -139,7 +139,7 @@ interface ItemProductoVentaProps {
     index: number;
 }
 
-const ItemProductoVenta = ({ producto, onSelectProducto, index }: ItemProductoVentaProps) => {
+const ItemProductoVenta = memo(function ItemProductoVenta({ producto, onSelectProducto, index }: ItemProductoVentaProps) {
     const totalStock = useMemo(() => {
         return producto.inventarios?.reduce((sum, inv) => sum + inv.cantidad, 0) ?? 0;
     }, [producto.inventarios]);
@@ -238,4 +238,6 @@ const ItemProductoVenta = ({ producto, onSelectProducto, index }: ItemProductoVe
             </Box>
         </ListItem>
     );
-};
+});
+
+export default memo(ListaProductoVenta);
