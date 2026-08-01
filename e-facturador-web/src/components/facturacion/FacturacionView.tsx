@@ -54,6 +54,7 @@ export default function FacturacionView() {
         control,
         handleSubmit,
         setValue,
+        getValues,
         watch,
         formState: { errors },
     } = facturaForm
@@ -181,7 +182,7 @@ export default function FacturacionView() {
         // }
 
         let detalleFactura: FacturaDetalle = {
-            linea: 0,
+            linea: fields.length + 1,
             productoId: producto.id,
             producto: producto,
             productoDesc: producto.nombreProducto,
@@ -198,26 +199,18 @@ export default function FacturacionView() {
             retencionIsr: 0,
             almacenId: 0,
         };
-        let detalles = watch("detalles");
-        detalles.push(detalleFactura);
-        detalleFactura = detalleItbis(producto, detalleFactura, retencionValueRef.current);
-        detalleFactura.linea = detalles.length;
+        append(detalleFactura);
         toast.success("Producto agregado a la factura");
-
-        setValue("detalles", detalles);
-    }, [watch, setValue]);
+    }, [append]);
 
     const handleOnChangeCantidad = useCallback((index: number, value: string, column: string) => {
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
-        let detalles = watch("detalles");
-        let detalle = detalles[index];
-        detalle.cantidad = Number(value);
-        detalle = detalleItbis(detalle.producto!, detalle, retencionValueRef.current);
-        detalles[index] = detalle;
-        setValue("detalles", detalles);
-    }, [watch, setValue]);
+        const detalle = { ...fields[index], cantidad: Number(value) };
+        const detalleActualizado = detalleItbis(detalle.producto!, detalle, retencionValueRef.current);
+        update(index, detalleActualizado);
+    }, [fields, retencionValueRef, update]);
 
     function handleSelectCliente(cliente: Cliente): void {
         setValue("clienteId", cliente.secuencia);
@@ -239,32 +232,32 @@ export default function FacturacionView() {
             setValue("retencionItbis", response?.retencionItbis || 0);
             setValue("retencionIsr", response?.retencionIsr || 0);
             setValue("total", response?.total || 0);
-            setValue("detalles", response?.detalles || []);
+            replace(response?.detalles || []);
             setValue("envio", response?.envio || false);
             setValue("nota", response?.nota || "");
         });
     }
 
     function handleSelectRetenciones(retencion: MgRetencion): void {
-        let detalles = watch("detalles");
+
         retencionValueRef.current = retencion?.valor || 0;
-        detalles = detalles.map((detalle) => detalleItbis(detalle.producto!, detalle, retencion?.valor || 0));
+        const detalles = fields.map((detalle) => detalleItbis(detalle.producto!, detalle, retencion?.valor || 0));
         setValue("retencionId", retencion?.id || 0);
-        setValue("detalles", detalles);
+        replace(detalles);
     }
 
     function handleSelectTipoComprobante(selected: any): void {
         setValue("tipoComprobanteId", selected.tipoComprobante)
     }
     const handleGenerateReport = () => {
-        const id = Number(watch("id"));
+        const id = Number(getValues("id"));
         if (id > 0) {
             CallReportById("reporte", id);
         }
     }
 
     function handleResend() {
-        const id = Number(watch("id"));
+        const id = Number(getValues("id"));
         if (id > 0) {
             getFacturaSender(id).then((response) => {
                 console.log(response);
@@ -516,6 +509,7 @@ function FacturaDetalleTable({
                     id: "cantidad",
                     label: "Cantidad",
                     onChange: (index: number, value: any, column: string) => handleOnChangeCantidad(index, value, column),
+                    isNumeric: true,
                 },
                 { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
                 { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },

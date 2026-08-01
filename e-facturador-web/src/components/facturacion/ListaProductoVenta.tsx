@@ -164,13 +164,13 @@ const ItemProductoVenta = memo(function ItemProductoVenta({ producto, onSelectPr
                 gap: 1.5
             }}
         >
-            <Avatar 
-                className="product-avatar-gradient" 
-                sx={{ 
-                    width: 32, 
-                    height: 32, 
-                    fontSize: '0.8rem', 
-                    flexShrink: 0 
+            <Avatar
+                className="product-avatar-gradient"
+                sx={{
+                    width: 32,
+                    height: 32,
+                    fontSize: '0.8rem',
+                    flexShrink: 0
                 }}
             >
                 {producto.secuencia}
@@ -193,11 +193,11 @@ const ItemProductoVenta = memo(function ItemProductoVenta({ producto, onSelectPr
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 1 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                         {producto.codigoBarra && (
-                            <Typography 
-                                variant="caption" 
-                                color="text.secondary" 
-                                sx={{ 
-                                    fontSize: '0.7rem', 
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                    fontSize: '0.7rem',
                                     lineHeight: 1.1,
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',

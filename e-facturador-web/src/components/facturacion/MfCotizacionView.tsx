@@ -49,8 +49,7 @@ export default function MfCotizacionView() {
     const {
         control,
         handleSubmit,
-        setValue,
-        watch,
+        setValue, getValues,
         formState: { errors },
     } = cotizacionForm;
 
@@ -64,10 +63,8 @@ export default function MfCotizacionView() {
         control,
         name: "detalles"
     });
-    useEffect(() => { }, []);
 
     const cotizacionDetalleItbis = (detalle: CotizacionDetalle, retencion: number): CotizacionDetalle => {
-        debugger
         let montoTotal = (detalle.precioItbis + detalle.precioVenta) * detalle.cantidad;
         let montoItbis = detalle.precioItbis * detalle.cantidad;
         let precioVentaUnd = detalle.precioVenta;
@@ -87,7 +84,7 @@ export default function MfCotizacionView() {
     };
 
     const onSubmit: SubmitHandler<Cotizacion> = (data) => {
-        const detalles = watch("detalles") || [];
+        const detalles = fields || [];
         const monto = detalles.reduce((acc, row) => acc + (row.montoVenta || 0), 0);
         const itbis = detalles.reduce((acc, row) => acc + (row.montoItbis || 0), 0);
         const retencionItbis = detalles.reduce((acc, row) => acc + (row.retencionItbis || 0), 0);
@@ -179,13 +176,12 @@ export default function MfCotizacionView() {
         if (isNaN(Number(value)) || Number(value) <= 0) {
             return;
         }
-        let detalles = watch("detalles");
-        let detalle = detalles[index];
+
+        let detalle = fields[index];
         detalle.cantidad = Number(value);
-        // detalle = detalleItbis(detalle.producto!, detalle, retencionValueRef.current);
-        detalles[index] = detalle;
-        setValue("detalles", detalles);
-    }, [watch, setValue]);
+        cotizacionDetalleItbis(detalle, retencionValue);
+        update(index, detalle);
+    }, [fields, retencionValue, update]);
 
     function handleSelectCliente(cliente: Cliente): void {
         setValue("clienteId", cliente.secuencia);
@@ -199,10 +195,10 @@ export default function MfCotizacionView() {
 
 
         setValue("retencionId", retencion?.id || 0);
-        let detalles = watch("detalles") || [];
-        if (detalles.length > 0) {
-            detalles = detalles.map((detalle) => cotizacionDetalleItbis(detalle, retencion?.valor || 0));
-            setValue("detalles", detalles);
+        let detalles = fields || [];
+        if (fields.length > 0) {
+            detalles.forEach((detalle) => cotizacionDetalleItbis(detalle, retencion?.valor || 0));
+            replace(detalles)
         }
     }
 
@@ -238,7 +234,7 @@ export default function MfCotizacionView() {
 
     const handleGenerateReport = () => {
 
-        const id = Number(watch("id"));
+        const id = Number(getValues("id"));
 
         console.log("cotizacion id:", id)
 
