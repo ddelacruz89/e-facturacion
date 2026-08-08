@@ -55,7 +55,7 @@ export default function FacturacionView() {
         handleSubmit,
         setValue,
         getValues,
-        watch,
+        trigger,
         formState: { errors },
     } = facturaForm
 
