@@ -12,7 +12,7 @@ import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorSearchCriteria
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
 import com.braintech.eFacturador.facturacionelectronica.services.ECFServices;
 import com.braintech.eFacturador.interfaces.inventario.InSuplidorService;
-import com.braintech.eFacturador.jpa.contabilidad.McCuenta;
+import com.braintech.eFacturador.jpa.contabilidad.McCatalogoCuenta;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidor;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidorDetalle;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidorDetalleDescuento;
@@ -296,14 +296,14 @@ public class MfFacturaSuplidorServiceImpl implements MfFacturaSuplidorService {
 
     // Contabilidad — proxy por ID
     if (dto.getContableId() != null) {
-      McCuenta contable = new McCuenta();
+      McCatalogoCuenta contable = new McCatalogoCuenta();
       contable.setId(dto.getContableId());
       e.setContable(contable);
     } else {
       e.setContable(null);
     }
     if (dto.getCxpId() != null) {
-      McCuenta cxp = new McCuenta();
+      McCatalogoCuenta cxp = new McCatalogoCuenta();
       cxp.setId(dto.getCxpId());
       e.setCxp(cxp);
     } else {

@@ -27,14 +27,14 @@ import BlockIcon from "@mui/icons-material/Block";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import ActionBar from "../../customers/ActionBar";
-import { McCuentaNodoDTO } from "../../models/contabilidad/McCuenta";
+import { McCatalogoCuentaNodoDTO } from "../../models/contabilidad/McCatalogoCuenta";
 import {
     buscarRaices,
     buscarHijos,
     desactivarCuenta,
     activarCuenta,
-} from "../../apis/McCuentaController";
-import McCuentaFormDialog from "./McCuentaFormDialog";
+} from "../../apis/McCatalogoCuentaController";
+import McCatalogoCuentaFormDialog from "./McCatalogoCuentaFormDialog";
 
 const formatSaldo = (value: number | undefined | null): string => {
     if (value === null || value === undefined) return "";
@@ -44,17 +44,17 @@ const formatSaldo = (value: number | undefined | null): string => {
 // ── FilaCuenta (recursiva) ──────────────────────────────────────────────────
 
 interface FilaCuentaProps {
-    nodo: McCuentaNodoDTO;
+    nodo: McCatalogoCuentaNodoDTO;
     depth: number;
     onEdit: (id: number) => void;
-    onAddChild: (padre: McCuentaNodoDTO) => void;
-    onToggleEstado: (nodo: McCuentaNodoDTO) => void;
+    onAddChild: (padre: McCatalogoCuentaNodoDTO) => void;
+    onToggleEstado: (nodo: McCatalogoCuentaNodoDTO) => void;
     refreshToken: number;
 }
 
 const FilaCuenta: React.FC<FilaCuentaProps> = ({ nodo, depth, onEdit, onAddChild, onToggleEstado, refreshToken }) => {
     const [open, setOpen] = useState(false);
-    const [hijos, setHijos] = useState<McCuentaNodoDTO[]>([]);
+    const [hijos, setHijos] = useState<McCatalogoCuentaNodoDTO[]>([]);
     const [loading, setLoading] = useState(false);
     const loaded = useRef(false);
 
@@ -132,11 +132,13 @@ const FilaCuenta: React.FC<FilaCuentaProps> = ({ nodo, depth, onEdit, onAddChild
                     </Typography>
                 </TableCell>
                 <TableCell align="right" sx={{ width: 150 }}>
-                    <Tooltip title="Agregar sub-cuenta">
-                        <IconButton size="small" onClick={() => onAddChild(nodo)}>
-                            <AddIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
+                    {!nodo.permiteMovimiento && (
+                        <Tooltip title="Agregar sub-cuenta">
+                            <IconButton size="small" onClick={() => onAddChild(nodo)}>
+                                <AddIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
                     <Tooltip title="Editar">
                         <IconButton size="small" onClick={() => onEdit(nodo.id)}>
                             <EditIcon fontSize="small" />
@@ -181,8 +183,8 @@ const FilaCuenta: React.FC<FilaCuentaProps> = ({ nodo, depth, onEdit, onAddChild
 
 const PAGE_SIZE = 15;
 
-const McCuentaView: React.FC = () => {
-    const [raices, setRaices] = useState<McCuentaNodoDTO[]>([]);
+const McCatalogoCuentaView: React.FC = () => {
+    const [raices, setRaices] = useState<McCatalogoCuentaNodoDTO[]>([]);
     const [page, setPage] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -192,7 +194,7 @@ const McCuentaView: React.FC = () => {
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editId, setEditId] = useState<number | null>(null);
-    const [padreSeleccionado, setPadreSeleccionado] = useState<McCuentaNodoDTO | null>(null);
+    const [padreSeleccionado, setPadreSeleccionado] = useState<McCatalogoCuentaNodoDTO | null>(null);
 
     const cargarRaices = useCallback(async (targetPage: number) => {
         setLoading(true);
@@ -226,7 +228,7 @@ const McCuentaView: React.FC = () => {
         setDialogOpen(true);
     };
 
-    const abrirNuevaSubcuenta = (padre: McCuentaNodoDTO) => {
+    const abrirNuevaSubcuenta = (padre: McCatalogoCuentaNodoDTO) => {
         setEditId(null);
         setPadreSeleccionado(padre);
         setDialogOpen(true);
@@ -244,7 +246,7 @@ const McCuentaView: React.FC = () => {
         setRefreshToken((t) => t + 1);
     };
 
-    const handleToggleEstado = async (nodo: McCuentaNodoDTO) => {
+    const handleToggleEstado = async (nodo: McCatalogoCuentaNodoDTO) => {
         try {
             if (nodo.estadoId === "INA") {
                 await activarCuenta(nodo.id);
@@ -336,7 +338,7 @@ const McCuentaView: React.FC = () => {
                 disabled={loading}
             />
 
-            <McCuentaFormDialog
+            <McCatalogoCuentaFormDialog
                 open={dialogOpen}
                 padre={padreSeleccionado}
                 editId={editId}
@@ -358,4 +360,4 @@ const McCuentaView: React.FC = () => {
     );
 };
 
-export default McCuentaView;
+export default McCatalogoCuentaView;

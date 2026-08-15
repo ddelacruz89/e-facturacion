@@ -4,7 +4,7 @@ import com.braintech.eFacturador.dao.facturacion.MgRetencionItbisRepository;
 import com.braintech.eFacturador.dto.facturacion.MgRetencionItbisRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MgRetencionItbisResumenDTO;
 import com.braintech.eFacturador.exceptions.RecordNotFoundException;
-import com.braintech.eFacturador.jpa.contabilidad.McCuenta;
+import com.braintech.eFacturador.jpa.contabilidad.McCatalogoCuenta;
 import com.braintech.eFacturador.jpa.general.MgRetencionItbis;
 import com.braintech.eFacturador.services.facturacion.MgRetencionItbisService;
 import java.util.List;
@@ -69,7 +69,7 @@ public class MgRetencionItbisServiceImpl implements MgRetencionItbisService {
 
     // Cuentas contables — solo se asigna la referencia por ID (sin consulta extra innecesaria)
     if (dto.getRetenerCuentaId() != null) {
-      McCuenta retener = new McCuenta();
+      McCatalogoCuenta retener = new McCatalogoCuenta();
       retener.setId(dto.getRetenerCuentaId());
       entity.setRetenerCuenta(retener);
     } else {
@@ -77,7 +77,7 @@ public class MgRetencionItbisServiceImpl implements MgRetencionItbisService {
     }
 
     if (dto.getRetenidoCuentaId() != null) {
-      McCuenta retenido = new McCuenta();
+      McCatalogoCuenta retenido = new McCatalogoCuenta();
       retenido.setId(dto.getRetenidoCuentaId());
       entity.setRetenidoCuenta(retenido);
     } else {

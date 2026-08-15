@@ -1,5 +1,5 @@
 import apiClient from "../services/apiClient";
-import { McTipoCuenta } from "../models/contabilidad/McCuenta";
+import { McTipoCuenta } from "../models/contabilidad/McCatalogoCuenta";
 
 const api = "/api/v1/contabilidad/tipos-cuenta";
 

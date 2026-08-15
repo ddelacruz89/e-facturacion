@@ -58,7 +58,7 @@ const ReciboEntregaConfigView = lazy(() => import("./components/despacho/ReciboE
 const DePrecioEnvioView = lazy(() => import("./components/despacho/DePrecioEnvioView"));
 const NotificacionTipoConfigView = lazy(() => import("./components/seguridad/NotificacionTipoConfigView"));
 const TicketListView    = lazy(() => import("./components/helpdesk/TicketListView"));
-const McCuentaView = lazy(() => import("./components/contabilidad/McCuentaView"));
+const McCatalogoCuentaView = lazy(() => import("./components/contabilidad/McCatalogoCuentaView"));
 const TicketDetalleView = lazy(() => import("./components/helpdesk/TicketDetalleView"));
 
 // Routes component that uses authentication context
@@ -116,7 +116,7 @@ const AppRoutes = () => {
                     <Route path="inventario/reportes" element={<ReportesInventarioView />} />
                     <Route path="aprobaciones-config" element={<AprobacionConfigView />} />
                     <Route path="aprobaciones-bandeja" element={<AprobacionBandejaView />} />
-                    <Route path="contabilidad/cuentas" element={<MenuRoute menuUrl="/contabilidad/cuentas"><McCuentaView /></MenuRoute>} />
+                    <Route path="contabilidad/cuentas" element={<MenuRoute menuUrl="/contabilidad/cuentas"><McCatalogoCuentaView /></MenuRoute>} />
                     <Route path="despacho/tipo-vehiculo" element={<MenuRoute menuUrl="/despacho/tipo-vehiculo"><DeTipoVehiculoView /></MenuRoute>} />
                     <Route path="despacho/vehiculos" element={<MenuRoute menuUrl="/despacho/vehiculos"><DeVehiculoView /></MenuRoute>} />
                     <Route path="despacho/ordenes" element={<MenuRoute menuUrl="/despacho/ordenes"><DeOrdenDespachoView /></MenuRoute>} />

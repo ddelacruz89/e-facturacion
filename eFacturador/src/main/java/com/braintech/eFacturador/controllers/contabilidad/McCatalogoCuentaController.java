@@ -1,9 +1,10 @@
 package com.braintech.eFacturador.controllers.contabilidad;
 
-import com.braintech.eFacturador.dto.contabilidad.McCuentaNodoDTO;
-import com.braintech.eFacturador.dto.contabilidad.McCuentaRequestDTO;
-import com.braintech.eFacturador.interfaces.contabilidad.McCuentaService;
-import com.braintech.eFacturador.jpa.contabilidad.McCuenta;
+import com.braintech.eFacturador.dto.contabilidad.McCatalogoCuentaNodoDTO;
+import com.braintech.eFacturador.dto.contabilidad.McCatalogoCuentaRequestDTO;
+import com.braintech.eFacturador.dto.contabilidad.McCatalogoCuentaSugerenciaDTO;
+import com.braintech.eFacturador.interfaces.contabilidad.McCatalogoCuentaService;
+import com.braintech.eFacturador.jpa.contabilidad.McCatalogoCuenta;
 import com.braintech.eFacturador.security.Accion;
 import com.braintech.eFacturador.security.RequierePermiso;
 import java.util.List;
@@ -24,15 +25,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("api/v1/contabilidad/cuentas")
 @RequiredArgsConstructor
-public class McCuentaController {
+public class McCatalogoCuentaController {
 
   private static final String MENU_URL = "/contabilidad/cuentas";
 
-  private final McCuentaService cuentaService;
+  private final McCatalogoCuentaService cuentaService;
 
   /** Nivel 1: cuentas raíz (sin padre), paginadas. GET /api/v1/contabilidad/cuentas/raices */
   @GetMapping("/raices")
-  public ResponseEntity<Page<McCuentaNodoDTO>> raices(
+  public ResponseEntity<Page<McCatalogoCuentaNodoDTO>> raices(
       @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
     return ResponseEntity.ok(cuentaService.buscarRaices(page, size));
   }
@@ -43,26 +44,36 @@ public class McCuentaController {
    * <p>GET /api/v1/contabilidad/cuentas/{padreId}/hijos
    */
   @GetMapping("/{padreId}/hijos")
-  public ResponseEntity<List<McCuentaNodoDTO>> hijos(@PathVariable Integer padreId) {
+  public ResponseEntity<List<McCatalogoCuentaNodoDTO>> hijos(@PathVariable Integer padreId) {
     return ResponseEntity.ok(cuentaService.buscarHijos(padreId));
+  }
+
+  /**
+   * Sugiere el código de la próxima sub-cuenta a crear bajo {@code padreId}.
+   *
+   * <p>GET /api/v1/contabilidad/cuentas/{padreId}/sugerencia
+   */
+  @GetMapping("/{padreId}/sugerencia")
+  public ResponseEntity<McCatalogoCuentaSugerenciaDTO> sugerencia(@PathVariable Integer padreId) {
+    return ResponseEntity.ok(cuentaService.sugerirSubcuenta(padreId));
   }
 
   /** GET /{id} — objeto completo para editar. */
   @GetMapping("/{id}")
-  public ResponseEntity<McCuenta> getById(@PathVariable Integer id) {
+  public ResponseEntity<McCatalogoCuenta> getById(@PathVariable Integer id) {
     return ResponseEntity.ok(cuentaService.getById(id));
   }
 
   @RequierePermiso(menuUrl = MENU_URL, accion = Accion.ESCRIBIR)
   @PostMapping
-  public ResponseEntity<McCuenta> create(@RequestBody McCuentaRequestDTO request) {
+  public ResponseEntity<McCatalogoCuenta> create(@RequestBody McCatalogoCuentaRequestDTO request) {
     return ResponseEntity.ok(cuentaService.create(request));
   }
 
   @RequierePermiso(menuUrl = MENU_URL, accion = Accion.ESCRIBIR)
   @PutMapping("/{id}")
-  public ResponseEntity<McCuenta> update(
-      @PathVariable Integer id, @RequestBody McCuentaRequestDTO request) {
+  public ResponseEntity<McCatalogoCuenta> update(
+      @PathVariable Integer id, @RequestBody McCatalogoCuentaRequestDTO request) {
     return ResponseEntity.ok(cuentaService.update(id, request));
   }
 

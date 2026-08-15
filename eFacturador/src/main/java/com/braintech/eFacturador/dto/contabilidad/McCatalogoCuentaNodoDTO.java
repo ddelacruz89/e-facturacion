@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class McCuentaNodoDTO {
+public class McCatalogoCuentaNodoDTO {
   private Integer id;
   private Integer cuentaPadreId;
   private String cuenta;

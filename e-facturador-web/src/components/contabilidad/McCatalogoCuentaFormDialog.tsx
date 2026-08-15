@@ -17,21 +17,21 @@ import {
     TextField,
     Typography,
 } from "@mui/material";
-import { McCuenta, McCuentaNodoDTO, McCuentaRequestDTO, McTipoCuenta } from "../../models/contabilidad/McCuenta";
+import { McCatalogoCuenta, McCatalogoCuentaNodoDTO, McCatalogoCuentaRequestDTO, McTipoCuenta } from "../../models/contabilidad/McCatalogoCuenta";
 import { getTiposCuenta } from "../../apis/McTipoCuentaController";
-import { crearCuenta, actualizarCuenta, getCuenta } from "../../apis/McCuentaController";
+import { crearCuenta, actualizarCuenta, getCuenta, sugerirSubcuenta } from "../../apis/McCatalogoCuentaController";
 
-interface McCuentaFormDialogProps {
+interface McCatalogoCuentaFormDialogProps {
     open: boolean;
     /** Cuenta padre cuando se crea una sub-cuenta; null/undefined para cuenta raíz. */
-    padre?: McCuentaNodoDTO | null;
+    padre?: McCatalogoCuentaNodoDTO | null;
     /** id de la cuenta a editar; undefined para creación. */
     editId?: number | null;
     onClose: () => void;
     onSaved: () => void;
 }
 
-const emptyForm: McCuentaRequestDTO = {
+const emptyForm: McCatalogoCuentaRequestDTO = {
     tipoCuentaId: 0,
     cuentaPadreId: null,
     nivel1: "",
@@ -42,12 +42,11 @@ const emptyForm: McCuentaRequestDTO = {
     orden: 0,
     cuenta: "",
     nombreCuenta: "",
-    permiteMovimiento: true,
 };
 
-const McCuentaFormDialog: React.FC<McCuentaFormDialogProps> = ({ open, padre, editId, onClose, onSaved }) => {
+const McCatalogoCuentaFormDialog: React.FC<McCatalogoCuentaFormDialogProps> = ({ open, padre, editId, onClose, onSaved }) => {
     const [tipos, setTipos] = useState<McTipoCuenta[]>([]);
-    const [form, setForm] = useState<McCuentaRequestDTO>(emptyForm);
+    const [form, setForm] = useState<McCatalogoCuentaRequestDTO>(emptyForm);
     const [saving, setSaving] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
 
@@ -60,7 +59,7 @@ const McCuentaFormDialog: React.FC<McCuentaFormDialogProps> = ({ open, padre, ed
         if (!open) return;
         setErrorMsg("");
         if (editId) {
-            getCuenta(editId).then((c: McCuenta) => {
+            getCuenta(editId).then((c: McCatalogoCuenta) => {
                 setForm({
                     tipoCuentaId: c.tipoCuentaId?.id ?? 0,
                     cuentaPadreId: c.cuentaPadreId?.id ?? null,
@@ -72,19 +71,37 @@ const McCuentaFormDialog: React.FC<McCuentaFormDialogProps> = ({ open, padre, ed
                     orden: c.orden ?? 0,
                     cuenta: c.cuenta,
                     nombreCuenta: c.nombreCuenta,
-                    permiteMovimiento: c.permiteMovimiento,
                 });
             });
-        } else {
+        } else if (padre) {
             setForm({
                 ...emptyForm,
-                cuentaPadreId: padre ? padre.id : null,
-                nivel: padre ? (padre.nivel ?? 0) + 1 : 1,
+                tipoCuentaId: padre.tipoCuentaId,
+                cuentaPadreId: padre.id,
+                nivel: (padre.nivel ?? 0) + 1,
             });
+            sugerirSubcuenta(padre.id)
+                .then((s) => {
+                    setForm((prev) => ({
+                        ...prev,
+                        nivel1: s.nivel1 ?? "",
+                        nivel2: s.nivel2 ?? "",
+                        nivel3: s.nivel3 ?? "",
+                        nivel4: s.nivel4 ?? "",
+                        nivel: s.nivel,
+                        orden: s.orden,
+                        cuenta: s.cuenta,
+                    }));
+                })
+                .catch((e: any) => {
+                    setErrorMsg(e?.response?.data?.message || "No se pudo sugerir el código de la sub-cuenta.");
+                });
+        } else {
+            setForm({ ...emptyForm, nivel: 1 });
         }
     }, [open, editId, padre]);
 
-    const setField = (field: keyof McCuentaRequestDTO, value: unknown) => {
+    const setField = (field: keyof McCatalogoCuentaRequestDTO, value: unknown) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -154,6 +171,7 @@ const McCuentaFormDialog: React.FC<McCuentaFormDialogProps> = ({ open, padre, ed
                             value={form.cuenta}
                             onChange={(e) => setField("cuenta", e.target.value)}
                             placeholder="ej. 1.01.1.0001"
+                            helperText={!editId && padre ? "Sugerido — puedes editarlo" : undefined}
                         />
                     </Grid>
                     <Grid size={12}>
@@ -225,14 +243,12 @@ const McCuentaFormDialog: React.FC<McCuentaFormDialogProps> = ({ open, padre, ed
                     </Grid>
                     <Grid size={{ xs: 12, sm: 4 }}>
                         <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={form.permiteMovimiento}
-                                    onChange={(e) => setField("permiteMovimiento", e.target.checked)}
-                                />
-                            }
+                            control={<Checkbox checked={form.nivel === 4} disabled />}
                             label="Permite movimiento"
                         />
+                        <Typography variant="caption" color="text.secondary" display="block">
+                            Solo el nivel 4 permite movimiento — se define automáticamente.
+                        </Typography>
                     </Grid>
                 </Grid>
             </DialogContent>
@@ -253,4 +269,4 @@ const McCuentaFormDialog: React.FC<McCuentaFormDialogProps> = ({ open, padre, ed
     );
 };
 
-export default McCuentaFormDialog;
+export default McCatalogoCuentaFormDialog;

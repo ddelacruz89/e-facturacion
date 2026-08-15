@@ -26,10 +26,10 @@ import lombok.Setter;
 @EqualsAndHashCode(callSuper = false)
 @NoArgsConstructor
 @Table(
-    name = "mc_cuenta",
+    name = "mc_catalogo_cuenta",
     schema = "contabilidad",
     uniqueConstraints = @UniqueConstraint(columnNames = {"empresa_id", "cuenta"}))
-public class McCuenta extends BaseEntityPk implements Serializable {
+public class McCatalogoCuenta extends BaseEntityPk implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -42,7 +42,7 @@ public class McCuenta extends BaseEntityPk implements Serializable {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "cuenta_padre_id")
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-  private McCuenta cuentaPadreId;
+  private McCatalogoCuenta cuentaPadreId;
 
   @Column(name = "nivel1", length = 3)
   private String nivel1;

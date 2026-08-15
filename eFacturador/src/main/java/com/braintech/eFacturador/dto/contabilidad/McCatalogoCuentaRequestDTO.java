@@ -3,7 +3,7 @@ package com.braintech.eFacturador.dto.contabilidad;
 import lombok.Data;
 
 @Data
-public class McCuentaRequestDTO {
+public class McCatalogoCuentaRequestDTO {
   private Integer tipoCuentaId;
   private Integer cuentaPadreId;
   private String nivel1;
@@ -14,5 +14,4 @@ public class McCuentaRequestDTO {
   private Integer orden;
   private String cuenta;
   private String nombreCuenta;
-  private Boolean permiteMovimiento;
 }

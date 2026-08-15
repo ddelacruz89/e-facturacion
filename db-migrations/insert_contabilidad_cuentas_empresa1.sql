@@ -17,7 +17,7 @@
 
 BEGIN;
 
-INSERT INTO contabilidad.mc_cuenta (id, empresa_id, tipo_cuenta_id, cuenta_padre_id, nivel1, nivel2, nivel3, nivel4, nivel, orden, cuenta, nombre_cuenta, permite_movimiento, usuario_reg, fecha_reg, estado_id, saldo_cuenta, control)
+INSERT INTO contabilidad.mc_catalogo_cuenta (id, empresa_id, tipo_cuenta_id, cuenta_padre_id, nivel1, nivel2, nivel3, nivel4, nivel, orden, cuenta, nombre_cuenta, permite_movimiento, usuario_reg, fecha_reg, estado_id, saldo_cuenta, control)
 VALUES
   (1, 1, 1, NULL, '100', '00', '0', '0000', NULL, 3, '100.00.0.0000', 'ACTIVO', FALSE, 'Master', '2019-10-16 16:35:50', 'ACT', 170085148.88, NULL),
   (2, 1, 1, 1, '110', '00', '0', '0000', 0, 4, '110.00.0.0000', 'ACTIVOS CIRCULANTES', FALSE, 'Master', '2019-10-16 16:35:50', 'ACT', 170068832.68, NULL),
@@ -272,10 +272,10 @@ VALUES
   (327, 1, 1, 51, '120', '01', '0', '0002', 4, 0, '120-01-0-0002', 'Punto Laptop', FALSE, NULL, '2023-02-28 09:12:48', 'ACT', 0, '120.00.0.0000');
 
 -- Alinear la secuencia IDENTITY de la PK con el mayor id insertado explícitamente.
-SELECT setval(pg_get_serial_sequence('contabilidad.mc_cuenta', 'id'), (SELECT MAX(id) FROM contabilidad.mc_cuenta), true);
+SELECT setval(pg_get_serial_sequence('contabilidad.mc_catalogo_cuenta', 'id'), (SELECT MAX(id) FROM contabilidad.mc_catalogo_cuenta), true);
 
 COMMIT;
 
 -- ── VERIFICACIÓN ──────────────────────────────────────────────────────────
--- SELECT count(*) FROM contabilidad.mc_cuenta WHERE empresa_id = 1;
--- SELECT cuenta, nombre_cuenta FROM contabilidad.mc_cuenta WHERE empresa_id = 1 AND cuenta_padre_id IS NULL ORDER BY orden;
+-- SELECT count(*) FROM contabilidad.mc_catalogo_cuenta WHERE empresa_id = 1;
+-- SELECT cuenta, nombre_cuenta FROM contabilidad.mc_catalogo_cuenta WHERE empresa_id = 1 AND cuenta_padre_id IS NULL ORDER BY orden;
