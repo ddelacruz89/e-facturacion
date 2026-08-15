@@ -28,6 +28,7 @@ import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PaymentIcon from "@mui/icons-material/Payment";
 import ListAltIcon from "@mui/icons-material/ListAlt";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import ActionBar from "../../customers/ActionBar";
 import ModalSearch from "../search/ModalSearch";
 import useModalSearch from "../../hooks/useModalSearch";
@@ -35,12 +36,14 @@ import { SEARCH_CONFIGS } from "../../types/modalSearchTypes";
 import { getFacturaSuplidorBySecuencia } from "../../apis/FacturaSuplidorController";
 import {
     buscarPagosSuplidor,
+    getPagoSuplidorById,
     savePagoSuplidor,
 } from "../../apis/FacturaSuplidorPagosController";
 import { getAllFormasPago } from "../../apis/FormaPagoSuplidorController";
 import { MfFacturaSuplidor } from "../../models/facturacion/MfFacturaSuplidor";
 import {
     MfFacturaSuplidorFormaPago,
+    MfFacturaSuplidorPagos,
     MfFacturaSuplidorPagosResumen,
 } from "../../models/facturacion/MfFacturaSuplidorPagos";
 
@@ -62,6 +65,13 @@ const fmt = (v: number | string | undefined | null) =>
 const fmtDate = (v?: string) => v ? v.slice(0, 10) : "—";
 
 const TIPO_PAGO: Record<string, string> = { "1": "Contado", "2": "Crédito", "3": "Gratuito" };
+
+const ESTADO_FACTURA: Record<string, { label: string; bg: string; fg: string }> = {
+    PAG: { label: "PAGADA",   bg: "#d1fae5", fg: "#065f46" },
+    ACT: { label: "ACTIVA",   bg: "#e0f2fe", fg: "#075985" },
+    PEN: { label: "PENDIENTE",bg: "#fff3cd", fg: "#92400e" },
+    ANU: { label: "ANULADA",  bg: "#fee2e2", fg: "#991b1b" },
+};
 
 // ── Tipo de renglón de pago local ─────────────────────────────────────────────
 interface PagoLine {
@@ -96,6 +106,10 @@ export default function FacturaSuplidorPagosView() {
     // ── pago pendiente (confirmado en modal, aún no guardado) ────────────────
     const [pendingLines, setPendingLines] = useState<PagoLine[] | null>(null);
 
+    // ── detalle de un pago (ver líneas) ──────────────────────────────────────
+    const [detalleView, setDetalleView] = useState<MfFacturaSuplidorPagos | null>(null);
+    const [loadingDetalle, setLoadingDetalle] = useState(false);
+
     // ── catálogos ────────────────────────────────────────────────────────────
     const [formasPago, setFormasPago]   = useState<MfFacturaSuplidorFormaPago[]>([]);
 
@@ -129,6 +143,20 @@ export default function FacturaSuplidorPagosView() {
     const cargarPagos = async (id: number) => {
         const lista = await buscarPagosSuplidor({ facturaSuplidorId: id });
         setPagos(lista);
+    };
+
+    const handleVerDetalle = async (id: number) => {
+        setLoadingDetalle(true);
+        try {
+            const pago = await getPagoSuplidorById(id);
+            if (pago) {
+                setDetalleView(pago);
+            } else {
+                showMsg("No se pudo cargar el detalle del pago.", "error");
+            }
+        } finally {
+            setLoadingDetalle(false);
+        }
     };
 
     const handleSelectFactura = searchFactura.handleSelect(async (r: any) => {
@@ -203,7 +231,7 @@ export default function FacturaSuplidorPagosView() {
         if (!factura || !pendingLines || pendingLines.length === 0) return;
         setSaving(true);
         try {
-            await savePagoSuplidor({
+            const saved = await savePagoSuplidor({
                 facturaSuplidorId: factura.id!,
                 monto:    totalFactura,
                 pagado:   pendingTotal,
@@ -220,6 +248,7 @@ export default function FacturaSuplidorPagosView() {
             showMsg("Pago registrado correctamente.");
             setPendingLines(null);
             await cargarPagos(factura.id!);
+            setDetalleView(saved);
         } catch {
             showMsg("Error al registrar el pago.", "error");
         } finally {
@@ -229,6 +258,17 @@ export default function FacturaSuplidorPagosView() {
 
     const showMsg = (msg: string, sev: "success"|"error" = "success") => {
         setSnackMsg(msg); setSnackSev(sev); setSnackOpen(true);
+    };
+
+    const handleNuevo = () => {
+        setFactura(null);
+        setSecuenciaInput("");
+        setPagos([]);
+        setPendingLines(null);
+        setDetalleView(null);
+        setLines([]);
+        setLineForm({ formaPagoId: undefined, formaPagoNombre: "", numeroReferencia: "", concepto: "Pago Fact.", montoPagado: 0 });
+        setPagoOpen(false);
     };
 
     // ── render ────────────────────────────────────────────────────────────────
@@ -243,6 +283,13 @@ export default function FacturaSuplidorPagosView() {
                     onClick={handleGuardar}
                 >
                     {saving ? "Guardando…" : "Guardar"}
+                </Button>
+                <Button
+                    variant="contained" type="button"
+                    sx={{ bgcolor: C.tableHead, "&:hover": { bgcolor: "#2d3748" } }}
+                    onClick={handleNuevo}
+                >
+                    Nuevo
                 </Button>
             </ActionBar>
 
@@ -265,7 +312,10 @@ export default function FacturaSuplidorPagosView() {
                                             <IconButton
                                                 size="small"
                                                 sx={{ bgcolor: C.teal, color: "#fff", borderRadius: 1, "&:hover": { bgcolor: C.tealDark } }}
-                                                onClick={() => searchFactura.openModal(SEARCH_CONFIGS.FACTURA_SUPLIDOR)}
+                                                onClick={() => searchFactura.openModal(
+                                                    SEARCH_CONFIGS.FACTURA_SUPLIDOR,
+                                                    { ...SEARCH_CONFIGS.FACTURA_SUPLIDOR.defaultParams, estadoId: "ACT" }
+                                                )}
                                             >
                                                 <SearchIcon fontSize="small" />
                                             </IconButton>
@@ -363,8 +413,8 @@ export default function FacturaSuplidorPagosView() {
                     </Button>
                 </Box>
 
-                {/* ── PAGADO / RESTANTE ─────────────────────────────────────── */}
-                <Grid container spacing={1.5} sx={{ mb: 2 }}>
+                {/* ── PAGADO / RESTANTE / ESTADO ────────────────────────────── */}
+                <Grid container spacing={1.5} alignItems="flex-end" sx={{ mb: 2 }}>
                     <Grid size={{ xs: 6, sm: 2 }}>
                         <Typography sx={labelSx}>Pagado</Typography>
                         <TextField fullWidth size="small" value={fmt(pagado)} disabled sx={readSx} />
@@ -374,32 +424,76 @@ export default function FacturaSuplidorPagosView() {
                         <TextField fullWidth size="small" value={fmt(restante)} disabled
                             sx={{ bgcolor: restante > 0 ? "#fff3cd" : "#d1fae5" }} />
                     </Grid>
+                    {factura && (
+                        <Grid size={{ xs: 12, sm: 3 }}>
+                            <Typography sx={labelSx}>Estado Factura</Typography>
+                            <Box
+                                sx={{
+                                    bgcolor: (ESTADO_FACTURA[factura.estadoId ?? ""] ?? ESTADO_FACTURA.ACT).bg,
+                                    color: (ESTADO_FACTURA[factura.estadoId ?? ""] ?? ESTADO_FACTURA.ACT).fg,
+                                    borderRadius: 1,
+                                    height: 40,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontWeight: 700,
+                                    fontSize: 13,
+                                    letterSpacing: 0.5,
+                                }}
+                            >
+                                {(ESTADO_FACTURA[factura.estadoId ?? ""] ?? ESTADO_FACTURA.ACT).label}
+                            </Box>
+                        </Grid>
+                    )}
                 </Grid>
+
+                {factura?.estadoId === "PAG" && (
+                    <Alert severity="success" sx={{ mb: 2, fontWeight: 600 }}>
+                        Esta factura está completamente pagada.
+                    </Alert>
+                )}
 
                 {/* ── Tabla de pagos existentes ─────────────────────────────── */}
                 <TableContainer component={Paper} variant="outlined">
                     <Table size="small">
                         <TableHead>
                             <TableRow sx={{ bgcolor: C.tableHead }}>
-                                <TableCell align="center" sx={{ color: "#fff", fontWeight: 700, width: "33%" }}>Monto</TableCell>
-                                <TableCell align="center" sx={{ color: "#fff", fontWeight: 700, width: "34%" }}>Fecha Pago</TableCell>
-                                <TableCell align="center" sx={{ color: "#fff", fontWeight: 700, width: "33%" }}>Estado</TableCell>
+                                <TableCell align="center" sx={{ color: "#fff", fontWeight: 700, width: "27%" }}>Monto</TableCell>
+                                <TableCell align="center" sx={{ color: "#fff", fontWeight: 700, width: "27%" }}>Fecha Pago</TableCell>
+                                <TableCell align="center" sx={{ color: "#fff", fontWeight: 700, width: "27%" }}>Estado</TableCell>
+                                <TableCell align="center" sx={{ color: "#fff", fontWeight: 700, width: "19%" }}>Acción</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {pagos.length === 0 && !pendingLines ? (
                                 <TableRow>
-                                    <TableCell colSpan={3} align="center" sx={{ color: C.labelColor, py: 2 }}>
+                                    <TableCell colSpan={4} align="center" sx={{ color: C.labelColor, py: 2 }}>
                                         No hay pagos a esta factura
                                     </TableCell>
                                 </TableRow>
                             ) : (
                                 <>
                                     {pagos.map(p => (
-                                        <TableRow key={p.id} hover>
+                                        <TableRow
+                                            key={p.id}
+                                            hover
+                                            onClick={() => !loadingDetalle && handleVerDetalle(p.id)}
+                                            sx={{ cursor: loadingDetalle ? "wait" : "pointer" }}
+                                        >
                                             <TableCell align="right">{fmt(p.monto)}</TableCell>
                                             <TableCell align="center">{fmtDate(p.fechaPago)}</TableCell>
                                             <TableCell align="center">{p.estadoId}</TableCell>
+                                            <TableCell align="center">
+                                                <IconButton
+                                                    size="small"
+                                                    title="Ver detalle"
+                                                    disabled={loadingDetalle}
+                                                    onClick={(e) => { e.stopPropagation(); handleVerDetalle(p.id); }}
+                                                    sx={{ color: C.teal }}
+                                                >
+                                                    <VisibilityIcon fontSize="small" />
+                                                </IconButton>
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                     {pendingLines && (
@@ -411,6 +505,7 @@ export default function FacturaSuplidorPagosView() {
                                                     PENDIENTE
                                                 </Box>
                                             </TableCell>
+                                            <TableCell align="center" sx={{ color: C.labelColor }}>—</TableCell>
                                         </TableRow>
                                     )}
                                 </>
@@ -563,6 +658,75 @@ export default function FacturaSuplidorPagosView() {
                 </DialogActions>
             </Dialog>
 
+            {/* ══ Modal: Detalle del pago ════════════════════════════════════ */}
+            <Dialog open={!!detalleView} onClose={() => setDetalleView(null)} maxWidth="md" fullWidth>
+                <DialogTitle sx={{ bgcolor: C.tableHead, color: "#fff", fontWeight: 700, py: 1.5 }}>
+                    Detalle del Pago {detalleView ? `#${detalleView.id}` : ""}
+                </DialogTitle>
+                <DialogContent sx={{ pt: 2 }}>
+                    <Grid container spacing={1.5} sx={{ mb: 2 }}>
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                            <Typography sx={labelSx}>Fecha Pago</Typography>
+                            <TextField fullWidth size="small" value={fmtDate(detalleView?.fechaPago)} disabled sx={readSx} />
+                        </Grid>
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                            <Typography sx={labelSx}>Monto</Typography>
+                            <TextField fullWidth size="small" value={fmt(detalleView?.monto)} disabled sx={readSx} />
+                        </Grid>
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                            <Typography sx={labelSx}>Pagado</Typography>
+                            <TextField fullWidth size="small" value={fmt(detalleView?.pagado)} disabled sx={readSx} />
+                        </Grid>
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                            <Typography sx={labelSx}>Estado</Typography>
+                            <TextField fullWidth size="small" value={detalleView?.estadoId ?? ""} disabled sx={readSx} />
+                        </Grid>
+                    </Grid>
+
+                    <TableContainer component={Paper} variant="outlined">
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow sx={{ bgcolor: C.tableHead }}>
+                                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Forma Pago</TableCell>
+                                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Referencia</TableCell>
+                                    <TableCell sx={{ color: "#fff", fontWeight: 700 }}>Concepto</TableCell>
+                                    <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="right">Monto</TableCell>
+                                    <TableCell sx={{ color: "#fff", fontWeight: 700 }} align="center">Estado</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {!detalleView || detalleView.detalles.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={5} align="center" sx={{ color: C.labelColor, py: 2 }}>
+                                            No hay renglones para este pago
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    detalleView.detalles.map(d => (
+                                        <TableRow key={d.id}>
+                                            <TableCell>{d.formaPago?.formaPago ?? "—"}</TableCell>
+                                            <TableCell>{d.numeroReferencia || "—"}</TableCell>
+                                            <TableCell>{d.concepto || "—"}</TableCell>
+                                            <TableCell align="right">{fmt(d.montoPagado)}</TableCell>
+                                            <TableCell align="center">{d.estado}</TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, py: 2 }}>
+                    <Button
+                        fullWidth variant="contained"
+                        onClick={() => setDetalleView(null)}
+                        sx={{ bgcolor: C.tableHead, "&:hover": { bgcolor: "#2d3748" }, textTransform: "none", fontWeight: 600 }}
+                    >
+                        Cerrar
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* ── Modal búsqueda factura ──────────────────────────────────── */}
             {searchFactura.config && (
                 <ModalSearch
@@ -570,6 +734,7 @@ export default function FacturaSuplidorPagosView() {
                     open={searchFactura.isOpen}
                     onClose={searchFactura.closeModal}
                     onSelect={handleSelectFactura}
+                    initialValues={searchFactura.initialValues}
                 />
             )}
 

@@ -1,6 +1,6 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
-import com.braintech.eFacturador.jpa.contabilidad.McCatalogoCuenta;
+import com.braintech.eFacturador.jpa.contabilidad.McCuenta;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.io.Serial;
@@ -39,7 +39,7 @@ public class MfFacturaSuplidorFormaPago implements Serializable {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "catalogos_cuentas_id")
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-  private McCatalogoCuenta catalogosCuentas;
+  private McCuenta catalogosCuentas;
 
   @Column(name = "tipo_forma_pago")
   private String tipoFormaPago;

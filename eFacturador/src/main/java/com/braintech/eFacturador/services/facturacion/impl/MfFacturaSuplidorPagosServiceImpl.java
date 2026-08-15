@@ -3,6 +3,7 @@ package com.braintech.eFacturador.services.facturacion.impl;
 import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorFormaPagoRepository;
 import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorPagosDao;
 import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorPagosRepository;
+import com.braintech.eFacturador.dao.facturacion.MfFacturaSuplidorRepository;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorPagosDetalleRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorPagosHeaderRequestDTO;
 import com.braintech.eFacturador.dto.facturacion.MfFacturaSuplidorPagosHeaderResumenDTO;
@@ -14,6 +15,7 @@ import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidorPagosDetalle;
 import com.braintech.eFacturador.jpa.facturacion.MfFacturaSuplidorPagosHeader;
 import com.braintech.eFacturador.services.facturacion.MfFacturaSuplidorPagosService;
 import com.braintech.eFacturador.util.TenantContext;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class MfFacturaSuplidorPagosServiceImpl implements MfFacturaSuplidorPagos
   private final MfFacturaSuplidorPagosRepository repository;
   private final MfFacturaSuplidorPagosDao dao;
   private final MfFacturaSuplidorFormaPagoRepository formaPagoRepository;
+  private final MfFacturaSuplidorRepository facturaSuplidorRepository;
   private final TenantContext tenantContext;
 
   @Override
@@ -48,7 +51,9 @@ public class MfFacturaSuplidorPagosServiceImpl implements MfFacturaSuplidorPagos
     MfFacturaSuplidorPagosHeader header = new MfFacturaSuplidorPagosHeader();
     mapHeader(dto, header);
     mapDetalles(dto, header);
-    return repository.save(header);
+    MfFacturaSuplidorPagosHeader saved = repository.save(header);
+    actualizarEstadoFactura(dto.getFacturaSuplidorId());
+    return saved;
   }
 
   @Override
@@ -59,18 +64,50 @@ public class MfFacturaSuplidorPagosServiceImpl implements MfFacturaSuplidorPagos
     mapHeader(dto, header);
     header.getDetalles().clear();
     mapDetalles(dto, header);
-    return repository.save(header);
+    MfFacturaSuplidorPagosHeader saved = repository.save(header);
+    actualizarEstadoFactura(dto.getFacturaSuplidorId());
+    return saved;
   }
 
   @Override
   @Transactional
   public MfFacturaSuplidorPagosHeader anular(Integer id) {
     MfFacturaSuplidorPagosHeader header = findById(id);
+    Integer facturaSuplidorId =
+        header.getFacturaSuplidor() != null ? header.getFacturaSuplidor().getId() : null;
     header.setEstadoId("ANU");
     header.setFechaAnulado(LocalDateTime.now());
     header.setUsuarioAnulacion(tenantContext.getCurrentUsername());
     header.getDetalles().forEach(d -> d.setEstado("ANU"));
-    return repository.save(header);
+    MfFacturaSuplidorPagosHeader saved = repository.save(header);
+    actualizarEstadoFactura(facturaSuplidorId);
+    return saved;
+  }
+
+  /**
+   * Recalcula el monto acumulado pagado de la factura y la marca como "PAG" cuando el pago
+   * acumulado alcanza el total (incluye ITBIS). Si un pago se anula y la factura ya no está
+   * completamente pagada, revierte el estado a "ACT".
+   */
+  private void actualizarEstadoFactura(Integer facturaSuplidorId) {
+    if (facturaSuplidorId == null) {
+      return;
+    }
+    MfFacturaSuplidor factura = facturaSuplidorRepository.findById(facturaSuplidorId).orElse(null);
+    if (factura == null || "ANU".equals(factura.getEstadoId())) {
+      return;
+    }
+
+    BigDecimal totalPagado = repository.sumPagadoActivoByFacturaSuplidorId(facturaSuplidorId);
+    factura.setPago(totalPagado);
+
+    if (factura.getTotal() != null && totalPagado.compareTo(factura.getTotal()) >= 0) {
+      factura.setEstadoId("PAG");
+    } else if ("PAG".equals(factura.getEstadoId())) {
+      factura.setEstadoId("ACT");
+    }
+
+    facturaSuplidorRepository.save(factura);
   }
 
   @Override

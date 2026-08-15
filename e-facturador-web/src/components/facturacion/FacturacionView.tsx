@@ -509,8 +509,8 @@ function FacturaDetalleTable({
                 {
                     id: "cantidad",
                     label: "Cantidad",
-                    onChange: (index: number, value: any, column: string) => handleOnChangeCantidad(index, value, column),
                     isNumeric: true,
+                    onChange: (index: number, value: any, column: string) => handleOnChangeCantidad(index, value, column),
                 },
                 { id: "montoVenta", label: "Monto Venta", format: (value: number) => formatCurrency(value) },
                 { id: "montoItbis", label: "Monto ITBIS", format: (value: number) => formatCurrency(value) },

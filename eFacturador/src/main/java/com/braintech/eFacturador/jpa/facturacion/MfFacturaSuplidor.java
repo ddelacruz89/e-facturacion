@@ -1,7 +1,7 @@
 package com.braintech.eFacturador.jpa.facturacion;
 
 import com.braintech.eFacturador.jpa.SuperClass.BaseDgII;
-import com.braintech.eFacturador.jpa.contabilidad.McCatalogoCuenta;
+import com.braintech.eFacturador.jpa.contabilidad.McCuenta;
 import com.braintech.eFacturador.jpa.general.MgRetencionItbis;
 import com.braintech.eFacturador.jpa.inventario.InSuplidor;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -131,12 +131,12 @@ public class MfFacturaSuplidor extends BaseDgII implements Serializable {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "contable_id")
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-  private McCatalogoCuenta contable;
+  private McCuenta contable;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "cxp_id")
   @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-  private McCatalogoCuenta cxp;
+  private McCuenta cxp;
 
   // ── Mora ──────────────────────────────────────────────────────────────────
 

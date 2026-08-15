@@ -1,6 +1,6 @@
 package com.braintech.eFacturador.jpa.general;
 
-import com.braintech.eFacturador.jpa.contabilidad.McCatalogoCuenta;
+import com.braintech.eFacturador.jpa.contabilidad.McCuenta;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -33,17 +33,15 @@ public class MgRetencionItbis implements Serializable {
   @Column(name = "valor", nullable = false, precision = 10, scale = 0)
   private BigDecimal valor;
 
-  /** Cuenta contable que retiene (quien descuenta). FK → contabilidad.mc_catalago_cuenta */
+  /** Cuenta contable que retiene (quien descuenta). FK → contabilidad.mc_cuenta */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "retener_cuenta_id")
-  private McCatalogoCuenta retenerCuenta;
+  private McCuenta retenerCuenta;
 
-  /**
-   * Cuenta contable del retenido (a quien se le descuenta). FK → contabilidad.mc_catalago_cuenta
-   */
+  /** Cuenta contable del retenido (a quien se le descuenta). FK → contabilidad.mc_cuenta */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "retenido_cuenta_id")
-  private McCatalogoCuenta retenidoCuenta;
+  private McCuenta retenidoCuenta;
 
   /** Texto que aparece en el pie de la factura como nota de retención. */
   @Column(name = "comentario_factura", length = 500)
