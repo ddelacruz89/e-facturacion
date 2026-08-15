@@ -1,11 +1,22 @@
 package com.braintech.eFacturador.jpa.contabilidad;
 
-import com.braintech.eFacturador.jpa.SuperClass.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.io.Serializable;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Table(name = "mc_tipo_cuenta", schema = "contabilidad")
+/** Catálogo global del sistema (Activo, Pasivo, Capital, Ingreso, Costo, Gasto). */
 @Entity
-public class McTipoCuenta extends BaseEntity {
+@Table(name = "mc_tipo_cuenta", schema = "contabilidad")
+@Data
+@NoArgsConstructor
+public class McTipoCuenta implements Serializable {
+
   private static final long serialVersionUID = 1L;
 
   @Id
@@ -13,9 +24,10 @@ public class McTipoCuenta extends BaseEntity {
   @Column(name = "id")
   private Integer id;
 
-  @Column(name = "tipoCuenta")
+  @Column(name = "tipo_cuenta")
   private String tipoCuenta;
 
+  /** {@code true} = naturaleza crédito (el saldo aumenta con crédito); {@code false} = débito. */
   @Column(name = "cr")
-  private Boolean isCredito;
+  private Boolean cr;
 }
