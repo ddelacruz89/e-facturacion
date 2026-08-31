@@ -15,14 +15,6 @@ import lombok.*;
 public class McCatalogoCuenta extends BaseEntity {
   private static final long serialVersionUID = 1L;
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id")
-  private Integer id;
-
-  @Column(name = "empresa_id")
-  private Integer empresaId;
-
   @Column(name = "numero_cuenta")
   private String numeroCuenta;
 

@@ -1,12 +1,8 @@
 package com.braintech.eFacturador.dto.facturacion;
 
 import com.braintech.eFacturador.jpa.general.MgItbis;
-import com.braintech.eFacturador.jpa.inventario.InInventario;
-import lombok.Getter;
-
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.List;
+import lombok.Getter;
 
 @Getter
 public class ProductoVentaDto {
