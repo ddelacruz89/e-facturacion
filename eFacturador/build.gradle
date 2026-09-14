@@ -57,6 +57,10 @@ dependencies {
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
+	// Requerido por Hibernate 6.6 (XmlMappingBinderAccess) — ya no viene incluido en el JDK
+	implementation 'jakarta.xml.bind:jakarta.xml.bind-api'
+	runtimeOnly 'org.glassfish.jaxb:jaxb-runtime'
+
 	// Storage backends para Recibo de Entrega
 	implementation 'software.amazon.awssdk:s3:2.26.12'
 	implementation 'com.azure:azure-storage-blob:12.27.0'

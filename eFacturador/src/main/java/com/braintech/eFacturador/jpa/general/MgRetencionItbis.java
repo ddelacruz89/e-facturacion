@@ -33,13 +33,13 @@ public class MgRetencionItbis implements Serializable {
   @Column(name = "valor", nullable = false, precision = 10, scale = 0)
   private BigDecimal valor;
 
-  /** Cuenta contable que retiene (quien descuenta). FK → contabilidad.mc_catalago_cuenta */
+  /** Cuenta contable que retiene (quien descuenta). FK → contabilidad.mc_catalogo_cuenta */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "retener_cuenta_id")
   private McCatalogoCuenta retenerCuenta;
 
   /**
-   * Cuenta contable del retenido (a quien se le descuenta). FK → contabilidad.mc_catalago_cuenta
+   * Cuenta contable del retenido (a quien se le descuenta). FK → contabilidad.mc_catalogo_cuenta
    */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "retenido_cuenta_id")
