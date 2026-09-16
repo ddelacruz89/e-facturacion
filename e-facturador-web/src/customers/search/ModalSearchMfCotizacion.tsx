@@ -147,10 +147,9 @@ export default function ModalSearchMfCotizacion({ control, name, label, size, on
         <React.Fragment>
             {type === "PK" && <TextInputPkSearch control={control} name={name} label={label} disabled size={size} handleSearch={handleClickOpen} />}
             {type === "Search" && <TextInputSearch control={control} name={name} label={label} disabled size={size} handleSearch={handleClickOpen} />}
-
-            <Button variant="contained" color="primary" onClick={handleClickOpen}>
+            {type === "button" && <Button variant="contained" color="primary" onClick={handleClickOpen}>
                 <ArticleIcon />  Cotizaciones
-            </Button>
+            </Button>}
 
             <BootstrapDialog
                 onClose={handleClose}

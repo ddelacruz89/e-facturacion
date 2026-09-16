@@ -162,7 +162,7 @@ export default function MfCotizacionView() {
             precioItbis: producto.precioItbis,
             cantidad: 1,
             montoVenta: 0,
-            itbisId: producto.itbisId.id,
+            itbisId: producto.itbisId?.id || 0,
             montoItbis: 0,
             retencionItbis: 0,
             retencionIsr: 0,
@@ -268,7 +268,7 @@ export default function MfCotizacionView() {
                 <fieldset disabled={save}>
                     <Grid container spacing={2} style={{ padding: 20 }}>
                         <GridRow>
-                            <ModalSearchMfCotizacion control={control} name="secuencia" label="No. Cotización" size={2} onSelect={handleSearchCotizacion} />
+                            <ModalSearchMfCotizacion type="PK" control={control} name="secuencia" label="No. Cotización" size={2} onSelect={handleSearchCotizacion} />
                             <TipoComprobanteSelect
                                 disabled={save}
                                 control={control}
@@ -287,7 +287,7 @@ export default function MfCotizacionView() {
                             <RetencionesSelect
                                 disabled={save}
                                 control={control}
-                                name="retencion"
+                                name="retencionId"
                                 label="retencion"
                                 rules={{
                                     required: "Debe seleccionar retenciones",

@@ -3,13 +3,13 @@ export interface ProductoVenta {
     codigoBarra: string
     descripcion: string
     nombreProducto: string
-    unidadProductorSuplidor: UnidadProductorSuplidor[]
+    unidadProductorSuplidor?: UnidadProductorSuplidor[]
     secuencia: number
     itbis: number
     precioVenta: number
     precioCostoAvg: number
-    inventarios: Inventario[]
-    itbisId: ItbisId
+    inventarios?: Inventario[]
+    itbisId?: ItbisId
     precioItbis: number
 }
 

@@ -18,6 +18,9 @@ import { Cliente } from "../../models/cliente/Cliente";
 import ModalSearchFacturas from "../../customers/search/ModalSearchFacturas";
 import ModalReciboPago from "./modals/ModalReciboPago";
 import { CallReportById } from "../../customers/search/CallReport";
+import ModalSearchMfCotizacion from "../../customers/search/ModalSearchMfCotizacion";
+import { getByNumeroCotizacion } from "../../apis/MfCotizacionController";
+import { ICotizacionResumen } from "../../models/MfContizacion";
 
 export default function FacturacionView() {
 
@@ -67,7 +70,8 @@ export default function FacturacionView() {
         replace
     } = useFieldArray({
         control,
-        name: "detalles"
+        name: "detalles",
+        keyName: "fieldId",
     });
 
     // const [factura, setFactura] = useState<Factura>({
@@ -193,7 +197,7 @@ export default function FacturacionView() {
             precioItbis: 0,
             cantidad: 1,
             montoVenta: 0,
-            itbisId: producto.itbisId.id,
+            itbisId: producto.itbisId?.id || 0,
             montoItbis: 0,
             retencionItbis: 0,
             retencionIsr: 0,
@@ -238,6 +242,70 @@ export default function FacturacionView() {
             setValue("nota", response?.nota || "");
         });
     }
+    const handleSearchCotizacion = (cotizacion: ICotizacionResumen) => {
+        handleClean();
+        getByNumeroCotizacion(Number(cotizacion.secuencia)).then((response) => {
+            if (response) {
+                const detalles = response.detalles.map((detalle, index) => {
+                    const productoVenta: ProductoVenta = {
+                        id: detalle.productoId,
+                        nombreProducto: detalle.precioVentaDto?.nombreProducto || "",
+                        precioCostoAvg: detalle.precioVentaDto?.precioCostoAvg || 0,
+                        precioVenta: detalle.precioVentaDto?.precioVenta || 0,
+                        itbisId: detalle?.precioVentaDto?.itbisId,
+                        precioItbis: detalle?.precioVentaDto?.precioItbis || 0,
+                        descripcion: detalle.producto?.descripcion || "",
+                        codigoBarra: detalle.producto?.codigoBarra || "",
+                        secuencia: detalle.producto?.secuencia || 0,
+                        itbis: detalle.producto?.itbis || 0,
+                        inventarios: detalle.producto?.inventarios || [],
+
+
+                    };
+                    let detalleFactura: FacturaDetalle = {
+
+                        linea: index + 1,
+                        productoId: productoVenta.id || 0,
+                        producto: productoVenta,
+                        productoDesc: productoVenta.nombreProducto,
+                        precioCosto: productoVenta.precioCostoAvg,
+                        precioVentaUnd: 0,
+                        precioVenta: detalle.precioVenta,
+                        montoDescuento: detalle.montoDescuento,
+                        precioItbis: detalle.precioItbis,
+                        cantidad: detalle.cantidad,
+                        montoVenta: detalle.montoVenta,
+                        itbisId: productoVenta.itbisId?.id || 0,
+                        montoItbis: detalle.montoItbis,
+                        retencionItbis: detalle.retencionItbis,
+                        retencionIsr: detalle.retencionIsr,
+                        almacenId: 0,
+                        montoTotal: detalle.montoTotal,
+                    };
+                    return detalleFactura;
+                });
+
+                replace(detalles)
+                setValue("id", 0);
+                setValue("secuencia", 0);
+                setValue("tipoComprobanteId", response?.tipoComprobanteId || "");
+                setValue("clienteId", response?.clienteId || 0);
+                setValue("razonSocial", response?.razonSocial || "");
+                setValue("rnc", response?.rnc || "");
+                setValue("retencionId", response?.retencionId || 0);
+                setValue("monto", response?.monto || 0);
+                setValue("descuento", response?.descuento || 0);
+                setValue("itbis", response?.itbis || 0);
+                setValue("retencionItbis", response?.retencionItbis || 0);
+                setValue("retencionIsr", response?.retencionIsr || 0);
+                setValue("total", response?.total || 0);
+                setValue("nota", response?.nota || "");
+                toast.success("Cotización cargada correctamente");
+            } else {
+                toast.error("Cotización no encontrada");
+            }
+        });
+    };
 
     function handleSelectRetenciones(retencion: MgRetencion): void {
 
@@ -281,6 +349,7 @@ export default function FacturacionView() {
                     }} />
                 )}
                 <ActionBar title="Factura">
+                    <ModalSearchMfCotizacion type="button" control={control} name="secuencia" label="" size={2} onSelect={handleSearchCotizacion} />
                     <GuardarButton control={control} save={save} onOpenRecibo={() => setOpenModalReciboPago(true)} />
                     <Button variant="contained" color="primary" onClick={handleClean}>
                         <ArticleIcon /> Nuevo
@@ -329,7 +398,7 @@ export default function FacturacionView() {
                             <RetencionesSelect
                                 disabled={save}
                                 control={control}
-                                name="retencion"
+                                name="retencionId"
                                 label="retencion"
                                 rules={{
                                     required: "Debe seleccionar retenciones",
